@@ -15,7 +15,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from gymsub.views import home
+from home.views import home
 
 urlpatterns = [
     path('', home, name='home'),
