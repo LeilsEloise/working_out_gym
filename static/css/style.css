@@ -1,11 +1,11 @@
 .heading {
-  font-family: 'Playfair Display', serif;
+  font-family: "Boldonse"; system-ui; 
   font-weight: 700;
   font-size: 3rem;
 }
 
 body {
-    font-family: 'Playfair Display', sans-serif;
+    font-family: "PT Serif", serif;
 }
 
 .leading-p {
@@ -26,9 +26,28 @@ body {
 }
 
 .main-bg {
-    background-color: #f5fdf7;
+    background-color: white;
 }
 
 .dark-bg {
-    background-color: black;
+    background-color: #3b3b3b;
+}
+
+.navbar-heading {
+  font-family: "Boldonse"; system-ui; 
+  font-weight: 700;
+  font-size: 4rem;
+}
+
+.nav-link {
+    color: black;
+    font-family: "Boldonse"; system-ui; 
+}
+
+
+/* Navbar Code from Project 3 */
+
+.navbar-light .navbar-nav .nav-link.active {
+    font-weight: 700;
+    color: white;
 }
