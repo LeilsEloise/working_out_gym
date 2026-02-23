@@ -1,15 +1,11 @@
 .heading {
-  font-family: 'Playfair Display', serif;
+  font-family: "Boldonse"; system-ui; 
   font-weight: 700;
   font-size: 3rem;
 }
 
 body {
-    font-family: 'Playfair Display', sans-serif;
-}
-
-.leading-p {
-  font-size: 1.4rem;
+    font-family: "PT Serif", serif;
 }
 
 .brand {
@@ -26,9 +22,59 @@ body {
 }
 
 .main-bg {
-    background-color: #f5fdf7;
+    background-color: white;
 }
 
 .dark-bg {
-    background-color: black;
+    background-color: #3b3b3b;
 }
+
+.navbar-heading {
+  font-family: "Boldonse"; system-ui; 
+  font-weight: 700;
+  font-size: 3.5rem;
+}
+
+.nav-link {
+    color: black;
+    font-family: "Boldonse"; system-ui; 
+}
+
+
+/* Homepage Code */
+
+.main-image {
+    width: 950px;
+    height: auto;
+}
+
+.leading-p {
+  font-size: 1.4rem;
+  max-width: 75%;
+}
+
+
+
+/* Navbar Code from Project 3 */
+
+.navbar-light .navbar-nav .nav-link.active {
+    font-weight: 700;
+    color: white;
+}
+
+/* Media Queries */
+
+// Extra small devices (portrait phones, less than 576px)
+// No media query for `xs` since this is the default in Bootstrap
+
+// Small devices (landscape phones, 576px and up)
+@media (min-width: 576px) { ... }
+
+// Medium devices (tablets, 768px and up)
+@media (min-width: 768px) { ... }
+
+// Large devices (desktops, 992px and up)
+@media (min-width: 992px) { ... }
+
+// Extra large devices (large desktops, 1200px and up)
+@media (min-width: 1200px) { ... }
