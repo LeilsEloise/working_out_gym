@@ -42,7 +42,7 @@
   </div>
   <!-- ChatGPT Vote Model code-->
   <div class="d-flex align-items-center gap-2 my-3">
-    {% if user.is_authenticated %}
+    {% if user.is_authenticated and post.slug %}
     <a
       href="{% url 'discussionboard:post_vote' post.slug 1 %}"
       class="btn btn-sm btn-outline-success"
