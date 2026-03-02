@@ -1,0 +1,38 @@
+[
+    {
+  "model": "discussionboard.post",
+  "pk": null,
+  "fields": {
+    "title": "Doing exercise is good for you!",
+    "slug": "doing-exercise-is-good-for-you",
+    "author": 1,
+    "content": "<p>If you want to be healthier then exercise!</p>",
+    "excerpt": "Be healthy",
+    "created_on": "2026-01-24T12:00:00Z"
+  }
+},
+    {
+  "model": "discussionboard.post",
+  "pk": null,
+  "fields": {
+    "title": "Strengthen your core with yoga",
+    "slug": "strengthen-your-core-with-yoga",
+    "author": 1,
+    "content": "<p>Although it seems unlikely, yoga can actually strengthen your core and make you stronger!</p>",
+    "excerpt": "Yoga makes you strong",
+    "created_on": "2026-01-24T12:00:00Z"
+  }
+},
+     {
+  "model": "discussionboard.post",
+  "pk": null,
+  "fields": {
+    "title": "Weight lifting is for everyone",
+    "slug": "weight-lifting-is-for-everyone",
+    "author": 1,
+    "content": "<p>It's not just men who can do weight lifting but women too. It's not just young people who can do lifting but old people too.</p>",
+    "excerpt": "Try weight lifting",
+    "created_on": "2026-01-24T12:00:00Z"
+  }
+}
+]

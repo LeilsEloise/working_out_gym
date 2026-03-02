@@ -1,0 +1,18 @@
+<!-- ChatGPT Code-->
+
+{% extends "base.html" %}
+{% block content %}
+<div class="container my-4" style="max-width: 900px;">
+  <a href="{% url 'discussionboard:post_list' %}">&larr; Back to discussion board</a>
+
+  <div class="card mt-3">
+    <div class="card-body">
+      <h2 class="mb-1">{{ post.title }}</h2>
+      <p class="text-muted">Posted by {{ post.author }} • {{ post.created_on|date:"d M Y" }}</p>
+      <div>{{ post.content|safe }}</div>
+    </div>
+  </div>
+
+  {# comments section goes here (only on detail) #}
+</div>
+{% endblock %}
