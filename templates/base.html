@@ -84,10 +84,10 @@
         <!-- Auth links (left) -->
         <div class="position-absolute start-0 me-3">
           {% if user.is_authenticated %}
-          <a class="nav-link d-inline" href="{{ logout_url }}">Logout</a>
+          <a class="nav-link d-inline" href="{% url 'account_logout' %}">Logout</a>
           {% else %}
-          <a class="nav-link d-inline" href="{{ signup_url }}">Register</a>
-          <a class="nav-link d-inline" href="{{ login_url }}">Login</a>
+          <a class="nav-link d-inline" href="{% url 'account_signup' %}">Register</a>
+          <a class="nav-link d-inline" href="{% url 'account_login' %}">Login</a>
           {% endif %}
         </div>
       </div>
@@ -125,7 +125,7 @@
         </p>
       </div>
     </footer>
-    
+
   <!--Static JS-->
   <script src="{% static 'js/script.js' %}"></script>
 
