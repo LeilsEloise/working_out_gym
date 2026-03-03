@@ -1,52 +1,111 @@
-<!-- ChatGOT Template -->
+<!-- ChatGPT Template-->
 
-<!-- LEFT COLUMN: POSTS LIST -->
-<div class="col-12 col-lg-8">
-  <h2 class="mb-3">Discussion Board</h2>
+{% extends "base.html" %}
 
-  {% if posts %}
+{% block content %}
+<div class="container my-4">
+  <div class="row g-4">
 
-  <h6 class="mb-2">Your posts</h6>
-    {% for post in my_posts %}
-  <div class="d-flex justify-content-between align-items-center mb-2">
-    <a class="small" href="{% url 'discussionboard:post_detail' post.slug %}">
-      {{ post.title|truncatechars:25 }}
-    </a>
-    <div class="d-flex gap-1">
-      <a class="btn btn-sm btn-outline-primary" href="{% url 'discussionboard:post_edit' post.slug %}">Edit</a>
-      <a class="btn btn-sm btn-outline-danger" href="{% url 'discussionboard:post_delete' post.slug %}">Del</a>
+    <!-- LEFT COLUMN: ALL POSTS -->
+    <div class="col-12 col-lg-8">
+      <h2 class="mb-3">Discussion Board</h2>
+
+      {% if posts %}
+        {% for post in posts %}
+          <div class="card mb-3">
+            <div class="card-body">
+              <h5 class="card-title mb-1">
+                <a href="{% url 'discussionboard:post_detail' post.slug %}">
+                  {{ post.title }}
+                </a>
+              </h5>
+
+              <p class="text-muted mb-2">
+                Posted by {{ post.author }} • {{ post.created_on|date:"d M Y" }}
+              </p>
+
+              <p class="card-text">
+                {{ post.content|truncatewords:30 }}
+              </p>
+
+              {% if user.is_authenticated %}
+                {% if user.is_superuser or user == post.author %}
+                  <div class="d-flex gap-2">
+                    <a class="btn btn-sm btn-outline-primary" href="{% url 'discussionboard:post_edit' post.slug %}">Edit</a>
+                    <a class="btn btn-sm btn-outline-danger" href="{% url 'discussionboard:post_delete' post.slug %}">Delete</a>
+                  </div>
+                {% endif %}
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+
+        {% if is_paginated %}
+          <nav>
+            <ul class="pagination">
+              {% if page_obj.has_previous %}
+                <li class="page-item">
+                  <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+                </li>
+              {% endif %}
+
+              <li class="page-item disabled">
+                <span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+              </li>
+
+              {% if page_obj.has_next %}
+                <li class="page-item">
+                  <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+                </li>
+              {% endif %}
+            </ul>
+          </nav>
+        {% endif %}
+
+      {% else %}
+        <div class="alert alert-info">
+          No posts yet. Be the first to start a discussion!
+        </div>
+      {% endif %}
     </div>
+
+    <!-- RIGHT COLUMN: SIDEBAR -->
+    <div class="col-12 col-lg-4">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">Actions</h5>
+
+          {% if user.is_authenticated %}
+            <a class="btn btn-success w-100 mb-3" href="{% url 'discussionboard:post_create' %}">
+              + Create new post
+            </a>
+
+            <hr>
+
+            <h6 class="mb-2">Your posts</h6>
+
+            {% for post in my_posts %}
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <a class="small" href="{% url 'discussionboard:post_detail' post.slug %}">
+                  {{ post.title|truncatechars:25 }}
+                </a>
+                <div class="d-flex gap-1">
+                  <a class="btn btn-sm btn-outline-primary" href="{% url 'discussionboard:post_edit' post.slug %}">Edit</a>
+                  <a class="btn btn-sm btn-outline-danger" href="{% url 'discussionboard:post_delete' post.slug %}">Del</a>
+                </div>
+              </div>
+            {% empty %}
+              <p class="text-muted small mb-0">You haven’t posted yet.</p>
+            {% endfor %}
+
+          {% else %}
+            <p class="mb-3">Log in to create and manage posts.</p>
+            <a class="btn btn-outline-primary w-100" href="/accounts/login/">Log in</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
   </div>
-{% empty %}
-  <p class="text-muted small mb-0">You haven’t posted yet.</p>
-{% endfor %}
-
-
-    {% if is_paginated %}
-      <nav>
-        <ul class="pagination">
-          {% if page_obj.has_previous %}
-            <li class="page-item">
-              <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
-            </li>
-          {% endif %}
-
-          <li class="page-item disabled">
-            <span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
-          </li>
-
-          {% if page_obj.has_next %}
-            <li class="page-item">
-              <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
-            </li>
-          {% endif %}
-        </ul>
-      </nav>
-    {% endif %}
-
-  {% else %}
-    <div class="alert alert-info">
-      No posts yet. Be the first to start a discussion!
-    </div>
-  {% endif %}
 </div>
+{% endblock %}
