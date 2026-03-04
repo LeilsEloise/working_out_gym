@@ -1,0 +1,15 @@
+<!-- ChatGPT Template-->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+  <h3>Delete comment?</h3>
+  <p>{{ object.body }}</p>
+
+  <form method="post">
+    {% csrf_token %}
+    <button class="btn btn-danger" type="submit">Yes, delete</button>
+    <a class="btn btn-secondary" href="{% url 'discussionboard:post_detail' object.Post.slug %}">Cancel</a>
+  </form>
+</div>
+{% endblock %}

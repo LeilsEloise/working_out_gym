@@ -1,14 +1,15 @@
 #ChatGPT code
 
 from django.views import generic
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.urls import reverse_lazy
-from django.shortcuts import get_object_or_404
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.utils.text import slugify
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 
-from .models import Post
+from .forms import CommentForm
+from .models import Post, Comment
 
 class PostList(generic.ListView):
     model = Post
@@ -27,13 +28,38 @@ class PostList(generic.ListView):
         else:
             context["my_posts"] = Post.objects.none()
 
-        return context    
+        return context
 
+def post_detail(request, slug):
+    post = get_object_or_404(Post, slug=slug)
 
-class PostDetail(generic.DetailView):
-    model = Post
-    template_name = "discussionboard/post_detail.html"
-    context_object_name = "post"
+    # get comments for this post (adjust names to your model)
+    comments = post.comments.all().order_by("-created_on")  # or "-id"
+
+    if request.method == "POST":
+        if not request.user.is_authenticated:
+            return redirect("account_login")
+
+        comment_form = CommentForm(request.POST)
+        if comment_form.is_valid():
+            comment = comment_form.save(commit=False)
+            comment.Post = post
+            comment.author = request.user  # adjust field name if yours is "user" etc
+            comment.save()
+            return redirect("discussionboard:post_detail", slug=post.slug)
+    else:
+        comment_form = CommentForm()
+
+    return render(
+        request,
+        "discussionboard/post_detail.html",
+        {
+            "post": post,
+            "comments": comments,
+            "comment_form": comment_form,
+        },
+    )    
+
 
 class PostCreate(LoginRequiredMixin, generic.CreateView):
     model = Post
@@ -64,6 +90,21 @@ class PostDelete(LoginRequiredMixin, PostOwnerOrSuperuserMixin, generic.DeleteVi
     model = Post
     template_name = "discussionboard/post_confirm_delete.html"
     success_url = reverse_lazy("discussionboard:post_list")
+
+#ChatGPT Code
+class CommentOwnerOrSuperuserMixin(UserPassesTestMixin):
+    def test_func(self):
+        comment = self.get_object()
+        return self.request.user.is_superuser or comment.author == self.request.user
+
+#ChatGPT Code
+class CommentDelete(LoginRequiredMixin, CommentOwnerOrSuperuserMixin, generic.DeleteView):
+    model = Comment
+    template_name = "discussionboard/comment_confirm_delete.html"
+
+    def get_success_url(self):
+        # send user back to the post detail page after deleting the comment
+        return reverse_lazy("discussionboard:post_detail", kwargs={"slug": self.object.Post.slug})
 
 
 @login_required
