@@ -12,4 +12,5 @@ urlpatterns = [
     path("<slug:slug>/edit/", PostUpdate.as_view(), name="post_edit"),
     path("<slug:slug>/delete/", PostDelete.as_view(), name="post_delete"),
     path("comment/<int:pk>/delete/", views.CommentDelete.as_view(), name="comment_delete"),
+    path("comment/<int:pk>/edit/", views.CommentUpdate.as_view(), name="comment_edit"),
 ]

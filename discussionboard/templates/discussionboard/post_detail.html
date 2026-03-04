@@ -47,10 +47,11 @@
           </div>
           {% if not comment.approved and comment.author == user %}
           <p class="approval">This comment is awaiting approval</p>
-          {% endif %} {% if user.is_authenticated and comment.author == user %}
-          <button class="btn btn-edit" comment_id="{{ comment.id }}">
-            Edit
-          </button>
+          {% endif %}{% if user == comment.author or user.is_superuser %}
+          <a class="btn btn-sm btn-outline-primary"
+          href="{% url 'discussionboard:comment_edit' comment.pk %}">
+          Edit
+          </a>
           <!--ChatGPT Delete Button Code-->
           <a class="btn btn-sm btn-danger"
           href="{% url 'discussionboard:comment_delete' comment.pk %}">

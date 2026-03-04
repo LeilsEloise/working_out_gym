@@ -106,6 +106,20 @@ class CommentDelete(LoginRequiredMixin, CommentOwnerOrSuperuserMixin, generic.De
         # send user back to the post detail page after deleting the comment
         return reverse_lazy("discussionboard:post_detail", kwargs={"slug": self.object.Post.slug})
 
+#ChatGPT Code
+class CommentOwnerOrSuperuserMixin(UserPassesTestMixin):
+    def test_func(self):
+        comment = self.get_object()
+        return self.request.user.is_superuser or comment.author == self.request.user
+
+#ChatGPT Code
+class CommentUpdate(LoginRequiredMixin, CommentOwnerOrSuperuserMixin, generic.UpdateView):
+    model = Comment
+    fields = ["body"]
+    template_name = "discussionboard/comment_form.html"
+
+    def get_success_url(self):
+        return reverse_lazy("discussionboard:post_detail", kwargs={"slug": self.object.Post.slug})
 
 @login_required
 def post_vote(request, slug, value):
