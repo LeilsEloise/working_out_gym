@@ -12,4 +12,22 @@
     We hope that you will check out our Fitness and Nutrition Plans and the Merchandise page,
     where you will find all sorts of great products to aid your new fitness regime!</p>
 </div>
+
+{% load crispy_forms_tags %}
+
+<div class="container mt-5">
+  <div class="card p-4">
+    <h3 class="mb-3 text-center">Send feedback</h3>
+
+    <form method="post">
+      {% csrf_token %}
+      {{ feedback_form|crispy }}
+      <button type="submit" class="btn btn-primary w-100">Send</button>
+    </form>
+  </div>
+</div>
+
+<div class="container mt-5 mb-5">
+</div>
 {% endblock %}
+

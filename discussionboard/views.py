@@ -46,7 +46,11 @@ def post_detail(request, slug):
             comment.Post = post
             comment.author = request.user  # adjust field name if yours is "user" etc
             comment.save()
+            messages.success(request, "Your comment has been posted.")
             return redirect("discussionboard:post_detail", slug=post.slug)
+        else:
+            messages.error(request, "Couldn’t post comment — please check the form.")
+
     else:
         comment_form = CommentForm()
 
@@ -68,6 +72,7 @@ class PostCreate(LoginRequiredMixin, generic.CreateView):
     success_url = reverse_lazy("discussionboard:post_list")
 
     def form_valid(self, form):
+        messages.success(self.request, "Post updated successfully.")
         form.instance.author = self.request.user
         if not form.instance.slug:
             form.instance.slug = slugify(form.instance.title)
@@ -83,6 +88,10 @@ class PostUpdate(LoginRequiredMixin, PostOwnerOrSuperuserMixin, generic.UpdateVi
     fields = ["title", "content"]
     template_name = "discussionboard/post_form.html"
 
+    def form_valid(self, form):
+        messages.success(self.request, "Post updated successfully.")
+        return super().form_valid(form)
+    
     def get_success_url(self):
         return reverse_lazy("discussionboard:post_detail", kwargs={"slug": self.object.slug})
 
@@ -90,6 +99,10 @@ class PostDelete(LoginRequiredMixin, PostOwnerOrSuperuserMixin, generic.DeleteVi
     model = Post
     template_name = "discussionboard/post_confirm_delete.html"
     success_url = reverse_lazy("discussionboard:post_list")
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(self.request, "Post deleted.")
+        return super().delete(request, *args, **kwargs)
 
 #ChatGPT Code
 class CommentOwnerOrSuperuserMixin(UserPassesTestMixin):
