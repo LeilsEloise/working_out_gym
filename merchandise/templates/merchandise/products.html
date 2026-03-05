@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block page_header %}
+<div class="container mt-5 pt-5">
+<h2 class="text-center">Merchandise</h2>
+  <p class="leading-p mx-auto d-block">Welcome to the <strong>Working Out Gym's</strong> merchandise page,
+    where you will find all products being sold by our business!</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col">
+            {{ products }}
+        </div>
+    </div>
+</div>
+{% endblock %}
