@@ -2,13 +2,31 @@
 from django.db import models
 from django.utils.text import slugify
 
+# ChatGPT Code
+class Category(models.Model):
+    name = models.CharField(max_length=120, unique=True)
+    slug = models.SlugField(max_length=140, unique=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base = slugify(self.name)[:130] or "category"
+            slug = base
+            i = 1
+            while Category.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+                i += 1
+                slug = f"{base[:130 - (len(str(i)) + 1)]}-{i}"
+            self.slug = slug
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
 
 class Product(models.Model):
     title = models.CharField(max_length=255)
     handle = models.SlugField(max_length=255, unique=True, blank=True)
     slug = models.SlugField(max_length=255, unique=True, blank=True)
 
-    product_type = models.CharField(max_length=120, blank=True)
+    category = models.ForeignKey(Category, null=True, blank=True, on_delete=models.SET_NULL, related_name="products")
     vendor = models.CharField(max_length=120, blank=True)
 
     tags = models.TextField(blank=True)
