@@ -4,6 +4,10 @@ from django.utils.text import slugify
 
 # ChatGPT Code
 class Category(models.Model):
+
+    class Meta:
+        verbose_name_plural = 'Categories'
+            
     name = models.CharField(max_length=120, unique=True)
     slug = models.SlugField(max_length=140, unique=True, blank=True)
 
