@@ -1,3 +1,5 @@
+/* Base Styles */
+
 .heading {
   font-family: "Boldonse"; system-ui; 
   font-weight: 700;
@@ -40,11 +42,20 @@ body {
     font-family: "Boldonse"; system-ui; 
 }
 
+
+/* Navbar Code from Project 3 */
+
+.navbar-light .navbar-nav .nav-link.active {
+    font-weight: 700;
+    color: white;
+}
+
 /* ChatGPT Code */
 
 body {
   padding-bottom: 1rem;
 }
+
 
 /* Homepage Code */
 
@@ -58,12 +69,8 @@ body {
   max-width: 75%;
 }
 
-/* Navbar Code from Project 3 */
 
-.navbar-light .navbar-nav .nav-link.active {
-    font-weight: 700;
-    color: white;
-}
+/* Merchandise */
 
 
 

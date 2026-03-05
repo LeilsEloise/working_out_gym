@@ -10,12 +10,46 @@
 </div>
 {% endblock %}
 
+<!-- Code Institute ACK-->
 {% block content %}
-<div class="container">
-    <div class="row">
+<div class="container-fluid">
+  <div class="product-container col-10 offset-1">
+    <div class="row mt-1 mb-2"></div>
+
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-4">
+      {% for product in products %}
         <div class="col">
-            {{ products }}
+          <div class="card h-100 border-0">
+
+            <a href="#">
+              {% if product.image_src %}
+                <img class="card-img-top img-fluid" src="{{ product.image_src }}" alt="{{ product.title }}">
+              {% else %}
+                <img class="card-img-top img-fluid" src="{% static 'images/noimage.png' %}" alt="{{ product.title }}">
+              {% endif %}
+            </a>
+
+            <div class="card-body pb-0">
+              <p class="mb-0">{{ product.title }}</p>
+
+              {% if product.category %}
+                <small class="text-muted">{{ product.category.name }}</small>
+              {% endif %}
+            </div>
+
+            <div class="card-footer bg-white pt-0 border-0 text-left">
+              {% if product.from_price %}
+                <p class="lead mb-0 fw-bold">£{{ product.from_price }}</p>
+              {% else %}
+                <small class="text-muted">Price unavailable</small>
+              {% endif %}
+            </div>
+
+          </div>
         </div>
+      {% endfor %}
     </div>
+
+  </div>
 </div>
 {% endblock %}
