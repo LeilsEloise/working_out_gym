@@ -134,6 +134,71 @@ body {
   box-shadow: none;
 }
 
+/* Chat GPT Code */
+
+.menu-dropdown {
+  width: 100%;
+  max-width: 320px;
+  text-align: center;
+}
+
+.menu-dropdown-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.menu-link-main {
+  width: auto;
+  margin: 0;
+}
+
+.menu-toggle-btn {
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-size: 0.95rem;
+  padding: 0;
+}
+
+.menu-toggle-btn:focus {
+  box-shadow: none;
+}
+
+.submenu-panel {
+  margin-top: 0.75rem;
+  padding: 0.5rem 0;
+}
+
+.submenu-section {
+  margin-bottom: 1.25rem;
+}
+
+.submenu-heading {
+  color: #ffffff;
+  font-family: "Boldonse", system-ui;
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+}
+
+.submenu-group-title {
+  color: #d9d9d9;
+  font-weight: 700;
+  margin: 0.5rem 0 0.2rem;
+}
+
+.submenu-link {
+  display: block;
+  color: #ffffff;
+  text-decoration: none;
+  padding: 0.25rem 0;
+}
+
+.submenu-link:hover {
+  color: #d9d9d9;
+}
+
 /* Homepage */
 
 .main-image {

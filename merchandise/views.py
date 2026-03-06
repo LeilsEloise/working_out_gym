@@ -5,7 +5,7 @@ from .models import Product
 
 
 def all_products(request):
-    """A view to show all products, including search functionality"""
+    """A view to show all products, including search and category filtering"""
 
     products = (
         Product.objects.filter(is_active=True)
@@ -14,8 +14,15 @@ def all_products(request):
     )
 
     query = None
+    current_category = None
 
     if request.GET:
+        if "category" in request.GET:
+            current_category = request.GET["category"].strip()
+
+            category_list = [c.strip() for c in current_category.split(",") if c.strip()]
+            products = products.filter(category__name__in=category_list)
+
         if "q" in request.GET:
             query = request.GET["q"].strip()
 
@@ -35,6 +42,7 @@ def all_products(request):
     context = {
         "products": products,
         "search_term": query,
+        "current_category": current_category,
     }
 
     return render(request, "merchandise/products.html", context)

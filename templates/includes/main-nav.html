@@ -56,18 +56,119 @@
         </form>
       </div>
     </div>
-
+    <!-- ChatGPT Code-->
     <div class="collapse w-100" id="main-nav">
       <div class="nav-collapse-links py-3">
         <a class="menu-link" href="{% url 'home' %}">Home</a>
         <a class="menu-link" href="#">Fitness &amp; Nutrition Plans</a>
-        <a class="menu-link" href="{% url 'merchandise:products' %}"
-          >Merchandise</a
-        >
-        <a class="menu-link" href="{% url 'discussionboard:post_list' %}"
-          >Discussion Board</a
-        >
+        <a class="menu-link" href="{% url 'discussionboard:post_list' %}">
+        Discussion Board
+        </a>
+
+<div class="menu-dropdown">
+  <div class="menu-dropdown-header">
+    <a class="menu-link menu-link-main" href="{% url 'merchandise:products' %}">
+      Merchandise
+    </a>
+
+    <button
+      class="menu-toggle-btn"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#merchandise-submenu"
+      aria-expanded="false"
+      aria-controls="merchandise-submenu"
+      aria-label="Toggle merchandise menu">
+      <i class="fas fa-chevron-down"></i>
+    </button>
+  </div>
+
+  <div class="collapse" id="merchandise-submenu">
+    <div class="submenu-panel">
+
+      <div class="submenu-section">
+        <h6 class="submenu-heading">Womens</h6>
+
+        <p class="submenu-group-title">Tops</p>
+        <a class="submenu-link" href="{% url 'merchandise:products' %}?category=Womens%20Crop%20Tops,Womens%20Crop%20Top,Womens%20Ss%20Tops,Womens%20T-Shirt,Womens%20Sleeveless%20Tops,Womens%20Sleeveless%20Top,Womens%20Ls%20Tops,Womens%20Long%20Sleeve%20Top,Womens%20Tank,Womens%20Tanks,Womens%20tank,Womens%20Vest">
+          View Womens Tops
+        </a>
+
+        <p class="submenu-group-title">Sports Bras</p>
+        <a class="submenu-link" href="{% url 'merchandise:products' %}?category=Womens%20Sports%20Bras,Womens%20Sports%20Bra">
+          View Womens Sports Bras
+        </a>
+
+        <p class="submenu-group-title">Bottoms</p>
+        <a class="submenu-link" href="{% url 'merchandise:products' %}?category=Womens%20Leggings,Womens%20Shorts,womens%20Shorts,Womens%20Pants,Womens%20Bottoms,Womens%20Skort">
+          View Womens Bottoms
+        </a>
+
+        <p class="submenu-group-title">Swimwear</p>
+        <a class="submenu-link" href="{% url 'merchandise:products' %}?category=Womens%20Swimwear,Womens%20One%20Pieces,Womens%20One%20Piece">
+          View Womens Swimwear
+        </a>
+
+        <p class="submenu-group-title">Outerwear</p>
+        <a class="submenu-link" href="{% url 'merchandise:products' %}?category=Womens%20Pullovers,Womens%20Pullover,Womens%20Jackets%20%2F%20Outerwear,Womens%20Jackets,Womens%20Jacket,Womens%20Hoodies,Womens%20Hoodie,Womens%20Hoodies%20and%20Jackets,Womens%20Sweater,Womens%20swe">
+          View Womens Outerwear
+        </a>
+
+        <p class="submenu-group-title">Accessories &amp; Other</p>
+        <a class="submenu-link" href="{% url 'merchandise:products' %}?category=Womens%20Underwear,womens%20Socks,Womens%20Socks,womens%20Bags,womens%20Headwear,womens%20Accessories,Womens,Womens%20Dress,Womens%20Bodysuit">
+          View Womens Accessories &amp; Other
+        </a>
       </div>
+
+      <div class="submenu-section">
+        <h6 class="submenu-heading">Mens</h6>
+
+        <p class="submenu-group-title">Tops</p>
+        <a class="submenu-link" href="{% url 'merchandise:products' %}?category=Mens%20Drop%20Armhole%20Tank,Mens%20Ss%20Tops,mens%20Ss%20Tops,Mens%20T-Shirt,mens%20T-Shirt,Mens%20Long%20Sleeve%20Top,Mens%20Ls%20Tops,Mens%20Shirt,Mens%20Tank,Mens%20Sleeveless%20Tops,Mens%20Sleeveless%20T-Shirt,Mens%20Stringer,Mens%20Tops,Mens%20t,Mens%20Baselayer">
+          View Mens Tops
+        </a>
+
+        <p class="submenu-group-title">Bottoms</p>
+        <a class="submenu-link" href="{% url 'merchandise:products' %}?category=Mens%20Leggings,Mens%20Shorts,Mens%20Pants,Mens%20Joggers,Mens%20Bottoms">
+          View Mens Bottoms
+        </a>
+
+        <p class="submenu-group-title">Outerwear</p>
+        <a class="submenu-link" href="{% url 'merchandise:products' %}?category=Mens%20Pullovers,Mens%20Pullover,Mens%20Hoodie,Mens%20Sweater,Mens%20Jackets%20%2F%20Outerwear,Mens%20Jackets,Mens%20Jacket,Mens%20Outerwear">
+          View Mens Outerwear
+        </a>
+
+        <p class="submenu-group-title">Swimwear &amp; Other</p>
+        <a class="submenu-link" href="{% url 'merchandise:products' %}?category=Mens%20Swimwear,Mens%20Underwear">
+          View Mens Swimwear &amp; Other
+        </a>
+      </div>
+
+      <div class="submenu-section">
+        <h6 class="submenu-heading">Unisex</h6>
+
+        <p class="submenu-group-title">Accessories</p>
+        <a class="submenu-link" href="{% url 'merchandise:products' %}?category=Accessories,Headwear,Socks,Bags,Bag,Thirft%20Bag,Bottles,Equipment,Footwear,footwear">
+          View Unisex Accessories
+        </a>
+
+        <p class="submenu-group-title">Bottoms</p>
+        <a class="submenu-link" href="{% url 'merchandise:products' %}?category=unisex%20Pants,Pants,mens%20unisex%20Bottoms">
+          View Unisex Bottoms
+        </a>
+
+        <p class="submenu-group-title">Pullovers &amp; Tops</p>
+        <a class="submenu-link" href="{% url 'merchandise:products' %}?category=Pullovers,mens%20unisex%20Pullovers,Ss%20Tops,Underwear">
+          View Unisex Pullovers &amp; Tops
+        </a>
+
+        <p class="submenu-group-title">Gift Cards &amp; Misc</p>
+        <a class="submenu-link" href="{% url 'merchandise:products' %}?category=Gift%20Card,Misc.">
+          View Gift Cards &amp; Misc
+        </a>
+      </div>
+
     </div>
   </div>
+</div>
 </nav>
