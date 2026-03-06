@@ -50,6 +50,42 @@ body {
     color: white;
 }
 
+/* Navbar code from ChatGPT for new nav htmls */
+
+.small-auth-links .nav-link {
+  font-size: 0.85rem;
+}
+
+.mobile-logo {
+  height: 40px;
+  width: auto;
+  display: block;
+}
+
+.mobile-brand {
+  text-decoration: none;
+}
+
+.navbar-toggler {
+  padding: 0.25rem 0.5rem;
+}
+
+@media (max-width: 991.98px) {
+  .nav-link {
+    font-size: 0.95rem;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .small-auth-links .nav-link {
+    font-size: 0.75rem;
+  }
+
+  .mobile-logo {
+    height: 32px;
+  }
+}
+
 /* ChatGPT Code */
 
 body {

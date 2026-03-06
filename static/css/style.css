@@ -1,22 +1,19 @@
 /* Base Styles */
 
 .heading {
-  font-family: "Boldonse"; system-ui; 
+  font-family: "Boldonse", system-ui;
   font-weight: 700;
   font-size: 3rem;
 }
 
 body {
     font-family: "PT Serif", serif;
+    padding-bottom: 1rem;
 }
 
 .brand {
     font-weight: 700;
     font-size: 1.4rem;
-}
-
-.green-o {
-    color: #2e7d32;
 }
 
 .thin {
@@ -31,37 +28,114 @@ body {
     background-color: #3b3b3b;
 }
 
+/* ChatGPT seperate html navbar CSS */
 .navbar-heading {
-  font-family: "Boldonse"; system-ui; 
+  font-family: "Boldonse", system-ui;
   font-weight: 700;
-  font-size: 3.5rem;
+  font-size: 2.4rem;
+  color: white;
+  margin: 0;
 }
 
-.nav-link {
-    color: black;
-    font-family: "Boldonse"; system-ui; 
+.nav-link{
+  color: white;
+  font-family: "Boldonse", system-ui;
+  text-decoration: none;
+}
+
+.nav-link:hover,
+.small-auth-links .nav-link:hover {
+  color: #d9d9d9;
+}
+
+.small-auth-links .nav-link {
+  font-size: 0.8rem;
+}
+
+.mobile-logo {
+  height: 34px;
+  width: auto;
+  display: block;
+}
+
+.navbar-toggler {
+  border: none;
+  padding: 0.25rem 0.5rem;
+}
+
+.navbar-toggler:focus {
+  box-shadow: none;
+}
+
+.navbar-toggler-icon {
+  filter: invert(1);
+}
+
+@media (max-width: 575.98px) {
+  .small-auth-links .nav-link {
+    font-size: 0.7rem;
+  }
+
+  .mobile-logo {
+    height: 28px;
+  }
+}
+
+.nav-collapse-links {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.nav-collapse-links .nav-link {
+  display: block;
+  text-align: center;
+}
+
+@media (max-width: 1199.98px) {
+  .small-auth-links .nav-link {
+    font-size: 0.7rem;
+  }
+
+  .mobile-logo {
+    height: 30px;
+  }
+}
+
+@media (max-width: 1199.98px) {
+  .navbar {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+}
+
+.nav-collapse-links .nav-link {
+  display: block;
+  text-align: center;
+  white-space: normal;
+  word-break: break-word;
+  max-width: 260px;
 }
 
 
-/* Navbar Code from Project 3 */
-
-.navbar-light .navbar-nav .nav-link.active {
-    font-weight: 700;
-    color: white;
+.nav-collapse-links {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding-left: 1rem;
+  padding-right: 1rem;
 }
-
-/* ChatGPT Code */
-
-body {
-  padding-bottom: 1rem;
-}
-
 
 /* Homepage Code */
 
 .main-image {
-    width: 950px;
-    height: auto;
+  width: 100%;
+  max-width: 950px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
 }
 
 .leading-p {
@@ -69,24 +143,30 @@ body {
   max-width: 75%;
 }
 
+@media (max-width: 1199.98px) {
+  .main-image {
+    max-width: 700px;
+  }
+
+  .leading-p {
+    max-width: 90%;
+    font-size: 1.2rem;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .main-image {
+    max-width: 100%;
+  }
+
+  .leading-p {
+    max-width: 95%;
+    font-size: 1rem;
+  }
+}
 
 /* Merchandise */
 
 
 
 /* Media Queries */
-
-// Extra small devices (portrait phones, less than 576px)
-// No media query for `xs` since this is the default in Bootstrap
-
-// Small devices (landscape phones, 576px and up)
-@media (min-width: 576px) { ... }
-
-// Medium devices (tablets, 768px and up)
-@media (min-width: 768px) { ... }
-
-// Large devices (desktops, 992px and up)
-@media (min-width: 992px) { ... }
-
-// Extra large devices (large desktops, 1200px and up)
-@media (min-width: 1200px) { ... }
