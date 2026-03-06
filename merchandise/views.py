@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.db.models import Min
 from .models import Product
 
@@ -17,3 +17,13 @@ def all_products(request):
     }
     
     return render(request, 'merchandise/products.html', context)
+
+def product_detail(request, product_id):
+    """ A view to show individual Products"""
+
+    product = get_object_or_404(
+        Product.objects.annotate(from_price=Min("variants__price")),
+        pk=product_id
+    )
+    
+    return render(request, 'merchandise/product_detail.html', {"product": product})
