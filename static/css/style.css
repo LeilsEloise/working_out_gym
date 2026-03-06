@@ -7,117 +7,74 @@
 }
 
 body {
-    font-family: "PT Serif", serif;
-    padding-bottom: 1rem;
+  font-family: "PT Serif", serif;
 }
 
 .brand {
-    font-weight: 700;
-    font-size: 1.4rem;
+  font-weight: 700;
+  font-size: 1.4rem;
 }
 
 .thin {
-    font-weight: 300;
+  font-weight: 300;
 }
 
 .main-bg {
-    background-color: white;
+  background-color: white;
 }
 
 .dark-bg {
-    background-color: #3b3b3b;
+  background-color: #3b3b3b;
 }
 
-/* ChatGPT seperate html navbar CSS */
+/* Navbar */
+
+.custom-navbar {
+  background-color: #3b3b3b;
+}
+
 .navbar-heading {
   font-family: "Boldonse", system-ui;
   font-weight: 700;
-  font-size: 2.4rem;
-  color: white;
+  font-size: 2.2rem;
+  color: #ffffff;
   margin: 0;
 }
 
-.nav-link{
-  color: white;
-  font-family: "Boldonse", system-ui;
+.navbar-brand {
+  color: #ffffff !important;
   text-decoration: none;
 }
 
-.nav-link:hover,
-.small-auth-links .nav-link:hover {
-  color: #d9d9d9;
-}
-
-.small-auth-links .nav-link {
+.auth-link {
+  color: #ffffff;
+  font-family: "Boldonse", system-ui;
+  text-decoration: none;
   font-size: 0.8rem;
 }
 
+.auth-link:hover {
+  color: #d9d9d9;
+}
+
 .mobile-logo {
-  height: 34px;
+  height: 30px;
   width: auto;
   display: block;
+  margin: 0 auto;
 }
 
-.navbar-toggler {
+.custom-toggler {
   border: none;
+  color: #ffffff;
+  font-size: 1.2rem;
   padding: 0.25rem 0.5rem;
+  background: transparent;
 }
 
-.navbar-toggler:focus {
+.custom-toggler:focus {
   box-shadow: none;
 }
-
-.navbar-toggler-icon {
-  filter: invert(1);
-}
-
-@media (max-width: 575.98px) {
-  .small-auth-links .nav-link {
-    font-size: 0.7rem;
-  }
-
-  .mobile-logo {
-    height: 28px;
-  }
-}
-
-.nav-collapse-links {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
-.nav-collapse-links .nav-link {
-  display: block;
-  text-align: center;
-}
-
-@media (max-width: 1199.98px) {
-  .small-auth-links .nav-link {
-    font-size: 0.7rem;
-  }
-
-  .mobile-logo {
-    height: 30px;
-  }
-}
-
-@media (max-width: 1199.98px) {
-  .navbar {
-    padding-top: 0.5rem;
-    padding-bottom: 0.5rem;
-  }
-}
-
-.nav-collapse-links .nav-link {
-  display: block;
-  text-align: center;
-  white-space: normal;
-  word-break: break-word;
-  max-width: 260px;
-}
-
 
 .nav-collapse-links {
   display: flex;
@@ -128,7 +85,37 @@ body {
   padding-right: 1rem;
 }
 
-/* Homepage Code */
+.menu-link {
+  display: block;
+  color: #ffffff;
+  font-family: "Boldonse", system-ui;
+  text-decoration: none;
+  text-align: center;
+  padding: 0.6rem 0;
+  max-width: 280px;
+  width: 100%;
+}
+
+.menu-link:hover {
+  color: #d9d9d9;
+}
+
+@media (max-width: 1199.98px) {
+  .auth-link {
+    font-size: 0.7rem;
+  }
+
+  .mobile-logo {
+    height: 28px;
+  }
+
+  .custom-navbar {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+}
+
+/* Homepage */
 
 .main-image {
   width: 100%;
@@ -156,7 +143,7 @@ body {
 
 @media (max-width: 767.98px) {
   .main-image {
-    max-width: 100%;
+    max-width: 90%;
   }
 
   .leading-p {
@@ -165,8 +152,16 @@ body {
   }
 }
 
+.home-content {
+  margin-top: 3rem;
+  padding-top: 2rem;
+}
+
+@media (max-width: 767.98px) {
+  .home-content {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+  }
+}
+
 /* Merchandise */
-
-
-
-/* Media Queries */

@@ -1,52 +1,51 @@
 {% load static %}
 
-<nav class="navbar dark-bg shadow-sm">
+<nav class="navbar custom-navbar dark-bg shadow-sm">
   <div class="container-fluid">
 
     <div class="row w-100 align-items-center m-0">
 
-      <!-- Left: auth links -->
       <div class="col-4 text-start small-auth-links">
         {% if user.is_authenticated %}
-          <a class="nav-link d-inline me-2" href="{% url 'account_logout' %}">Logout</a>
+          <a class="auth-link" href="{% url 'account_logout' %}">Logout</a>
         {% else %}
-          <a class="nav-link d-inline me-2" href="{% url 'account_signup' %}">Register</a>
-          <a class="nav-link d-inline" href="{% url 'account_login' %}">Login</a>
+          <a class="auth-link me-2" href="{% url 'account_signup' %}">Register</a>
+          <a class="auth-link" href="{% url 'account_login' %}">Login</a>
         {% endif %}
       </div>
 
-      <!-- Centre: desktop brand / mobile logo -->
       <div class="col-4 text-center">
         <a class="navbar-brand m-0" href="{% url 'home' %}">
           <span class="navbar-heading d-none d-xl-inline">Working Out Gym</span>
-          <img src="{% static 'images/favicon.png' %}" alt="Working Out Gym logo" class="mobile-logo d-inline d-xl-none">
+          <img
+            src="{% static 'images/favicon.png' %}"
+            alt="Working Out Gym logo"
+            class="mobile-logo d-inline d-xl-none"
+          >
         </a>
       </div>
 
-      <!-- Right: toggler -->
       <div class="col-4 text-end">
-      <button
-        class="navbar-toggler text-white"
-        type="button"
-        data-bs-toggle="collapse"
-        data-bs-target="#main-nav"
-        aria-controls="main-nav"
-        aria-expanded="false"
-        aria-label="Toggle navigation">
-
-        <i class="fas fa-bars"></i>
-
-      </button>
+        <button
+          class="navbar-toggler custom-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#main-nav"
+          aria-controls="main-nav"
+          aria-expanded="false"
+          aria-label="Toggle navigation">
+          <i class="fas fa-bars"></i>
+        </button>
+      </div>
 
     </div>
 
-    <!-- Collapsed nav menu -->
-    <div class="collapse dark-bg w-100" id="main-nav">
+    <div class="collapse w-100" id="main-nav">
       <div class="nav-collapse-links py-3">
-        <a class="nav-link py-2" href="{% url 'home' %}">Home</a>
-        <a class="nav-link py-2" href="#">Fitness and Nutrition Plans</a>
-        <a class="nav-link py-2" href="{% url 'merchandise:products' %}">Merchandise</a>
-        <a class="nav-link py-2" href="{% url 'discussionboard:post_list' %}">Discussion Board</a>
+        <a class="menu-link" href="{% url 'home' %}">Home</a>
+        <a class="menu-link" href="#">Fitness &amp; Nutrition Plans</a>
+        <a class="menu-link" href="{% url 'merchandise:products' %}">Merchandise</a>
+        <a class="menu-link" href="{% url 'discussionboard:post_list' %}">Discussion Board</a>
       </div>
     </div>
 
