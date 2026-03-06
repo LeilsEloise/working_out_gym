@@ -115,6 +115,25 @@ body {
   }
 }
 
+/* Navbar Search Styles - ChatGPT */
+
+.navbar-search {
+  background-color: #3b3b3b;
+  border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.navbar-search .form-control {
+  border: none;
+}
+
+.navbar-search .btn {
+  border: none;
+}
+
+.navbar-search .form-control:focus {
+  box-shadow: none;
+}
+
 /* Homepage */
 
 .main-image {

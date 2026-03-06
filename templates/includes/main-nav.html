@@ -2,15 +2,13 @@
 
 <nav class="navbar custom-navbar dark-bg shadow-sm">
   <div class="container-fluid">
-
     <div class="row w-100 align-items-center m-0">
-
       <div class="col-4 text-start small-auth-links">
         {% if user.is_authenticated %}
-          <a class="auth-link" href="{% url 'account_logout' %}">Logout</a>
+        <a class="auth-link" href="{% url 'account_logout' %}">Logout</a>
         {% else %}
-          <a class="auth-link me-2" href="{% url 'account_signup' %}">Register</a>
-          <a class="auth-link" href="{% url 'account_login' %}">Login</a>
+        <a class="auth-link me-2" href="{% url 'account_signup' %}">Register</a>
+        <a class="auth-link" href="{% url 'account_login' %}">Login</a>
         {% endif %}
       </div>
 
@@ -21,7 +19,7 @@
             src="{% static 'images/favicon.png' %}"
             alt="Working Out Gym logo"
             class="mobile-logo d-inline d-xl-none"
-          >
+          />
         </a>
       </div>
 
@@ -33,21 +31,43 @@
           data-bs-target="#main-nav"
           aria-controls="main-nav"
           aria-expanded="false"
-          aria-label="Toggle navigation">
+          aria-label="Toggle navigation"
+        >
           <i class="fas fa-bars"></i>
         </button>
       </div>
+    </div>
+    <!-- Search bar -->
+    <div class="navbar-search py-3">
+      <div class="container">
+        <form method="GET" action="{% url 'merchandise:products' %}">
+          <div class="input-group w-100">
+            <input
+              class="form-control rounded-0"
+              type="text"
+              name="q"
+              placeholder="Search our site"
+            />
 
+            <button class="btn btn-dark rounded-0" type="submit">
+              <i class="fas fa-search"></i>
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
 
     <div class="collapse w-100" id="main-nav">
       <div class="nav-collapse-links py-3">
         <a class="menu-link" href="{% url 'home' %}">Home</a>
         <a class="menu-link" href="#">Fitness &amp; Nutrition Plans</a>
-        <a class="menu-link" href="{% url 'merchandise:products' %}">Merchandise</a>
-        <a class="menu-link" href="{% url 'discussionboard:post_list' %}">Discussion Board</a>
+        <a class="menu-link" href="{% url 'merchandise:products' %}"
+          >Merchandise</a
+        >
+        <a class="menu-link" href="{% url 'discussionboard:post_list' %}"
+          >Discussion Board</a
+        >
       </div>
     </div>
-
   </div>
 </nav>
