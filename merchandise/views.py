@@ -3,7 +3,7 @@ from django.contrib import messages
 from django.db.models import Q, Min
 from .models import Product
 
-
+# Claude AI Code
 def all_products(request):
     """A view to show all products, including search and category filtering"""
 
@@ -15,6 +15,23 @@ def all_products(request):
 
     query = None
     current_category = None
+    sort = None
+    direction = None
+
+    if request.GET:
+        if 'sort' in request.GET:
+            sortkey = request.GET['sort']
+            sort = sortkey
+            if sortkey == 'name':
+                sortkey = 'lower_name'
+                products = products.annotate(lower_name=Lower("name"))
+            elif sortkey == 'price':
+                sortkey = 'from_price'
+            if 'direction' in request.GET:
+                direction = request.GET['direction']
+                if direction == 'desc':
+                    sortkey = f'-{sortkey}'
+            products = products.order_by(sortkey)
 
     if request.GET:
         if "category" in request.GET:
@@ -38,6 +55,8 @@ def all_products(request):
             )
 
             products = products.filter(queries).distinct()
+
+    current_sorting = f'{sort}_{direction}'
 
     context = {
         "products": products,
