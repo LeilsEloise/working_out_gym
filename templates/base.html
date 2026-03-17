@@ -70,7 +70,11 @@
     {% endblock %}
   </main>
 
+  <!-- Claude AI Code -->
     {% block postloadjs %}
+        {{ block.super }}
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        {# Your other JavaScript code #}
     {% endblock %}
 
     <!-- Footer - ChatGPT  -->

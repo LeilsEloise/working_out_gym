@@ -9,11 +9,6 @@
     you will find all products being sold by our business!
   </p>
   <!-- Code Institute Acknowledgement-->
-  {% if current_categories %}
-  <p>Current categories: {% for category in current_categories %}{{ category.name }}, {% endfor %}</p>
-  {% else %}
-  <p>No current categories found.</p>
-  {% endif %}
 
   {% for category in current_categories %}
     <a class="category-badge text-decoration-none" href="{% url 'merchandise:products' %}?category={{ category.name }}">
@@ -37,75 +32,144 @@
 </div>
 {% endif %}
 
-<div class="container-fluid">
+<!-- Code Institute Code-->
+<div class="row">
   <div class="product-container col-10 offset-1">
-    <div class="row mt-1 mb-2"></div>
-    <!-- ChatGPT Code-->
-    <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-4">
-      {% for product in products %}
-        <div class="col">
-          <div class="card h-100 border-0">
-            <a href="{% url 'merchandise:product_detail' product.id %}">
-              {% if product.image_src %}
+    <div class="row mt-1 mb-2">
+      <div
+        class="col-12 col-md-6 my-auto order-md-last d-flex justify-content-center justify-content-md-end"
+      >
+        <div class="sort-select-wrapper w-50">
+          <select
+            id="sort-selector"
+            class="custom-select custom-select-sm rounded-0 border border-{% if current_sorting != 'None_None' %}info{% else %}black{% endif %}"
+          >
+            <option value="reset" {% if current_sorting == 'None_None' %}selected{% endif %}>Sort by...</option>
+            <option value="price_asc" {% if current_sorting == 'price_asc' %}selected{% endif %}>Price (low to high)</option>
+            <option value="price_desc" {% if current_sorting == 'price_desc' %}selected{% endif %}>Price (high to low)</option>
+            <option value="name_asc" {% if current_sorting == 'name_asc' %}selected{% endif %}>Name (A-Z)</option>
+            <option value="name_desc" {% if current_sorting == 'name_desc' %}selected{% endif %}>Name (Z-A)</option>
+            <option value="category_asc" {% if current_sorting == 'category_asc' %}selected{% endif %}>Category (A-Z)</option>
+            <option value="category_desc" {% if current_sorting == 'category_desc' %}selected{% endif %}>Category (Z-A)</option>
+          </select>
+        </div>
+      </div>
+      <div class="col-12 col-md-6 order-md-first">
+        <p class="text-muted mt-3 text-center text-md-left">
+          {% if search_term or current_categories or current_sorting != 'None_None' %}
+          <span class="small"><a href="{% url 'merchandise:products' %}">Merchandise Home</a> | </span>
+          {% endif %}
+          {{ products|length }} Products{% if search_term %} found for <strong>"{{ search_term }}"</strong>{% endif %}
+        </p>
+      </div>
+    </div>
+
+    <div class="container-fluid">
+      <div class="product-container col-10 offset-1">
+        <div class="row mt-1 mb-2"></div>
+        <!-- ChatGPT Code-->
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-4">
+          {% for product in products %}
+          <div class="col">
+            <div class="card h-100 border-0">
+              <a href="{% url 'merchandise:product_detail' product.id %}">
+                {% if product.image_src %}
                 <img
                   class="card-img-top img-fluid"
                   src="{{ product.image_src }}"
                   alt="{{ product.title }}"
                 >
-              {% else %}
+                {% else %}
                 <img
                   class="card-img-top img-fluid"
                   src="{% static 'images/noimage.png' %}"
                   alt="{{ product.title }}"
                 >
-              {% endif %}
-            </a>
+                {% endif %}
+              </a>
 
-            <div class="card-body pb-0">
-              <p class="mb-0">{{ product.title }}</p>
+              <div class="card-body pb-0">
+                <p class="mb-0">{{ product.title }}</p>
 
-              {% if product.category %}
+                {% if product.category %}
                 <small class="text-muted">
                   <a class="text-muted" href="{% url 'merchandise:products' %}?category={{ product.category.name }}">
                     <i class="fas fa-tag mr-1"></i>{{ product.category.name }}
                   </a>
                 </small>
-              {% endif %}
-            </div>
+                {% endif %}
+              </div>
 
-            <div class="card-footer bg-white pt-0 border-0 text-left">
-              {% if product.from_price %}
+              <div class="card-footer bg-white pt-0 border-0 text-left">
+                {% if product.from_price %}
                 <p class="lead mb-0 fw-bold">£{{ product.from_price }}</p>
-              {% else %}
+                {% else %}
                 <small class="text-muted">Price unavailable</small>
-              {% endif %}
+                {% endif %}
+              </div>
             </div>
           </div>
+          {% empty %}
+          <div class="col-12">
+            <p class="text-center mt-4">No products matched your search.</p>
+          </div>
+          {% endfor %}
         </div>
-      {% empty %}
-        <div class="col-12">
-          <p class="text-center mt-4">No products matched your search.</p>
-        </div>
-      {% endfor %}
+      </div>
     </div>
-  </div>
-</div>
 
-{# Badge section #}
-{% if badges %}
-  <div class="badges-container">
-    <h2>Badges</h2>
-    <ul>
-      {% for badge in badges %}
+    {# Badge section #}
+    {% if badges %}
+    <div class="badges-container">
+      <h2>Badges</h2>
+      <ul>
+        {% for badge in badges %}
         <li>
           {% if badge.image %}
-            <img src="{{ badge.image.url }}" alt="{{ badge.name }}">
+          <img src="{{ badge.image.url }}" alt="{{ badge.name }}">
           {% endif %}
           <h3>{{ badge.name }}</h3>
           <p>{{ badge.description }}</p>
         </li>
-      {% endfor %}
-    </ul>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
   </div>
-{% endif %}
+</div>
+{% endblock %}
+
+<!-- Claude AI -->
+{% block postloadjs %}
+    {{ block.super }}
+    <script type="text/javascript">
+		$('.btt-link').click(function(e) {
+			window.scrollTo(0,0)
+		})
+	</script>
+    
+    <script type="text/javascript">
+        $('#sort-selector').change(function() {
+            var selector = $(this);
+            var currentUrl = new URL(window.location);
+            var selectedVal = selector.val();
+            if(selectedVal != "reset"){
+                var sort = selectedVal.split("_")[0];
+                var direction = selectedVal.split("_")[1];
+                currentUrl.searchParams.set("sort", sort);
+                currentUrl.searchParams.set("direction", direction);
+                var newUrl = currentUrl.toString();
+                history.pushState({}, null, newUrl);
+                // Trigger a page reload or update the products list
+                location.reload();
+            } else {
+                currentUrl.searchParams.delete("sort");
+                currentUrl.searchParams.delete("direction");
+                var newUrl = currentUrl.toString();
+                history.pushState({}, null, newUrl);
+                // Trigger a page reload or update the products list
+                location.reload();
+            }
+        })
+    </script>
 {% endblock %}

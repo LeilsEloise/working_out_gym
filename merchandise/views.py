@@ -23,20 +23,22 @@ def all_products(request):
     for category in current_categories:
         print(f"- {category.name}")
 
-    if request.GET:
-        if 'sort' in request.GET:
-            sortkey = request.GET['sort']
-            sort = sortkey
-            if sortkey == 'name':
-                sortkey = 'lower_name'
-                products = products.annotate(lower_name=Lower("name"))
-            elif sortkey == 'price':
-                sortkey = 'from_price'
-            if 'direction' in request.GET:
-                direction = request.GET['direction']
-                if direction == 'desc':
-                    sortkey = f'-{sortkey}'
-            products = products.order_by(sortkey)
+    if 'sort' in request.GET:
+        sort = request.GET['sort']
+        direction = request.GET['direction']
+        if sort == 'price':
+            if direction == 'desc':
+                sort = '-from_price'
+            else:
+                sort = 'from_price'
+        elif sort == 'name':
+            if direction == 'desc':
+                sort = '-title'
+            else:
+                sort = 'title'
+        elif direction == 'desc':
+            sort = f'-{sort}'
+        products = products.order_by(sort)
 
     if request.GET:
         if "category" in request.GET:
@@ -69,6 +71,7 @@ def all_products(request):
         "current_categories": current_categories,
         "product_count": products.count(),
         "badges": Badge.objects.filter(is_active=True),
+        "current_sorting": current_sorting,
     }
 
     return render(request, "merchandise/products.html", context)
