@@ -2,7 +2,13 @@
 {% load static %}
 
 {% block page_header %}
-<div class="container mt-5 pt-5"></div>
+<div class="container mt-5 pt-5">
+  {% for category in current_categories %}
+    <a class="category-badge text-decoration-none" href="{% url 'merchandise:products' %}?category={{ category.name }}">
+      <span class="p-2 mt-2 badge badge-white text-black rounded-0 border border-dark">{{ category.name }}</span>
+    </a>
+  {% endfor %}
+</div>
 {% endblock %}
 
 {% block content %}
@@ -23,7 +29,11 @@
       <h3 class="mb-2">{{ product.title }}</h3>
 
       {% if product.category %}
-        <p class="text-muted mb-2">{{ product.category.name }}</p>
+        <p class="text-muted mb-2">
+          <a class="text-muted" href="{% url 'merchandise:products' %}?category={{ product.category.name }}">
+            <i class="fas fa-tag mr-1"></i>{{ product.category.name }}
+          </a>
+        </p>
       {% endif %}
 
       {% if product.from_price %}
@@ -31,6 +41,24 @@
       {% endif %}
 
       <p class="text-muted">{{ product.vendor }}</p>
+    </div>
+
+      {% if active_badges %}
+        <div class="badges-container mt-4">
+          <h2>Badges</h2>
+          <ul>
+            {% for badge in active_badges %}
+              <li>
+                {% if badge.image %}
+                  <img src="{{ badge.image.url }}" alt="{{ badge.name }}">
+                {% endif %}
+                <h3>{{ badge.name }}</h3>
+                <p>{{ badge.description }}</p>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
     </div>
 
   </div>

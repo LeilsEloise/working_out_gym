@@ -83,3 +83,13 @@ class ProductVariant(models.Model):
 
     def __str__(self):
         return f"{self.product.title} — {self.variant_title or self.sku or 'Variant'}"
+
+# Claude AI code
+class Badge(models.Model):
+    name = models.CharField(max_length=100)
+    description = models.TextField()
+    image = models.ImageField(upload_to='badges', null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.name

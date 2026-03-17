@@ -8,14 +8,39 @@
     Welcome to the <strong>Working Out Gym's</strong> merchandise page, where
     you will find all products being sold by our business!
   </p>
-</div>
+  <!-- Code Institute Acknowledgement-->
+  {% if current_categories %}
+  <p>Current categories: {% for category in current_categories %}{{ category.name }}, {% endfor %}</p>
+  {% else %}
+  <p>No current categories found.</p>
+  {% endif %}
+
+  {% for category in current_categories %}
+    <a class="category-badge text-decoration-none" href="{% url 'merchandise:products' %}?category={{ category.name }}">
+      <span class="p-2 mt-2 badge badge-white text-black rounded-0 border border-dark">{{ category.name }}</span>
+    </a>
+  {% empty %}
+    <p>No categories found.</p>
+  {% endfor %}
 {% endblock %}
 
 {% block content %}
+{% if search_term or current_category %}
+<div class="row mb-4">
+  <div class="col">
+    {% if search_term %}
+    <p>Showing {{ product_count }} results for '{{ search_term }}'</p>
+    {% elif current_category %}
+    <p>Showing {{ product_count }} results in the '{{ current_category }}' category</p>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
 <div class="container-fluid">
   <div class="product-container col-10 offset-1">
     <div class="row mt-1 mb-2"></div>
-<!-- ChatGPT Code-->
+    <!-- ChatGPT Code-->
     <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-4">
       {% for product in products %}
         <div class="col">
@@ -40,7 +65,11 @@
               <p class="mb-0">{{ product.title }}</p>
 
               {% if product.category %}
-                <small class="text-muted">{{ product.category.name }}</small>
+                <small class="text-muted">
+                  <a class="text-muted" href="{% url 'merchandise:products' %}?category={{ product.category.name }}">
+                    <i class="fas fa-tag mr-1"></i>{{ product.category.name }}
+                  </a>
+                </small>
               {% endif %}
             </div>
 
@@ -61,4 +90,22 @@
     </div>
   </div>
 </div>
+
+{# Badge section #}
+{% if badges %}
+  <div class="badges-container">
+    <h2>Badges</h2>
+    <ul>
+      {% for badge in badges %}
+        <li>
+          {% if badge.image %}
+            <img src="{{ badge.image.url }}" alt="{{ badge.name }}">
+          {% endif %}
+          <h3>{{ badge.name }}</h3>
+          <p>{{ badge.description }}</p>
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+{% endif %}
 {% endblock %}

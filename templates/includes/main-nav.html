@@ -40,20 +40,18 @@
     <!-- Search bar -->
     <div class="navbar-search py-3">
       <div class="container">
+        <!-- Claude AI Code-->
         <form method="GET" action="{% url 'merchandise:products' %}">
           <div class="input-group w-100">
-            <input
-              class="form-control rounded-0"
-              type="text"
-              name="q"
-              placeholder="Search our site"
-            />
-
+            <input class="form-control rounded-0" type="text" name="q" placeholder="Search our site" />
+            {% if current_category %}
+            <input type="hidden" name="category" value="{{ current_category }}">
+            {% endif %}
             <button class="btn btn-dark rounded-0" type="submit">
               <i class="fas fa-search"></i>
             </button>
           </div>
-        </form>
+      </form>
       </div>
     </div>
     <!-- ChatGPT Code-->

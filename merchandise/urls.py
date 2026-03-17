@@ -6,4 +6,6 @@ app_name = "merchandise"
 urlpatterns = [
     path("", views.all_products, name="products"),
     path("<int:product_id>/", views.product_detail, name="product_detail"),
+    path("badges/", views.all_badges, name="all_badges"),
+    path("badge/<int:badge_id>/", views.badge_detail, name="badge_detail"),
 ]

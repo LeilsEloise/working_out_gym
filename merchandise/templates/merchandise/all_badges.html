@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <h1>All Badges</h1>
+
+  {% if badges %}
+    <div class="badge-list">
+      {% for badge in badges %}
+        <div class="badge-item">
+          {% if badge.image %}
+            <img src="{{ badge.image.url }}" alt="{{ badge.name }}">
+          {% endif %}
+          <h2>{{ badge.name }}</h2>
+          <p>{{ badge.description }}</p>
+          <a href="{% url 'merchandise:badge_detail' badge.id %}">View Badge</a>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p>No active badges available.</p>
+  {% endif %}
+{% endblock %}
