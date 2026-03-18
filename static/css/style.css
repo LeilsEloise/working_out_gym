@@ -1,13 +1,24 @@
-/* Base Styles */
+/* Claude AI Code */
 
-.heading {
-  font-family: "Boldonse", system-ui;
-  font-weight: 700;
-  font-size: 3rem;
+/* Variables */
+:root {
+  --font-heading: "Boldonse", system-ui;
+  --font-body: "PT Serif", serif;
+  --color-primary: #ffffff;
+  --color-secondary: #d9d9d9;
+  --color-dark: #3b3b3b;
+  --color-info: #17a2b8;
 }
 
+/* Base Styles */
 body {
-  font-family: "PT Serif", serif;
+  font-family: var(--font-body);
+}
+
+.heading {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 3rem;
 }
 
 .brand {
@@ -20,41 +31,40 @@ body {
 }
 
 .main-bg {
-  background-color: white;
+  background-color: var(--color-primary);
 }
 
 .dark-bg {
-  background-color: #3b3b3b;
+  background-color: var(--color-dark);
 }
 
-/* Navbar */
-
+/* Navbar Styles */
 .custom-navbar {
-  background-color: #3b3b3b;
+  background-color: var(--color-dark);
 }
 
 .navbar-heading {
-  font-family: "Boldonse", system-ui;
+  font-family: var(--font-heading);
   font-weight: 700;
   font-size: 2.2rem;
-  color: #ffffff;
+  color: var(--color-primary);
   margin: 0;
 }
 
 .navbar-brand {
-  color: #ffffff !important;
+  color: var(--color-primary) !important;
   text-decoration: none;
 }
 
 .auth-link {
-  color: #ffffff;
-  font-family: "Boldonse", system-ui;
+  color: var(--color-primary);
+  font-family: var(--font-heading);
   text-decoration: none;
   font-size: 0.8rem;
 }
 
 .auth-link:hover {
-  color: #d9d9d9;
+  color: var(--color-secondary);
 }
 
 .mobile-logo {
@@ -66,7 +76,7 @@ body {
 
 .custom-toggler {
   border: none;
-  color: #ffffff;
+  color: var(--color-primary);
   font-size: 1.2rem;
   padding: 0.25rem 0.5rem;
   background: transparent;
@@ -87,8 +97,8 @@ body {
 
 .menu-link {
   display: block;
-  color: #ffffff;
-  font-family: "Boldonse", system-ui;
+  color: var(--color-primary);
+  font-family: var(--font-heading);
   text-decoration: none;
   text-align: center;
   padding: 0.6rem 0;
@@ -97,29 +107,13 @@ body {
 }
 
 .menu-link:hover {
-  color: #d9d9d9;
+  color: var(--color-secondary);
 }
 
-@media (max-width: 1199.98px) {
-  .auth-link {
-    font-size: 0.7rem;
-  }
-
-  .mobile-logo {
-    height: 28px;
-  }
-
-  .custom-navbar {
-    padding-top: 0.5rem;
-    padding-bottom: 0.5rem;
-  }
-}
-
-/* Navbar Search Styles - ChatGPT */
-
+/* Navbar Search Styles */
 .navbar-search {
-  background-color: #3b3b3b;
-  border-top: 1px solid rgba(255,255,255,0.1);
+  background-color: var(--color-dark);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .navbar-search .form-control {
@@ -134,8 +128,7 @@ body {
   box-shadow: none;
 }
 
-/* Chat GPT Code */
-
+/* Menu Dropdown Styles */
 .menu-dropdown {
   width: 100%;
   max-width: 320px;
@@ -157,7 +150,7 @@ body {
 .menu-toggle-btn {
   background: transparent;
   border: none;
-  color: #ffffff;
+  color: var(--color-primary);
   font-size: 0.95rem;
   padding: 0;
 }
@@ -176,31 +169,30 @@ body {
 }
 
 .submenu-heading {
-  color: #ffffff;
-  font-family: "Boldonse", system-ui;
+  color: var(--color-primary);
+  font-family: var(--font-heading);
   font-size: 1.1rem;
   margin-bottom: 0.5rem;
 }
 
 .submenu-group-title {
-  color: #d9d9d9;
+  color: var(--color-secondary);
   font-weight: 700;
   margin: 0.5rem 0 0.2rem;
 }
 
 .submenu-link {
   display: block;
-  color: #ffffff;
+  color: var(--color-primary);
   text-decoration: none;
   padding: 0.25rem 0;
 }
 
 .submenu-link:hover {
-  color: #d9d9d9;
+  color: var(--color-secondary);
 }
 
-/* Homepage */
-
+/* Homepage Styles */
 .main-image {
   width: 100%;
   max-width: 950px;
@@ -214,61 +206,96 @@ body {
   max-width: 75%;
 }
 
-@media (max-width: 1199.98px) {
-  .main-image {
-    max-width: 700px;
-  }
-
-  .leading-p {
-    max-width: 90%;
-    font-size: 1.2rem;
-  }
-}
-
-@media (max-width: 767.98px) {
-  .main-image {
-    max-width: 90%;
-  }
-
-  .leading-p {
-    max-width: 95%;
-    font-size: 1rem;
-  }
-}
-
-.home-content {
-  margin-top: 3rem;
-  padding-top: 2rem;
-}
-
-@media (max-width: 767.98px) {
-  .home-content {
-    margin-top: 1.5rem;
-    padding-top: 1rem;
-  }
-}
-
-/* Merchandise */
-
-/* testing css */
-
-/* Code Institute */
+/* Merchandise Styles */
 a.category-badge > span.badge:hover {
-    background: #212529 !important;
-    color: #fff !important;
+  background: #212529 !important;
+  color: #fff !important;
 }
 
 .text-black {
-    color: #000 !important;
+  color: #000 !important;
 }
 
 .btt-button {
-    height: 42px;
-    width: 42px;
-    position: fixed;
-    bottom: 10px;
-    right: 10px;
+  height: 42px;
+  width: 42px;
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
 }
+
 .btt-link {
-    cursor: pointer;
+  cursor: pointer;
+}
+
+/* Shopping Bag Icon Styles */
+.nav-link {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.nav-link:hover {
+  color: var(--color-secondary);
+}
+
+.nav-link {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.nav-link i {
+  color: var(--color-primary);
+}
+
+.nav-link-text {
+  color: var(--color-primary);
+}
+
+.text-info {
+  color: var(--color-info) !important;
+}
+
+.font-weight-bold {
+  font-weight: 700 !important;
+}
+
+@media (max-width: 1199.98px) {
+  .navbar .nav-link,
+  .navbar .nav-link i {
+    color: var(--color-primary) !important;
+  }
+}
+
+@media (max-width: 991.98px) {
+  .navbar-collapse {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
+
+  .nav-link i {
+    font-size: 1.2rem;
+  }
+
+  .nav-link span {
+    font-size: 0.9rem;
+    padding-left: 0.5rem;
+  }
+
+  /* Hide text on smaller screens */
+  .nav-link span {
+    display: none;
+  }
+}
+
+@media (max-width: 767.98px) {
+  /* Hide text on smaller screens */
+  .nav-link span {
+    display: none;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .leading-p {
+    font-size: 1.2rem;
+  }
 }
