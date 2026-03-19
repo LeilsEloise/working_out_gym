@@ -128,15 +128,6 @@ body {
   box-shadow: none;
 }
 
-.nav-link {
-  color: var(--color-primary);
-  text-decoration: none;
-}
-
-.nav-link i {
-  color: var(--color-primary);
-}
-
 /* Menu Dropdown Styles */
 .menu-dropdown {
   width: 100%;
@@ -237,6 +228,21 @@ a.category-badge > span.badge:hover {
   cursor: pointer;
 }
 
+/* Code Institute */
+.btn.btn-black.rounded-0.text-uppercase.mt-5 {
+    background-color: black;
+    color: white !important;
+    border-color: black;
+}
+
+.btn.btn-black.rounded-0.text-uppercase.mt-5:hover,
+.btn.btn-black.rounded-0.text-uppercase.mt-5:active,
+.btn.btn-black.rounded-0.text-uppercase.mt-5:focus {
+    background-color: white;
+    color: black !important;
+    border-color: black;
+}
+
 /* Shopping Bag Icon Styles */
 .nav-link {
   color: var(--color-primary);
@@ -247,21 +253,25 @@ a.category-badge > span.badge:hover {
   color: var(--color-secondary);
 }
 
+.nav-link {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.nav-link i {
+  color: var(--color-primary);
+}
+
+.nav-link-text {
+  color: var(--color-primary);
+}
+
 .text-info {
   color: var(--color-info) !important;
 }
 
 .font-weight-bold {
   font-weight: 700 !important;
-}
-
-.navbar .nav-link {
-  color: var(--color-primary);
-  text-decoration: none;
-}
-
-.navbar .nav-link i {
-  color: var(--color-primary);
 }
 
 @media (max-width: 1199.98px) {
@@ -296,5 +306,11 @@ a.category-badge > span.badge:hover {
   /* Hide text on smaller screens */
   .nav-link span {
     display: none;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .leading-p {
+    font-size: 1.2rem;
   }
 }
