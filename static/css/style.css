@@ -243,6 +243,19 @@ a.category-badge > span.badge:hover {
     border-color: black;
 }
 
+/* ChatGPT Code */
+
+.btn-black {
+    background-color: #000;
+    color: #fff;
+    border: none;
+}
+
+.btn-black:hover {
+    background-color: #222;
+    color: #fff;
+}
+
 /* Shopping Bag Icon Styles */
 .nav-link {
   color: var(--color-primary);
