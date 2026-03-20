@@ -6,7 +6,7 @@ from merchandise.models import Product
 # ChatGPT Code
 def bag_contents(request):
     bag_items = []
-    total = 0
+    total = Decimal('0.00')
     product_count = 0
     bag = request.session.get('bag', {})
 
@@ -16,27 +16,33 @@ def bag_contents(request):
         if isinstance(item_data, int):
             # Non-sized product
             quantity = item_data
-            total += quantity * (product.variants.first().price if product.variants.exists() else 0)
+            price = product.variants.first().price if product.variants.exists() else Decimal('0.00')
+            subtotal = quantity * price
+            total += subtotal
             product_count += quantity
 
             bag_items.append({
                 'product_id': product_id,
                 'quantity': quantity,
                 'product': product,
+                'price': price,
+                'subtotal': subtotal,
             })
 
         else:
             # Product with sizes
             for size, quantity in item_data['items_by_size'].items():
-                price = product.variants.first().price if product.variants.exists() else 0
-                total += quantity * price
+                price = product.variants.first().price if product.variants.exists() else Decimal('0.00')
+                subtotal = quantity * price
+                total += subtotal
                 product_count += quantity
-
                 bag_items.append({
                     'product_id': product_id,
                     'quantity': quantity,
                     'product': product,
                     'size': size,
+                    'price': price,
+                    'subtotal': subtotal,
                 })
 
     # Delivery calculations
