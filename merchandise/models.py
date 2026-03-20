@@ -32,6 +32,7 @@ class Product(models.Model):
 
     category = models.ForeignKey(Category, null=True, blank=True, on_delete=models.SET_NULL, related_name="products")
     vendor = models.CharField(max_length=120, blank=True)
+    has_sizes = models.BooleanField(default=False, null=True, blank=True)
 
     tags = models.TextField(blank=True)
     image_src = models.TextField(blank=True)
