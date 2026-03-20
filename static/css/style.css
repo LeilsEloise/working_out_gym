@@ -287,6 +287,11 @@ a.category-badge > span.badge:hover {
   font-weight: 700 !important;
 }
 
+.update-link,
+.remove-item {
+    cursor: pointer;
+}
+
 @media (max-width: 1199.98px) {
   .navbar .nav-link,
   .navbar .nav-link i {

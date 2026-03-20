@@ -73,3 +73,29 @@ def remove_from_bag(request, product_id):
 
     request.session['bag'] = bag
     return redirect(reverse('view_shoppingbag'))
+
+# ChatGPT Code
+def update_bag(request, item_id):
+    quantity = int(request.POST.get('quantity'))
+    size = request.POST.get('product_size')
+    bag = request.session.get('bag', {})
+
+    if size:
+        if item_id in bag and 'items_by_size' in bag[item_id]:
+            if quantity > 0:
+                bag[item_id]['items_by_size'][size] = quantity
+            else:
+                del bag[item_id]['items_by_size'][size]
+
+                if not bag[item_id]['items_by_size']:
+                    del bag[item_id]
+    else:
+        if quantity > 0:
+            bag[item_id] = quantity
+        else:
+            del bag[item_id]
+
+    request.session['bag'] = bag
+    messages.success(request, "Bag updated")
+
+    return redirect('shoppingbag:view_bag')
