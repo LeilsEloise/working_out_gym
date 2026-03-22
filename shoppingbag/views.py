@@ -69,7 +69,7 @@ def adjust_bag(request, product_id):
 def remove_from_bag(request, product_id):
     try:
         bag = request.session.get('bag', {})
-        product_id = str(product_id)   # 🔥 FIX HERE
+        product_id = str(product_id)
         size = request.POST.get('size')
 
         if size:

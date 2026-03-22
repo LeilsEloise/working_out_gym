@@ -256,6 +256,24 @@ a.category-badge > span.badge:hover {
     color: #fff;
 }
 
+/* Code Institute Bootstrap Toast */
+
+.message-container {
+    position: fixed;
+    top: 72px;
+    right: 15px;
+    z-index: 99999999999;
+}
+
+.custom-toast {
+    overflow: visible;
+}
+
+.toast-capper {
+    height: 2px;
+}
+
+
 /* Shopping Bag Icon Styles */
 .nav-link {
   color: var(--color-primary);
