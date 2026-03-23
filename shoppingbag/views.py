@@ -4,6 +4,7 @@ from django.shortcuts import render, redirect, reverse, get_object_or_404
 from django.contrib import messages
 from merchandise.models import Product
 from .contexts import bag_contents
+from django.http import HttpResponse
 
 # ChatGPT Code
 def view_bag(request):
@@ -31,9 +32,11 @@ def add_to_bag(request, product_id):
             if isinstance(bag[product_id], dict):
                 # Already has sizes
                 bag[product_id]['items_by_size'][size] = bag[product_id]['items_by_size'].get(size, 0) + quantity
+                messages.success(request, f'Updated size {size.upper()} {product.title} quantity to {bag[product_id]["items_by_size"][size]}')
             else:
                 # Previously added without size → convert it
                 bag[product_id] = {'items_by_size': {size: quantity}}
+                messages.success(request, f'Added size {size.upper()} {product.title} to your bag')
         else:
             # First time adding this product
             bag[product_id] = {'items_by_size': {size: quantity}}
@@ -44,72 +47,91 @@ def add_to_bag(request, product_id):
         # Non-sized products
         if product_id in bag and isinstance(bag[product_id], int):
             bag[product_id] += quantity
+            messages.success(request, f'Updated {product.title} quantity to {bag[product_id]}')
         else:
             bag[product_id] = quantity
-
-        messages.success(request, f'Added {product.title} to your bag')
+            messages.success(request, f'Added {product.name} to your bag')
 
     request.session['bag'] = bag
     return redirect(redirect_url)
 
 # ChatGPT Code
 def adjust_bag(request, product_id):
-    quantity = int(request.POST.get('quantity'))
-    bag = request.session.get('bag', {})
+    """Adjust the quantity of the specified product"""
 
-    if quantity > 0:
-        product_id = str(product_id)
-    else:
-        bag.pop(product_id)
+    product = get_object_or_404(Product, pk=product_id)
+    product_id = str(product_id)
 
-    request.session['bag'] = bag
-    return redirect(reverse('view_shoppingbag'))
-
-# ChatGPT Code
-def remove_from_bag(request, product_id):
-    try:
-        bag = request.session.get('bag', {})
-        product_id = str(product_id)
-        size = request.POST.get('size')
-
-        if size:
-            if product_id in bag and 'items_by_size' in bag[product_id]:
-                del bag[product_id]['items_by_size'][size]
-
-                if not bag[product_id]['items_by_size']:
-                    bag.pop(product_id)
-        else:
-            bag.pop(product_id, None)
-
-        request.session['bag'] = bag
-        return redirect(reverse('shoppingbag:view_bag'))
-
-    except Exception as e:
-        messages.error(request, 'Error removing item')
-        return redirect(reverse('shoppingbag:view_bag'))
-    
-# ChatGPT Code
-def update_bag(request, item_id):
     quantity = int(request.POST.get('quantity'))
     size = request.POST.get('product_size')
+
     bag = request.session.get('bag', {})
 
     if size:
-        if item_id in bag and 'items_by_size' in bag[item_id]:
-            if quantity > 0:
-                bag[item_id]['items_by_size'][size] = quantity
-            else:
-                del bag[item_id]['items_by_size'][size]
+        if quantity > 0:
+            bag[product_id]['items_by_size'][size] = quantity
+            messages.success(
+                request,
+                f'Updated size {size.upper()} {product.title} quantity to {quantity}'
+            )
+        else:
+            del bag[product_id]['items_by_size'][size]
 
-                if not bag[item_id]['items_by_size']:
-                    del bag[item_id]
+            if not bag[product_id]['items_by_size']:
+                bag.pop(product_id)
+
+            messages.success(
+                request,
+                f'Removed size {size.upper()} {product.title} from your bag'
+            )
     else:
         if quantity > 0:
-            item_id = str(item_id)
+            bag[product_id] = quantity
+            messages.success(
+                request,
+                f'Updated {product.title} quantity to {quantity}'
+            )
         else:
-            del bag[item_id]
+            bag.pop(product_id)
+            messages.success(
+                request,
+                f'Removed {product.title} from your bag'
+            )
 
     request.session['bag'] = bag
-    messages.success(request, "Bag updated")
+    return redirect(reverse('shoppingbag:view_bag'))
 
-    return redirect('shoppingbag:view_bag')
+# ChatGPT Code
+def remove_from_bag(request, product_id):
+    """Remove item from shopping bag"""
+
+    try:
+        product = get_object_or_404(Product, pk=product_id)
+        product_id = str(product_id)
+
+        bag = request.session.get('bag', {})
+        size = request.POST.get('product_size')
+
+        if size:
+            del bag[product_id]['items_by_size'][size]
+
+            if not bag[product_id]['items_by_size']:
+                bag.pop(product_id)
+
+            messages.success(
+                request,
+                f'Removed size {size.upper()} {product.title} from your bag'
+            )
+        else:
+            bag.pop(product_id)
+            messages.success(
+                request,
+                f'Removed {product.title} from your bag'
+            )
+
+        request.session['bag'] = bag
+        return HttpResponse(status=200)
+
+    except Exception as e:
+        messages.error(request, f'Error removing item: {e}')
+        return HttpResponse(status=500)
