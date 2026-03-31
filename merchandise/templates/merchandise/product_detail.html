@@ -1,16 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block page_header %}
-<div class="container mt-5 pt-5">
-  {% for category in current_categories %}
-    <a class="category-badge text-decoration-none" href="{% url 'merchandise:products' %}?category={{ category.name }}">
-      <span class="p-2 mt-2 badge badge-white text-black rounded-0 border border-dark">{{ category.name }}</span>
-    </a>
-  {% endfor %}
-</div>
-{% endblock %}
-
 {% block content %}
 <div class="container my-5">
   <div class="row g-4">

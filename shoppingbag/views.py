@@ -21,36 +21,47 @@ def add_to_bag(request, product_id):
     redirect_url = request.POST.get('redirect_url', '/')
     size = request.POST.get('product_size')
 
-    # session keys must be string
     product_id = str(product_id)
-
     bag = request.session.get('bag', {})
 
+    # ✅ PRODUCTS WITH SIZE
     if size:
-        # Ensure the product exists as a dict for sizes
         if product_id in bag:
             if isinstance(bag[product_id], dict):
-                # Already has sizes
-                bag[product_id]['items_by_size'][size] = bag[product_id]['items_by_size'].get(size, 0) + quantity
-                messages.success(request, f'Updated size {size.upper()} {product.title} quantity to {bag[product_id]["items_by_size"][size]}')
+                bag[product_id]['items_by_size'][size] = (
+                    bag[product_id]['items_by_size'].get(size, 0) + quantity
+                )
+                messages.success(
+                    request,
+                    f'Updated {product.title} (size {size.upper()}) quantity to {bag[product_id]["items_by_size"][size]}'
+                )
             else:
-                # Previously added without size → convert it
                 bag[product_id] = {'items_by_size': {size: quantity}}
-                messages.success(request, f'Added size {size.upper()} {product.title} to your bag')
+                messages.success(
+                    request,
+                    f'Added {product.title} (size {size.upper()}) to your bag'
+                )
         else:
-            # First time adding this product
             bag[product_id] = {'items_by_size': {size: quantity}}
+            messages.success(
+                request,
+                f'Added {product.title} (size {size.upper()}) to your bag'
+            )
 
-        messages.success(request, f'Added {product.title} (size {size.upper()}) to your bag')
-
+    # ✅ PRODUCTS WITHOUT SIZE
     else:
-        # Non-sized products
         if product_id in bag and isinstance(bag[product_id], int):
             bag[product_id] += quantity
-            messages.success(request, f'Updated {product.title} quantity to {bag[product_id]}')
+            messages.success(
+                request,
+                f'Updated {product.title} quantity to {bag[product_id]}'
+            )
         else:
             bag[product_id] = quantity
-            messages.success(request, f'Added {product.name} to your bag')
+            messages.success(
+                request,
+                f'Added {product.title} to your bag'
+            )
 
     request.session['bag'] = bag
     return redirect(redirect_url)
