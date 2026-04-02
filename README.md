@@ -10967,7 +10967,218 @@ var card = elements.create('card', {style: style});
 
 28. I switch Debug to False and run a collectstatic before committing my changes to Github and Heroku.
 
+# Stripe - Adding functionality to Card Element
 
+1. First I will need to add a listener on the card element for the change event and everytime it changes, I will check and see if there are any errors:
+
+// Handle Realtime Validation Errors on Card Element */
+card.addEventListener('change', function (event) (
+    var errorDiv = document.getElementById('card-errors');
+))
+
+2. If so then we will display them in the card errors div that I created by the card element on the checkout html page. This will make it clearer to the user what the issue is if they have an error when using the payment system. The error is rendered from Stripe with an icon next to it:
+
+// Handle Realtime Validation Errors on Card Element */
+card.addEventListener('change', function (event) (
+    var errorDiv = document.getElementById('card-errors');
+    if (event.error) {
+        var html = `
+            <span class="icon" role="alert">
+                <i class="fas fa-times"></i>
+            </span>
+            <span>${event.error.message}</span>
+        `;
+        $(errorDiv).html(html);
+    } else {
+        errorDiv.textContent = '';        
+    }
+});
+
+3. If i rerun my server now and go to payment, its clear what is wrong when nothing is entered, etc.. This works in steps. It will first create the Stripe paymentIntent from the Checkout view. Next, Stripe returns client_secret, which is returned to the template. Then in the Javascript on the client side, it uses the client_secret variable to call confirmCardPayment() and verifies the card number. 
+The next thing needed is a function to calculate the current bag total in the view. I can do this using the bag_contents function in contexts.py. I go to my checkout/views file and import this at the top of the file using:
+
+from shoppingbag.contexts import bag_contents
+
+4. Next, I update my function for checkout so that I include the bag_contents data in a variable within the function. I call the variable current_bag:
+
+current_bag = bag_contents(request)
+
+5. Directly under the new line of code, I also add the below to get the total, doing this by getting the grand_total key from the current_bag variable:
+
+total = current_bag('grand_total')
+
+6. Then beneath this I add the code for a stripe_total as Stripe will require the amount to charge as an integer. I create a variable called stripe_total and multiply the total by a hundred and round it to 0 decimal places using the round function:
+
+stripe_total = round(total * 100)
+
+7. Once I have done this, I install Stripe using the below cmd:
+
+pip3 install stripe
+
+8. I add this to my requirements.txt file once I can see this has successfully installed in the terminal using the below cmd. I open the file and check it is now showing there.
+
+pip3 freeze > requirements.txt
+
+9. I then import Stripe at the top of my views.py file in my checkout app:
+
+import stripe
+
+10. I will also import settings from django.conf as I will be needing these soon:
+
+from django.conf import settings
+
+11. Once the views file is saved, I am going to go to my settings file and add a few things. At the bottom of the file, I am going to add a setting called STRIPE_CURRENCY which I will give a value of usd for the time being:
+
+STRIPE_CURRENCY = 'usd'
+
+12. Then directly below it, I create another two. One for STRIPE_PUBLIC_KEY which we will get from the environment by giving it an empty default value and the same is true for the second we will create which is STRIPE_SECRET_KEY. We get these from the environment because even though the public key is already in Github from my last commit, we don't want the secret key in there because the secret key can be used to do everything on stripe including creating charges, making payments, issuing refunds and even updating the account information. So the client secret key needs to be kept out of version control. 
+
+STRIPE_PUBLIC_KEY = os.getenv('STRIPE_PUBLIC_KEY', '')
+STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY', '')
+
+13. Next, I set the environment variable up for my STRIPE_SECRET_KEY and STRIPE_PUBLIC_KEY in my env.py file. 
+
+14. Now that I have set up my variables and updated my settings, I can create my paymentIntent in my checkout/views file. Within my checkout function, I first set the variables for the public and secret keys at the top of the file:
+
+stripe_public_key = settings.STRIPE_PUBLIC_KEY
+stripe_secret_key = settings.STRIPE_SECRET_KEY
+
+15. Then underneath my stripe_total variable, I set the secret key on stripe:
+
+stripe.api_key = stripe_secret_key
+
+16. Then below this, I can create the paymentIntent with stripe.paymentintent.create giving it the amount and currency. For the time being I will just print this value out
+
+    intent = stripe.PaymentIntent=create(
+        amount=stripe_total,
+        currency=settings.STRIPE_CURRENCY,
+    )
+
+    print(intent)
+
+17. I reload my page on the dev server and go to the checkout page to see what I am working with but I am presented with a server 500 error. I turn Debug to True and reload to see what the issue is. The error is as below:
+
+![Checkout Error dict](/static/images/Stripe/Screenshot%20checkout%20error%20dict.png)
+
+18. I consult ChatGPT as I have not come across this error before and it advises that I have used the wrong parentheses for my dictionary in my current_bag grand_total function and advises me to update this to:
+
+current_bag['grand_total'] 
+
+19. I go to my checkout/views file and update the code accordingly and then reload my checkout page. However, I am now presented with a new error:
+
+NameError at /checkout/
+name 'stripe_secret_key' is not defined
+Request Method:	GET
+Request URL:	http://127.0.0.1:8000/checkout/
+Django Version:	6.0.2
+Exception Type:	NameError
+Exception Value:	
+name 'stripe_secret_key' is not defined
+Exception Location:	C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\checkout\views.py, line 20, in checkout
+Raised during:	checkout.views.checkout
+
+20. I realise that my settings file has not saved with the variable information for my stripe public key and secret key so update this again as below:
+
+STRIPE_PUBLIC_KEY = os.getenv('STRIPE_PUBLIC_KEY', '')
+STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY', '')
+
+21. I refresh the page but I am still getting the same error. I consult ChatGPT who advises I haven't defined the key as a variable in my checkout function so need to add the below at the top of the function:
+
+stripe_public_key = settings.STRIPE_PUBLIC_KEY
+stripe_secret_key = settings.STRIPE_SECRET_KEY
+
+22. I refresh the page again but this time I receive the following error and straight away I know it is that the settings file didn't save earlier with this variable added so I readd and then reload the page:
+
+AttributeError at /checkout/
+'Settings' object has no attribute 'STRIPE_CURRENCY'
+
+23. It is now not showing the payment section at all so I inspect the page on devtools and can see the following error in the console:
+
+Uncaught SyntaxError: Unexpected token '(' (at stripe_elements.js:24:50)
+
+24. I take a look at my stripe_elements.js file and realise that the open curly bracket that should be opening the statment is just a standard bracket so update this and then hard reload the page and can see the card element again. 
+
+25. I am now going to go back to my contexts file and update it so that my public key uses the variable set higher up the file:
+
+      'stripe_public_key': stripe_public_key,
+
+26. I also update the client secret to the below using intent:
+
+'client_secret': intent.client_secret,
+
+27. Finally I will add a convenient message which alerts you if you forget to set your public key:
+
+if not stripe_public_key:
+    messages.warning(request, 'Stripe public key is missing. Did you forget to set it in your environment?')
+
+# Stripe - Building Checkout Flow
+
+1. Now that I have set up my view to return the correct secrets, the last step to get this working is to add an event listener to the payment forms submit event. I am going to copy the Stripe docs code for submitting a payment and paste this into my current stripe_elements.js file after making some tweaks as per Code Institute's Boutique Ado:
+
+// Handle form submit
+var form = document.getElementById('payment-form');
+
+form.addEventListener('submit', function(ev) {
+    ev.preventDefault();
+    card.update({ 'disabled': true});
+    $('#submit-button').attr('disabled', true);
+    stripe.confirmCardPayment(clientSecret, {
+        payment_method: {
+            card: card,
+        }
+    }).then(function(result) {
+        if (result.error) {
+            var errorDiv = document.getElementById('card-errors');
+            var html = `
+                <span class="icon" role="alert">
+                <i class="fas fa-times"></i>
+                </span>
+                <span>${result.error.message}</span>`;
+            $(errorDiv).html(html);
+            card.update({ 'disabled': false});
+            $('#submit-button').attr('disabled', false);
+        } else {
+            if (result.paymentIntent.status === 'succeeded') {
+                form.submit();
+            }
+        }
+    });
+});
+
+2. Now this is in place I can test the basic functionality of my payment method on my site. I rerun the page and then go to checkout and populate the payment form. I use the following number to produce a successful card payment as this is the test Stripe card number for successful payments: 4242 4242 4242 4242:
+
+![Payment information populated](/static/images/Stripe/Screenshot%20populating%20checkout%20info.png)
+
+3. I click 'Complete Order' after populating the payment information but the page has frozen and doesn't appear to be doing anything. I can see this error in my terminal:
+
+[01/Apr/2026 17:38:10] "GET /static/checkout/js/stripe_elements.js HTTP/1.1" 304 0
+
+4. I turn debug to true and refresh and try and complete the order but the page is just frozen. I have a look in devtools at the error and this is what I can see:
+
+stripe_elements.js:47 Uncaught ReferenceError: clientSecret is not defined
+    at HTMLFormElement.<anonymous> (stripe_elements.js:47:31)
+
+5. I query this with ChatGPT who advises that my template reference to client_secret is incorrect as is using the wrong variable name, I need to change:
+
+{{ stripe_client_secret|json_script:"id_client_secret" }}
+
+To:
+
+{{ client_secret|json_script:"id_client_secret" }}
+
+- I also need to update my javascript as that is using the wrong variable also:
+
+stripe.confirmCardPayment(clientSecret, {
+
+To:
+
+stripe.confirmCardPayment(clientSecret, {42
+
+6. To see if this has now worked, as all the order information has gone now after hitting complete order, I go to my Stripe dashboard and go to Transactions and can see the purchase has gone through:
+
+![Stripe successful transaction](/static/images/Stripe/Screenshot%20successful%20transaction.png)
+
+7. I change Debug back to False, run collectstatic and then commit my changes to Git and Heroku.
 
 ---
 
@@ -11101,6 +11312,7 @@ The following parts of my Project were implemented using Bootstrap docs:
 - form-check-inline code in checkout.html
 - checkout.html submit button
 - bag_tools.py code
+- stripe_elements.js code and functions
 
 
 
