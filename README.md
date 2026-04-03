@@ -11180,6 +11180,605 @@ stripe.confirmCardPayment(clientSecret, {42
 
 7. I change Debug back to False, run collectstatic and then commit my changes to Git and Heroku.
 
+8. Even though I have verified that the form on the checkout page was submitted with the order to Stripe and that I am able to make payments on the site to Stripe, the form data isn't being submitted anywhere as my checkout view doesn't have any handling in place for the POST method so I am going to update checkout/views to include this now so that when the user submits their payment information it will create their order in the database and redirect them to a success page.
+
+9. In my checkout views in the checkout function, under my key variables, I check whether the method is POST using the belown and add the current code into an else block to handle the GET requests:
+
+if request.method == 'POST':
+else:
+
+10. Then within the code we have just set for the POST method, I copy and paste the code I have to get the shopping bag and paste this on the first line:
+
+    if request.method == 'POST':
+        shoppingbag = request.session.get('bag', {})
+
+    else: 
+
+11. Next, I put the form data for the order into a dictionary, borrowing the code from Code Institute's Boutique Ado:
+
+form_data = {
+            'full_name': request.POST['full_name'],
+            'email': request.POST['email'],
+            'phone_number': request.POST['phone_number'],
+            'country': request.POST['country'],
+            'postcode': request.POST['postcode'],
+            'town_or_city': request.POST['town_or_city'],
+            'street_address1': request.POST['street_address1'],
+            'street_address2': request.POST['street_address2'],
+            'county': request.POST['county'],
+}
+
+12. Then below the dictionary for form_data, I create an instance of the form using the form data and if the form is valid then I save the order:
+
+ order_form = OrderForm(form_data)
+        if order_form.is_valid():
+            order = order_form.save()
+
+13. Then below this, I iterate through the bag items to create each line item in the shopping bag. I am going to borrow Code Institute's code for this. This first gets the product ID from the bag and then if its value is an integer then we know we're working with an item that doesn't have sizes so the quantity will only include item data. Otherwise if it does have a size then it iterates through all sizes and creates the apppropriate line item. Then in the unlikely case that the product isn't found then an error message is given to the user and the order is deleted and the user is returned to the shopping bag page:
+
+            for item_id, item_data in bag.items():
+                try:
+                    product = Product.objects.get(id=item_id)
+                    if isinstance(item_data, int):
+                        order_line_item = OrderLineItem(
+                            order=order,
+                            product=product,
+                            quantity=item_data,
+                        )
+                        order_line_item.save()
+                    else:
+                        for size, quantity in item_data['items_by_size'].items():
+                            order_line_item = OrderLineItem(
+                                order=order,
+                                product=product,
+                                quantity=quantity,
+                                product_size=size,
+                            )
+                            order_line_item.save()
+                except Product.DoesNotExist:
+                    messages.error(request, (
+                        "One of the products in your bag wasn't found in our database. "
+                        "Please call us for assistance!")
+                    )
+                    order.delete()
+                    return redirect(reverse('view_bag'))
+
+14. Then at the bottom of the above code, at the same indentation asn the for-loop, we then attach whether or not user wants to save their profile information to this session and redirect them to a new page which I am yet to create which will be called checkout_success.html. The code below passes the order number as an argument, if the order form is invalid then it attaches a message to user to advise them and they will be returned to the checkout page at the bottom of the view with the form errors below:
+
+
+            request.session['save_info'] = 'save-info' in request.POST
+            return redirect(reverse('checkout_success', args=[order.order_number]))
+        else:
+            messages.error(request, 'There was an error with your form. \
+                Please double check your information.')
+
+15. Finally, I need to import the product model from my Merchandise app and the OrderLineItem from the Checkout app so I import these like so below:
+
+from .models import Order, OrderLineItem
+from merchandise.models import Product
+
+16. Now thats in place, I can create my checkout_success view in my checkout/views file. I define a new function under my checkout function and call it checkout_success and pass it the parameters of 'request' and 'order number', I add a comment to advise what the function is for
+
+def checkout_success(request, order_number):
+    """
+    Handle successful checkouts
+    """
+
+17. Then I am going to add the below code from Code Institute to save time. This code first checks if the user wants to save their information just like when getting the shopping bag - this will be required once profile app is created. Then the order number created in the previous view will be sent back to the template and attach a success message letting the user know their orderr number and then this will also be sent to the email that they use in the form. Then the shopping bag is deleted from the session as the order has now been stored in the database under the order number so its no longer required. It lastly sets the template and context and renders the template:
+
+    save_info = request.session.get('save_info')
+    order = get_object_or_404(Order, order_number=order_number)
+    messages.success(request, f'Order successfully processed! \
+        Your order number is {order_number}. A confirmation \
+        email will be sent to {order.email}.')
+    
+    if 'bag' in request.session:
+        del request.session['bag']
+
+    template = 'checkout/checkout_success.html'
+    context = {
+        'order': order,
+    }
+    return render(request, template, context)
+
+18. I now need to import the order model the top of the file and the get_object_or_404 method:
+
+from django.shortcuts import render, redirect, reverse, get_object_or_404
+
+19. Now thats in place, I need to create my url for the new page so I go to checkout/urls and set the below up in my url paths. Using the order number as an argument, it will generate the checkout_success view whenever a new order number is generated:
+
+    path('checkout_success/<order_number>', views.checkout_success, name='checkout_success'),
+
+20. I am now going to create my checkout_success.html template. I create this new file in the templates/checkout folder. The basis of my template will be almost identical to my checkout.html template so I am going to copy the contents from that file and paste into my checkout_success.html file and then make some changes. To save some time I will copy and paste the version from Code Institute Boutique Ado source code. This removes the unneccessary code for bag tools and changes the main text to thank you and and then gives a small message about the user's order. The second row is deleted and replaced with an empty column. The postload js block is removed as there is no extra js in this template. Then in the empty column is where the order summary will be rendered:
+
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'checkout/css/checkout.css' %}">
+{% endblock %}
+
+{% block page_header %}
+    <div class="container header-container">
+        <div class="row">
+            <div class="col"></div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block content %}
+    <div class="overlay"></div>
+    <div class="container">
+        <div class="row">
+            <div class="col">
+                <hr>
+                <h2 class="logo-font mb-4">Thank You</h2>
+                <hr>
+                <p class="text-black">Your order information is below. A confirmation email will be sent to <strong>{{ order.email }}</strong>.</p>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12 col-lg-7"></div>
+        </div>
+        <div class="row">
+			<div class="col-12 col-lg-7 text-right">
+				<a href="{% url 'products' %}?category=new_arrivals,deals,clearance" class="btn btn-black rounded-0 my-2">
+					<span class="icon mr-2">
+						<i class="fas fa-gifts"></i>
+					</span>
+					<span class="text-uppercase">Now check out the latest deals!</span>
+				</a>
+			</div>
+		</div>
+    </div>
+{% endblock %}
+
+21. I next need to make a couple of changes to ensure that my signals are working okay. In my checkouts/__init.py__ file I need to tell Django the name of the default config class for the app. This is the class used in the apps.py file where I imported the signals module, without this line in the init file, Django cannot see the custom ready method and the signals won't work:
+
+default_app_config = 'checkout.apps.CheckoutConfig'
+
+22. I am then going to update my Order model's update_total method by adding 'or 0' at the end of the line which aggregates all the line item totals. By including this we stop it from erroring because otherwise it would try to determine if none is less than or equal to the delivery threshold:
+
+        self.order_total = self.lineitems.aggregate(Sum('lineitem_total'))['lineitem_total__sum'] or 0
+
+23. With this updated I can now run my local server and see the page in action. I go to Secure Checkout and then populate my information and the Stripe test card information and then when I hit 'complete order' I am taking to a Server 500 page. I switch debug mode on and then refresh the page to see what is happening.
+
+24. I am receiving the following error message:
+
+NameError at /checkout/
+name 'bag' is not defined
+Request Method:	POST
+Request URL:	http://127.0.0.1:8000/checkout/
+Django Version:	6.0.2
+Exception Type:	NameError
+Exception Value:	
+name 'bag' is not defined
+Exception Location:	C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\checkout\views.py, line 36, in checkout
+Raised during:	checkout.views.checkout
+Python Executable:	C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\.venv\Scripts\python.exe
+Python Version:	3.12.8
+Python Path:	
+['C:\\Users\\leila\\OneDrive\\Desktop\\Documents\\vscode-projects\\working_out_gym',
+ 'C:\\Program Files\\Python312\\python312.zip',
+ 'C:\\Program Files\\Python312\\DLLs',
+ 'C:\\Program Files\\Python312\\Lib',
+ 'C:\\Program Files\\Python312',
+ 'C:\\Users\\leila\\OneDrive\\Desktop\\Documents\\vscode-projects\\working_out_gym\\.venv',
+ 'C:\\Users\\leila\\OneDrive\\Desktop\\Documents\\vscode-projects\\working_out_gym\\.venv\\Lib\\site-packages']
+Server time:	Thu, 02 Apr 2026 12:12:34 +0000
+
+25. I go to the offending line in question and update 'bag.items' to 'shoppingbag.items' and refresh. This has removed the previous error and generated a new one:
+
+AttributeError at /checkout/
+'Product' object has no attribute 'price'
+Request Method:	POST
+Request URL:	http://127.0.0.1:8000/checkout/
+Django Version:	6.0.2
+Exception Type:	AttributeError
+Exception Value:	
+'Product' object has no attribute 'price'
+Exception Location:	C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\checkout\models.py, line 71, in save
+Raised during:	checkout.views.checkout
+Python Executable:	C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\.venv\Scripts\python.exe
+Python Version:	3.12.8
+Python Path:	
+['C:\\Users\\leila\\OneDrive\\Desktop\\Documents\\vscode-projects\\working_out_gym',
+ 'C:\\Program Files\\Python312\\python312.zip',
+ 'C:\\Program Files\\Python312\\DLLs',
+ 'C:\\Program Files\\Python312\\Lib',
+ 'C:\\Program Files\\Python312',
+ 'C:\\Users\\leila\\OneDrive\\Desktop\\Documents\\vscode-projects\\working_out_gym\\.venv',
+ 'C:\\Users\\leila\\OneDrive\\Desktop\\Documents\\vscode-projects\\working_out_gym\\.venv\\Lib\\site-packages']
+Server time:	Thu, 02 Apr 2026 12:13:56 +0000
+
+26. This is likely due to me using a different variable for price. I have a look at my contexts file to see what I set this as. I need to use ProductVariant model as this is where I have set the price of my products in my app. I update 'Product' to 'ProductVariant' on the offending line of code above and I also import the model at the top of the file:
+
+from merchandise.models import Product, ProductVariant
+
+27. I refresh my page again but this time I am receiving this error:
+
+DoesNotExist at /checkout/
+ProductVariant matching query does not exist.
+Request Method:	POST
+Request URL:	http://127.0.0.1:8000/checkout/
+Django Version:	6.0.2
+Exception Type:	DoesNotExist
+Exception Value:	
+ProductVariant matching query does not exist.
+Exception Location:	C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\.venv\Lib\site-packages\django\db\models\query.py, line 639, in get
+Raised during:	checkout.views.checkout
+Python Executable:	C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\.venv\Scripts\python.exe
+Python Version:	3.12.8
+Python Path:	
+['C:\\Users\\leila\\OneDrive\\Desktop\\Documents\\vscode-projects\\working_out_gym',
+ 'C:\\Program Files\\Python312\\python312.zip',
+ 'C:\\Program Files\\Python312\\DLLs',
+ 'C:\\Program Files\\Python312\\Lib',
+ 'C:\\Program Files\\Python312',
+ 'C:\\Users\\leila\\OneDrive\\Desktop\\Documents\\vscode-projects\\working_out_gym\\.venv',
+ 'C:\\Users\\leila\\OneDrive\\Desktop\\Documents\\vscode-projects\\working_out_gym\\.venv\\Lib\\site-packages']
+Server time:	Thu, 02 Apr 2026 12:23:38 +0000
+
+28. I then need to update my OrderLineModel to use ProductVariant instead of Product:
+
+self.lineitem_total = self.product_variant.price * self.quantity
+
+29. I replace the code for product in OrderLineItem with the code for ProductVariant:
+
+product_variant = models.ForeignKey(ProductVariant, null=False, blank=False, on_delete=models.CASCADE)
+
+30. I import the ProductVariant model into the file from merchandise app:
+
+from merchandise.models import Product, ProductVariant
+
+31. However, I refresh the page and this is still not resolving me to checkout_success.:
+
+
+Request Method:	POST
+Request URL:	http://127.0.0.1:8000/checkout/
+Django Version:	6.0.2
+Exception Type:	DoesNotExist
+Exception Value:	
+ProductVariant matching query does not exist.
+Exception Location:	C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\.venv\Lib\site-packages\django\db\models\query.py, line 639, in get
+Raised during:	checkout.views.checkout
+Python Executable:	C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\.venv\Scripts\python.exe
+Python Version:	3.12.8
+Python Path:	
+['C:\\Users\\leila\\OneDrive\\Desktop\\Documents\\vscode-projects\\working_out_gym',
+ 'C:\\Program Files\\Python312\\python312.zip',
+ 'C:\\Program Files\\Python312\\DLLs',
+ 'C:\\Program Files\\Python312\\Lib',
+ 'C:\\Program Files\\Python312',
+ 'C:\\Users\\leila\\OneDrive\\Desktop\\Documents\\vscode-projects\\working_out_gym\\.venv',
+ 'C:\\Users\\leila\\OneDrive\\Desktop\\Documents\\vscode-projects\\working_out_gym\\.venv\\Lib\\site-packages']
+Server time:	Thu, 02 Apr 2026 12:27:58 +0000
+
+32. I query this with ChatGPT who asks me to add the below print statement before my for loop for item_id:
+
+print("BAG CONTENTS:", shoppingbag)
+
+- We add it here because this is where the error is occurring in our code and this print statement will show exactly what item_id values are being used.
+
+- Next I re-run the dev server and go through checkout again. I scroll through the feedback on my terminal and find the below code:
+
+BAG CONTENTS: {'9177': 1, '11659': {'items_by_size': {'m': 1}}, '9698': {'items_by_size': {'m': 2}}, '11469': {'items_by_size': {'m': 1}}}
+
+- This tells ChatGPT that these are Product ID's and not ProductVariant ID's which is why my code will be breaking. I need to update the below code from:
+
+product = ProductVariant.objects.get(id=item_id)
+
+- To the below so that it bridges the Product > Variant inside checkout so it doesn't crash:
+
+product = Product.objects.get(id=item_id)
+product_variant = product.variants.first()
+
+- It also advises me to update the below on my checkoutviews:
+
+order_line_item = OrderLineItem(
+    order=order,
+    product_variant=product_variant,
+    quantity=item_data,
+)
+
+- And:
+
+for size, quantity in item_data['items_by_size'].items():
+    order_line_item = OrderLineItem(
+        order=order,
+        product_variant=product_variant,
+        quantity=quantity,
+        product_size=size,
+    )
+
+- There are also a number of bugs it has identified. For instance I need to update my exception to use ProductVariant instead of Product in the below code:
+
+except Product.DoesNotExist:
+
+- Then I need to update my function that returns the string to:
+
+def __str__(self):
+    return f'SKU {self.product_variant.sku} on order {self.order.order_number}'
+
+33. After making these tweaks I reload my server and try to go through checkout again. However, I am recieiving the below error:
+
+ProgrammingError at /checkout/
+column "product_variant_id" of relation "checkout_orderlineitem" does not exist
+LINE 1: INSERT INTO "checkout_orderlineitem" ("order_id", "product_v...
+                                                          ^
+Request Method:	POST
+Request URL:	http://127.0.0.1:8000/checkout/
+Django Version:	6.0.2
+Exception Type:	ProgrammingError
+Exception Value:	
+column "product_variant_id" of relation "checkout_orderlineitem" does not exist
+LINE 1: INSERT INTO "checkout_orderlineitem" ("order_id", "product_v...
+                                                          ^
+Exception Location:	C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\.venv\Lib\site-packages\django\db\backends\utils.py, line 105, in _execute
+Raised during:	checkout.views.checkout
+Python Executable:	C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\.venv\Scripts\python.exe
+Python Version:	3.12.8
+Python Path:	
+['C:\\Users\\leila\\OneDrive\\Desktop\\Documents\\vscode-projects\\working_out_gym',
+ 'C:\\Program Files\\Python312\\python312.zip',
+ 'C:\\Program Files\\Python312\\DLLs',
+ 'C:\\Program Files\\Python312\\Lib',
+ 'C:\\Program Files\\Python312',
+ 'C:\\Users\\leila\\OneDrive\\Desktop\\Documents\\vscode-projects\\working_out_gym\\.venv',
+ 'C:\\Users\\leila\\OneDrive\\Desktop\\Documents\\vscode-projects\\working_out_gym\\.venv\\Lib\\site-packages']
+Server time:	Thu, 02 Apr 2026 15:42:21 +0000
+
+34. I realise that I have made changes to the product model that I haven't migrated so I makemigrations but I am seeing the below message when I run this:
+
+ python3 manage.py makemigrations
+It is impossible to add a non-nullable field 'product_variant' to orderlineitem without specifying a default. This is because the database needs something to populate existing rows.
+Please select a fix:
+ 1) Provide a one-off default now (will be set on all existing rows with a null value for this column)
+ 2) Quit and manually define a default value in models.py.
+
+ - I cancel this as I want a cleaner approach to the code. I decide to delete my Postgre SQL database and rebuild it. I install Postgre SQL locally using the following link:
+
+(https://www.postgresql.org/download/windows/)
+
+- I click the download installer link and choose the latest version for Windows and download the installer. Once its finished downloading, I then run the installer and click next, leaving most options at default. I enter the superuser password for my fitnessguru account and click next, next and install the software. Then I create a new file to store the local database that I am going to build with the updated models in a new local_settings.py file in my project folder.
+
+- I request a new PostgreSQL database link from Code Institute on this link: (https://dbs.ci-dbs.net/) 
+
+- Once I have a new database link, I populate my database information in local_settings.py as below but with the information in my new database link:
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'your_db_name',
+        'USER': 'your_username',
+        'PASSWORD': 'your_password',
+        'HOST': 'your_host',
+        'PORT': '5432',
+    }
+}
+
+- At the bottom of my settings.py file, I add the following code:
+
+try:
+    from .local_settings import *
+except ImportError:
+    pass
+
+- Then finally I add the file to my .gitignore file to protect it from being published to Github.
+
+- I now try to run makemigrations and migrate but still seeing the same prompt asking for a default value to be provided. I delete all migration files in checkout, merchandise and shoppingbag leaving just __init__.py.
+
+- I update my local_settings.py with the below code, replacing the text in the brackets with my new Code Institute database link:
+
+import dj_database_url
+
+DATABASES = {
+    'default': dj_database_url.parse(
+        ''
+    )
+}
+
+- I now run my makemigrations and migrate successfully.
+
+- As the database has been reset, all of my products have also been removed from the database so I need to readd these again using the fixtures file cleanly. To do this, I locate the 2 x fixtures files in my Merchandise app: merchandise/fixtures/categories.json and merchandise/fixtures/products.json. Then I run the following cmds in this order as categories is the parent as products.json depends on categories:
+
+python manage.py loaddata categories
+python manage.py loaddata products
+
+- However, when I run loaddate for products it has failed with the error:
+
+"server closed the connection unexpectedly. This probably means the server terminated abnormally before or while processing the request."
+
+- I consult ChatGPT about this who recommends regenerating clean fixtures file using the below cmd as it currently contains productvariants in here:
+
+python manage.py dumpdata merchandise.Product --indent 2 > merchandise/fixtures/products.json
+
+- I then run the loaddata for categories:
+
+python manage.py loaddata categories
+
+- And then the fixture for Products:
+
+python manage.py loaddata products
+
+- However, this error with:
+
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+
+- I check my products.json file and its currently encoded with UTF-16 so I update this to UTF-8, save the file and then try to run loaddata on categories and products again. However, looking in my products.json file it appears to be empty so in the process of regenerating the fixtures in my project it appears to be have corrupted the file.
+
+- I first check that my local_settings.py has the correct DATABASE settings with the new PostgreSQL link which it does. I run makemigrations and migrate to make sure that the database is clean and not waiting on any migrations but no changes need to be made. I then run the below cmd to load the categories:
+
+python manage.py loaddata categories
+
+- Then once this has ran successfully, I run the below in my terminal to confirm that the categories are correctly loaded:
+
+python manage.py shell
+>>> from merchandise.models import Category
+>>> Category.objects.all()
+
+- This returns the following results so it appears as though Category has loaded successfully:
+
+<QuerySet [<Category: Womens Crop Tops>, <Category: Womens Sports Bras>, <Category: Womens Leggings>, <Category: Womens Ss Tops>, <Category: Headwear>, <Category: Womens Sleeveless Tops>, <Category: Womens Shorts>, <Category: Socks>, <Category: Bags>, <Category: Womens Pullovers>, <Category: Womens Jackets / Outerwear>, <Category: Womens Ls Tops>, <Category: Womens Pants>, <Category: Accessories>, <Category: Womens Underwear>, <Category: Womens Bottoms>, <Category: mens unisex Bottoms>, <Category: Mens Hoodie>, <Category: Mens Pants>, <Category: Mens Ss Tops>, '...(remaining elements truncated)...']>
+
+- I then need to recreate the corrupted json file for products using:
+
+python manage.py dumpdata merchandise.Product --indent 2 > merchandise/fixtures/products.json
+
+- This is failing to recreate the file as my database is empty. I decide to recreate the fixtures using my Kaggle dataset. ChatGPT provides me with the below script which I populate into a create_fixtures.py file in the root of my project. This will create the json files for categories, product and ProductVariant:
+
+import csv
+import json
+
+INPUT_CSV = "gymshark_products.csv"
+
+categories = {}
+products = {}
+variants = []
+
+category_map = {}
+product_map = {}
+
+category_id = 1
+product_id = 1
+variant_id = 1
+
+with open(INPUT_CSV, newline='', encoding='utf-8') as csvfile:
+    reader = csv.DictReader(csvfile)
+
+    for row in reader:
+        # --- CATEGORY ---
+        category_name = (row.get("product_type") or "Uncategorized").strip()
+
+        if category_name not in category_map:
+            category_map[category_name] = category_id
+
+            categories[category_id] = {
+                "model": "merchandise.category",
+                "pk": category_id,
+                "fields": {
+                    "name": category_name,
+                    "slug": category_name.lower().replace(" ", "-"),
+                }
+            }
+
+            category_id += 1
+
+        cat_id = category_map[category_name]
+
+        # --- PRODUCT ---
+        product_key = row["handle"]  # UNIQUE + CLEAN
+
+        if product_key not in product_map:
+            product_map[product_key] = product_id
+
+            variant_title = row.get("variant_title", "")
+            has_sizes = "/" in variant_title  # simple heuristic
+
+            products[product_id] = {
+                "model": "merchandise.product",
+                "pk": product_id,
+                "fields": {
+                    "title": row["title"],
+                    "handle": row["handle"],
+                    "slug": row["handle"],  # safe since unique
+                    "category": cat_id,
+                    "vendor": row.get("vendor", ""),
+                    "tags": row.get("tags", ""),
+                    "image_src": row.get("image_src", ""),
+                    "has_sizes": has_sizes,
+                    "is_active": True,
+                }
+            }
+
+            product_id += 1
+
+        prod_id = product_map[product_key]
+
+        # --- VARIANT ---
+        variant = {
+            "model": "merchandise.productvariant",
+            "pk": variant_id,
+            "fields": {
+                "product": prod_id,
+                "variant_title": row.get("variant_title", ""),
+                "sku": row.get("sku") or None,
+                "price": float(row.get("price") or 0),
+                "inventory_quantity": int(row.get("inventory_quantity") or 0),
+                "image_src": row.get("image_src", ""),
+                "is_active": True,
+            }
+        }
+
+        variants.append(variant)
+        variant_id += 1
+
+# --- SAVE FILES ---
+with open("categories.json", "w", encoding="utf-8") as f:
+    json.dump(list(categories.values()), f, indent=2)
+
+with open("products.json", "w", encoding="utf-8") as f:
+    json.dump(list(products.values()), f, indent=2)
+
+with open("variants.json", "w", encoding="utf-8") as f:
+    json.dump(variants, f, indent=2)
+
+print("✅ Fixtures generated successfully!")
+
+- I populate the file with this script and then run the following:
+
+python create_fixtures.py
+
+- Fixtures runs successfully is returned in the terminal so I then create my json files using:
+
+python manage.py loaddata categories.json
+python manage.py loaddata products.json
+python manage.py loaddata variants.json
+
+- However, when I run the loaddate for categories,json file it says the categories already exist and then the product.json file fails to run as a result. The cleanest approach now would be to reset the database and start fresh again. To reset the database, I run:
+
+python manage.py flush
+
+- Then to reload everything clean I run the loaddata cmds on the fixture files again:
+
+python manage.py loaddata categories.json
+
+- However, upon running the loaddata categories.json I am receiving the below error:
+
+django.db.utils.IntegrityError: Problem installing fixture 'C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\merchandise\fixtures\categories.json': Could not load merchandise.Category(pk=48): duplicate key value violates unique constraint "merchandise_category_slug_key"
+DETAIL:  Key (slug)=(womens-socks) already exists.
+
+- I consult ChatGPT about this who advises adding the below to my create_fixtures.py script underneath my imports as my model produces a unique slug and my fixtures need to match this:
+
+from django.utils.text import slugify
+
+existing_category_slugs = set()
+
+def unique_slug(name, existing_slugs):
+    base = slugify(name) or "category"
+    slug = base
+    i = 1
+
+    while slug in existing_slugs:
+        i += 1
+        slug = f"{base}-{i}"
+
+    existing_slugs.add(slug)
+    return slug
+
+- Then in the category section of my script, I need to replace this:
+
+"slug": category_name.lower().replace(" ", "-"),
+
+- With this:
+
+slug = unique_slug(category_name, existing_category_slugs)
+
+- I also need to add existing_category_slugs to my global variables so I add this above category_id at the top of my file:
+
+existing_category_slugs = set()
+
 ---
 
 # 6. Credits and Acknowledgements
@@ -11313,6 +11912,9 @@ The following parts of my Project were implemented using Bootstrap docs:
 - checkout.html submit button
 - bag_tools.py code
 - stripe_elements.js code and functions
+- checkout views checkout function stripe updates
+- checkout_success views
+- checkout_success.html code
 
 
 

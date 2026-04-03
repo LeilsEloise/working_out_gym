@@ -1,0 +1,738 @@
+[
+  {
+    "model": "merchandise.category",
+    "pk": 1,
+    "fields": {
+      "name": "Womens Crop Tops",
+      "slug": "womens-crop-tops"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 2,
+    "fields": {
+      "name": "Womens Sports Bras",
+      "slug": "womens-sports-bras"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 3,
+    "fields": {
+      "name": "Womens Leggings",
+      "slug": "womens-leggings"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 4,
+    "fields": {
+      "name": "Womens Ss Tops",
+      "slug": "womens-ss-tops"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 5,
+    "fields": {
+      "name": "Headwear",
+      "slug": "headwear"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 6,
+    "fields": {
+      "name": "Womens Sleeveless Tops",
+      "slug": "womens-sleeveless-tops"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 7,
+    "fields": {
+      "name": "Womens Shorts",
+      "slug": "womens-shorts"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 8,
+    "fields": {
+      "name": "Socks",
+      "slug": "socks"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 9,
+    "fields": {
+      "name": "Bags",
+      "slug": "bags"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 10,
+    "fields": {
+      "name": "Womens Pullovers",
+      "slug": "womens-pullovers"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 11,
+    "fields": {
+      "name": "Womens Jackets / Outerwear",
+      "slug": "womens-jackets-outerwear"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 12,
+    "fields": {
+      "name": "Womens Ls Tops",
+      "slug": "womens-ls-tops"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 13,
+    "fields": {
+      "name": "Womens Pants",
+      "slug": "womens-pants"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 14,
+    "fields": {
+      "name": "Accessories",
+      "slug": "accessories"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 15,
+    "fields": {
+      "name": "Womens Underwear",
+      "slug": "womens-underwear"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 16,
+    "fields": {
+      "name": "Womens Bottoms",
+      "slug": "womens-bottoms"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 17,
+    "fields": {
+      "name": "mens unisex Bottoms",
+      "slug": "mens-unisex-bottoms"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 18,
+    "fields": {
+      "name": "Mens Hoodie",
+      "slug": "mens-hoodie"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 19,
+    "fields": {
+      "name": "Mens Pants",
+      "slug": "mens-pants"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 20,
+    "fields": {
+      "name": "Mens Ss Tops",
+      "slug": "mens-ss-tops"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 21,
+    "fields": {
+      "name": "Mens Tank",
+      "slug": "mens-tank"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 22,
+    "fields": {
+      "name": "Mens Shorts",
+      "slug": "mens-shorts"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 23,
+    "fields": {
+      "name": "Mens T-Shirt",
+      "slug": "mens-t-shirt"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 24,
+    "fields": {
+      "name": "Mens Sleeveless Tops",
+      "slug": "mens-sleeveless-tops"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 25,
+    "fields": {
+      "name": "Mens Stringer",
+      "slug": "mens-stringer"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 26,
+    "fields": {
+      "name": "Mens Pullovers",
+      "slug": "mens-pullovers"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 27,
+    "fields": {
+      "name": "Womens Crop Top",
+      "slug": "womens-crop-top"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 28,
+    "fields": {
+      "name": "Mens Long Sleeve Top",
+      "slug": "mens-long-sleeve-top"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 29,
+    "fields": {
+      "name": "Womens Long Sleeve Top",
+      "slug": "womens-long-sleeve-top"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 30,
+    "fields": {
+      "name": "Womens Jackets",
+      "slug": "womens-jackets"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 31,
+    "fields": {
+      "name": "Womens Tank",
+      "slug": "womens-tank"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 32,
+    "fields": {
+      "name": "Womens Sports Bra",
+      "slug": "womens-sports-bra"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 33,
+    "fields": {
+      "name": "Womens Hoodies",
+      "slug": "womens-hoodies"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 34,
+    "fields": {
+      "name": "Womens Jacket",
+      "slug": "womens-jacket"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 35,
+    "fields": {
+      "name": "Womens One Pieces",
+      "slug": "womens-one-pieces"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 36,
+    "fields": {
+      "name": "Mens Jackets / Outerwear",
+      "slug": "mens-jackets-outerwear"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 37,
+    "fields": {
+      "name": "footwear",
+      "slug": "footwear"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 38,
+    "fields": {
+      "name": "womens Socks",
+      "slug": "womens-socks"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 39,
+    "fields": {
+      "name": "womens Bags",
+      "slug": "womens-bags"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 40,
+    "fields": {
+      "name": "Bottles",
+      "slug": "bottles"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 41,
+    "fields": {
+      "name": "womens Headwear",
+      "slug": "womens-headwear"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 42,
+    "fields": {
+      "name": "Mens Bottoms",
+      "slug": "mens-bottoms"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 43,
+    "fields": {
+      "name": "Mens Underwear",
+      "slug": "mens-underwear"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 44,
+    "fields": {
+      "name": "unisex Pants",
+      "slug": "unisex-pants"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 45,
+    "fields": {
+      "name": "Mens Ls Tops",
+      "slug": "mens-ls-tops"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 46,
+    "fields": {
+      "name": "Womens T-Shirt",
+      "slug": "womens-t-shirt"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 47,
+    "fields": {
+      "name": "Mens Joggers",
+      "slug": "mens-joggers"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 48,
+    "fields": {
+      "name": "Womens Socks",
+      "slug": "womens-socks-2"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 49,
+    "fields": {
+      "name": "Mens Baselayer",
+      "slug": "mens-baselayer"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 50,
+    "fields": {
+      "name": "Misc.",
+      "slug": "misc"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 51,
+    "fields": {
+      "name": "Mens Pullover",
+      "slug": "mens-pullover"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 52,
+    "fields": {
+      "name": "Womens Vest",
+      "slug": "womens-vest"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 53,
+    "fields": {
+      "name": "mens unisex Pullovers",
+      "slug": "mens-unisex-pullovers"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 54,
+    "fields": {
+      "name": "Womens Hoodie",
+      "slug": "womens-hoodie"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 55,
+    "fields": {
+      "name": "Mens Swimwear",
+      "slug": "mens-swimwear"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 56,
+    "fields": {
+      "name": "womens Accessories",
+      "slug": "womens-accessories"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 57,
+    "fields": {
+      "name": "Womens Swimwear",
+      "slug": "womens-swimwear"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 58,
+    "fields": {
+      "name": "Pants",
+      "slug": "pants"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 59,
+    "fields": {
+      "name": "Pullovers",
+      "slug": "pullovers"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 60,
+    "fields": {
+      "name": "Ss Tops",
+      "slug": "ss-tops"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 61,
+    "fields": {
+      "name": "Womens tank",
+      "slug": "womens-tank-2"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 62,
+    "fields": {
+      "name": "Womens Pullover",
+      "slug": "womens-pullover"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 63,
+    "fields": {
+      "name": "Womens Tanks",
+      "slug": "womens-tanks"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 64,
+    "fields": {
+      "name": "Womens",
+      "slug": "womens"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 65,
+    "fields": {
+      "name": "Womens Sweater",
+      "slug": "womens-sweater"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 66,
+    "fields": {
+      "name": "Mens Jacket",
+      "slug": "mens-jacket"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 67,
+    "fields": {
+      "name": "mens T-Shirt",
+      "slug": "mens-t-shirt-2"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 68,
+    "fields": {
+      "name": "Mens Tops",
+      "slug": "mens-tops"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 69,
+    "fields": {
+      "name": "Womens Skort",
+      "slug": "womens-skort"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 70,
+    "fields": {
+      "name": "Bag",
+      "slug": "bag"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 71,
+    "fields": {
+      "name": "Mens Shirt",
+      "slug": "mens-shirt"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 72,
+    "fields": {
+      "name": "Mens Leggings",
+      "slug": "mens-leggings"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 73,
+    "fields": {
+      "name": "Footwear",
+      "slug": "footwear-2"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 74,
+    "fields": {
+      "name": "Womens One Piece",
+      "slug": "womens-one-piece"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 75,
+    "fields": {
+      "name": "mens Ss Tops",
+      "slug": "mens-ss-tops-2"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 76,
+    "fields": {
+      "name": "Mens Outerwear",
+      "slug": "mens-outerwear"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 77,
+    "fields": {
+      "name": "womens Shorts",
+      "slug": "womens-shorts-2"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 78,
+    "fields": {
+      "name": "Womens Dress",
+      "slug": "womens-dress"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 79,
+    "fields": {
+      "name": "Womens Bodysuit",
+      "slug": "womens-bodysuit"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 80,
+    "fields": {
+      "name": "Mens t",
+      "slug": "mens-t"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 81,
+    "fields": {
+      "name": "Thirft Bag",
+      "slug": "thirft-bag"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 82,
+    "fields": {
+      "name": "Womens Hoodies and Jackets",
+      "slug": "womens-hoodies-and-jackets"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 83,
+    "fields": {
+      "name": "Womens Sleeveless Top",
+      "slug": "womens-sleeveless-top"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 84,
+    "fields": {
+      "name": "Womens swe",
+      "slug": "womens-swe"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 85,
+    "fields": {
+      "name": "Equipment",
+      "slug": "equipment"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 86,
+    "fields": {
+      "name": "Mens Drop Armhole Tank",
+      "slug": "mens-drop-armhole-tank"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 87,
+    "fields": {
+      "name": "Mens Jackets",
+      "slug": "mens-jackets"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 88,
+    "fields": {
+      "name": "Underwear",
+      "slug": "underwear"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 89,
+    "fields": {
+      "name": "Gift Card",
+      "slug": "gift-card"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 90,
+    "fields": {
+      "name": "Mens Sweater",
+      "slug": "mens-sweater"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 91,
+    "fields": {
+      "name": "Uncategorized",
+      "slug": "uncategorized"
+    }
+  },
+  {
+    "model": "merchandise.category",
+    "pk": 92,
+    "fields": {
+      "name": "Mens Sleeveless T-Shirt",
+      "slug": "mens-sleeveless-t-shirt"
+    }
+  }
+]

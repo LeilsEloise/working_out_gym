@@ -5,3 +5,4 @@ env.py
 .venv/
 .github/
 db.sqlite3
+local_settings.py
