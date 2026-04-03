@@ -64,7 +64,17 @@ with open(INPUT_CSV, newline='', encoding='utf-8') as csvfile:
             product_map[product_key] = product_id
 
             variant_title = row.get("variant_title", "")
-            has_sizes = "/" in variant_title
+            category_name = (row.get("product_type") or "").lower()
+
+            clothing_keywords = ["shirt", "top", "tank", "hoodie", "jacket", "shorts", "leggings", "joggers"]
+            size_keywords = ["xs", "s", "m", "l", "xl", "xxl"]
+
+            variant_title_clean = variant_title.lower()
+
+            is_clothing = any(word in category_name for word in clothing_keywords)
+            has_size_word = any(size in variant_title_clean for size in size_keywords)
+
+            has_sizes = is_clothing and has_size_word
 
             products[product_id] = {
                 "model": "merchandise.product",

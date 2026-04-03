@@ -11714,7 +11714,7 @@ with open(INPUT_CSV, newline='', encoding='utf-8') as csvfile:
         variants.append(variant)
         variant_id += 1
 
-# --- SAVE FILES ---
+--- SAVE FILES ---
 with open("categories.json", "w", encoding="utf-8") as f:
     json.dump(list(categories.values()), f, indent=2)
 
@@ -11778,6 +11778,423 @@ slug = unique_slug(category_name, existing_category_slugs)
 - I also need to add existing_category_slugs to my global variables so I add this above category_id at the top of my file:
 
 existing_category_slugs = set()
+
+- Now I will flush the database again using the below cmd and typing yes on the prompt to delete the files:
+
+python manage.py flush
+
+- Once that has ran successfully, I create my fixtures again using:
+
+python create_fixtures.py
+
+- Once that says it has generated the fixtures successfully, I can recreate the categories.json file using:
+
+python manage.py loaddata categories
+
+- This installs successfully so I then populate the products.json file using:
+
+python manage.py loaddata products
+
+- This finally installs successfully too, so I load my final json file for variants using:
+
+python manage.py loaddata variants
+
+- This installs successfully too. 
+
+- I run my page on my local dev server and try going to my admin pages first but realise that my superuser has been deleted as a result of the database purge. I run the below cmd and then populate the details for my superuser:
+
+python manage.py createsuperuser
+
+- I login to the admin page with the details and check that the changes I have made haven't created any unwanted duplicates, this looks fine, there is a section for variants now under Merchandise but this is to be expected:
+
+![Admin Panel okay after db rebuild](/static/images/Stripe/Screenshot%20admin%20okay%20after%20rebuild%20-%20no%20duplicates.png)
+
+- However, when I then look in each of the menus for Product, Categories and Variant there is only one item in each of these lists. I consult ChatGPT about this who advises that the script looks as though it is treating all rows as the same product with this line of code:
+
+product_key = row["handle"]
+
+- I check what data is actually in my database currently using the below:
+
+python manage.py shell
+
+from merchandise.models import Product, ProductVariant
+
+Product.objects.count()
+
+- This returns 1, I then run the below to see what the ProductVariant count is which is also 1:
+
+ProductVariant.objects.count()
+
+- ChatGPT recommends updating the product_key to make it more robust and not rely only on a handle but also on a fallback. I update the below in my create_fixtures script:
+
+product_key = row["handle"]
+
+To:
+
+product_key = (row.get("handle") or row.get("title") or "").strip().lower()
+
+- Now I need to flush my database again using:
+
+python manage.py flush#
+
+- I delete the current fixture json files I had previously created and then run:
+
+python create_fixtures.py
+
+- This tells me the fixtures have generated successfully, I can see the three files again in the root of my project folder. I check the products.json file and this is still only showing 1 product. I consult ChatGPT who advises it is an indentation issue in my create_fixtures.py file and to resolve to the below then delete the fixtures and run again:
+
+with open(INPUT_CSV, newline='', encoding='utf-8') as csvfile:
+    reader = csv.DictReader(csvfile)
+
+    for row in reader:
+        # --- CATEGORY ---
+        category_name = (row.get("product_type") or "Uncategorized").strip()
+
+        if category_name not in category_map:
+            category_map[category_name] = category_id
+
+            slug = unique_slug(category_name, existing_category_slugs)
+
+            categories[category_id] = {
+                "model": "merchandise.category",
+                "pk": category_id,
+                "fields": {
+                    "name": category_name,
+                    "slug": slug,
+                }
+            }
+
+            category_id += 1
+
+        cat_id = category_map[category_name]
+
+        # --- PRODUCT ---
+        product_key = (row.get("handle") or row.get("title") or "").strip().lower()
+
+        if product_key not in product_map:
+            product_map[product_key] = product_id
+
+            variant_title = row.get("variant_title", "")
+            has_sizes = "/" in variant_title
+
+            products[product_id] = {
+                "model": "merchandise.product",
+                "pk": product_id,
+                "fields": {
+                    "title": row["title"],
+                    "handle": row["handle"],
+                    "slug": row["handle"],
+                    "category": cat_id,
+                    "vendor": row.get("vendor", ""),
+                    "tags": row.get("tags", ""),
+                    "image_src": row.get("image_src", ""),
+                    "has_sizes": has_sizes,
+                    "is_active": True,
+                }
+            }
+
+            product_id += 1
+
+        prod_id = product_map[product_key]
+
+        # --- VARIANT ---
+        variant = {
+            "model": "merchandise.productvariant",
+            "pk": variant_id,
+            "fields": {
+                "product": prod_id,
+                "variant_title": row.get("variant_title", ""),
+                "sku": row.get("sku") or None,
+                "price": float(row.get("price") or 0),
+                "inventory_quantity": int(row.get("inventory_quantity") or 0),
+                "image_src": row.get("image_src", ""),
+                "is_active": True,
+            }
+        }
+
+        variants.append(variant)
+        variant_id += 1
+
+- I update create_fixtures as above and then delete the three files and run:
+
+python create_fixtures.py
+
+- Now when I check the products.json file, I can see a large number of items in here as I would expect to see. Now the json files are loaded with the correct data, I can run my loaddata cmds:
+
+python manage.py loaddata categories
+python manage.py loaddata products
+python manage.py loaddata variants
+
+- These all run successfully and I can see the correct data in each of these files now.
+
+35. I now want to remove the local_settings.py file and store my new database url in my env.py file in the DATABASE_URL in place of the old link. I first need to update my DATABASE_URL variable with the new link. I do this now in env.py. Then in settings.py I make sure that the below is set which it is:
+
+import dj_database_url
+
+DATABASES = {
+    'default': dj_database_url.parse(os.environ.get("DATABASE_URL"))
+}
+
+35. I can now delete the below block from my settings.py file:
+
+try:
+    from .local_settings import *
+except ImportError:
+    pass
+
+36. Then I can run migrations on my new database using:
+
+python manage.py migrate
+
+- This advises there is no migrations to apply. To confirm that it has already run these I run:
+
+python manage.py showmigrations
+
+- This shows me a list with x's in the checkboxes so it looks safe to say it has made the migrations. 
+
+37. Now I can run the loaddata cmds on my json files as below:
+
+python manage.py loaddata categories
+python manage.py loaddata products
+python manage.py loaddata variants
+
+38. These all load in successfully showing that the correct amount of items has been installed this time. I now want to verify that I am using the new correct database so run:
+
+from django.db import connection
+
+39. I create superuser again using: 
+
+python manage.py createsuperuser
+
+40. I run my page on my local server and go to admin panel and check the menus for categories, products and variants.
+
+- My categories list looks correct, as you can see from the below screenshot. The categories list loads, there are no duplicates (the slug list is unique) and names look clean:
+
+![DB rebuild admin category list](/static/images/Stripe/Screenshot%20db%20rebuild%20category%20list.png)
+
+- If I click into one of the categories then I can save this without any errors:
+
+![DB rebuild admin category item saved](/static/images/Stripe/Screenshot%20%20db%20rebuild%20category%20items%20saving%20without%20error.png)
+
+- If I click into Products then it is showing me a list of over 7000 products now as opposed to 1. The titles look correct and they have a category assigned:
+
+![DB rebuild admin product list](/static/images/Stripe/Screenshot%20db%20rebuild%20product%20admin%20list.png)
+
+- If I click into some of the products then I see they have a slug generated and an img and also Product Variants associated with the product:
+
+![DB rebuild product admin](/static/images/Stripe/Screenshot%20DB%20rebuild%20product%20item.png)
+
+- Then if I go into my ProductVariants list, this looks good too. There are multiple variants now showing in the list, each variant appears linked to a product when I have clicked into them, the prices are all different and the inventory values look realistic:
+
+![DB rebuild productvariants admin](/static/images/Stripe/Screenshot%20db%20rebuild%20product%20variants.png)
+
+41. I now want to test out the actual page and make sure that nothing has broken here. I first check the Homepage is rendering correctly which it is. I test out the feedback form which sends the form and gives a success message to say it is sent.
+
+- I next check out the Discussion Board. This all looks good, it has actually retained all of the data from the previously posted posts and users which is good. I can post a new post and delete previous posts so I am happy with this.
+
+- Next I check the Merchandise page, I can still see all the categories in my Navbar menu under the main Merchandise menu. If I click into these then I am taken to a page with the relevant products. My menu which sorts into price and categories both work okay too. If I click on the individual items then these are loading up nicely. I can add the items to my bag and then toast success shopping bag preview renders on the page nicely, it shows the correct images and the Secure Checkout button directs me to the checkout page.
+
+- I next view my Shopping Bag. This is rendering all the products I have just added nicely. I can update the size and quantities on items or delete them if I choose.
+
+- If I click Secure Checkout then this takes me tothe Checkout page with the shipping and payment forms along with the order summary. I can populate the forms and then click complete order and this is where I was falling down last time.
+
+42. I am going to update my DATABASE_URL in my app's settings on Heroku as I am going to commit my changes after doing my database rebuild and change of URL. First, I will go to Heroku.com and go to Working-out-gym's settings and update the Config Vars for DATABASE_URL to my new url. 
+
+43. Once I have updated this on Heroku, I then need to push my code using the below cmds which will push to Github and then deploy and build on Heroku:
+
+git add .
+git commit -m "Switch to new database"
+git push origin main
+git push heroku main
+
+44. Once these have run successfully, I then need to run the migrations on Heroku using:
+
+heroku run python manage.py migrate -a working-out-gym
+
+- However, this advises that there is no migrations to apply.
+
+45. I then run the below cmds in the written order so loaddata from the new fixtures created onto the Heroku app:
+
+heroku run python manage.py loaddata categories -a working-out-gym
+heroku run python manage.py loaddata products -a working-out-gym
+heroku run python manage.py loaddata variants -a working-out-gym
+
+46. These all run successfully and install the products on Heroku, so I launch the app now to see how this is looking. The homepage looks fine, I log into the admin panel with the superuser credentials and these are letting me logon. I can see 'Products', 'ProductVariants' and 'Categories' under the merchandise section of my admin panel. If I click inton these the lists look okay and the items themselves seem fine also.
+
+- I then check the frontend of the production app, looking at Merchandise and making sure all sorting menus work. These are all working okay. I can add products to the bag and then go the shopping bag and then when I try to complete checkout to go to the checkout page I am getting the following error:
+
+AuthenticationError at /checkout/
+You did not provide an API key. You need to provide your API key in the Authorization header, using Bearer auth (e.g. 'Authorization: Bearer YOUR_SECRET_KEY'). See https://stripe.com/docs/api#authentication for details, or we can help at https://support.stripe.com/.
+Request Method:	GET
+Request URL:	https://working-out-gym-aaf119c10db9.herokuapp.com/checkout/
+Django Version:	6.0.2
+Exception Type:	AuthenticationError
+Exception Value:	
+You did not provide an API key. You need to provide your API key in the Authorization header, using Bearer auth (e.g. 'Authorization: Bearer YOUR_SECRET_KEY'). See https://stripe.com/docs/api#authentication for details, or we can help at https://support.stripe.com/.
+Exception Location:	/app/.heroku/python/lib/python3.12/site-packages/stripe/_api_requestor.py, line 353, in handle_error_response
+Raised during:	checkout.views.checkout
+Python Executable:	/app/.heroku/python/bin/python
+Python Version:	3.12.13
+Python Path:	
+['/app/.heroku/python/bin',
+ '/app',
+ '/app/.heroku/python/lib/python312.zip',
+ '/app/.heroku/python/lib/python3.12',
+ '/app/.heroku/python/lib/python3.12/lib-dynload',
+ '/app/.heroku/python/lib/python3.12/site-packages']
+Server time:	Fri, 03 Apr 2026 11:17:15 +0000
+
+- I consult ChatGPT who advises that as my Stripe keys are set in an env.py file, I need to set these up on the config vars setttings of my Heroku app so it can see them. To set these I run the following cmds but with the key values applied:
+
+heroku config:set STRIPE_PUBLIC_KEY=your_public_key -a working-out-gym
+heroku config:set STRIPE_SECRET_KEY=your_secret_key -a working-out-gym
+
+- I reload my page on Heroku and see if it is letting me checkout now but it is saying the API key is invalid. I am going to go back to resolving payment checkout flow on my dev server and see if fixing the full flow will then fix on Heroku once changes are deployed to it.
+
+47. I load up my dev server and go to Checkout and I am receiving the following error after populating the forms and hitting 'complete order':
+
+ProgrammingError at /checkout/
+column "product_variant_id" of relation "checkout_orderlineitem" does not exist
+LINE 1: INSERT INTO "checkout_orderlineitem" ("order_id", "product_v...
+                                                          ^
+Request Method:	POST
+Request URL:	http://127.0.0.1:8000/checkout/
+Django Version:	6.0.2
+Exception Type:	ProgrammingError
+Exception Value:	
+column "product_variant_id" of relation "checkout_orderlineitem" does not exist
+LINE 1: INSERT INTO "checkout_orderlineitem" ("order_id", "product_v...
+                                                          ^
+Exception Location:	C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\.venv\Lib\site-packages\django\db\backends\utils.py, line 105, in _execute
+Raised during:	checkout.views.checkout
+Python Executable:	C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\.venv\Scripts\python.exe
+Python Version:	3.12.8
+Python Path:	
+['C:\\Users\\leila\\OneDrive\\Desktop\\Documents\\vscode-projects\\working_out_gym',
+ 'C:\\Program Files\\Python312\\python312.zip',
+ 'C:\\Program Files\\Python312\\DLLs',
+ 'C:\\Program Files\\Python312\\Lib',
+ 'C:\\Program Files\\Python312',
+ 'C:\\Users\\leila\\OneDrive\\Desktop\\Documents\\vscode-projects\\working_out_gym\\.venv',
+ 'C:\\Users\\leila\\OneDrive\\Desktop\\Documents\\vscode-projects\\working_out_gym\\.venv\\Lib\\site-packages']
+Server time:	Fri, 03 Apr 2026 10:37:09 +0000
+
+48. ChatGPT advises that this is a database mismatch, the error means that the column 'product_variant_id' does not exist so Django is trying to insert into a column that my database doesn't have. My models have the following code:
+
+product_variant = models.ForeignKey(...)
+
+- But my database table has the below which doesn't have that column:
+
+checkout_orderlineitem
+
+- The database was never updated with a migration so I need to create migrations:
+
+python manage.py makemigrations
+
+- However, this runs and still picks up no changes. I consult ChatGPT who advises I need to rollback the migrations for the checkout app and then reapply them using the below cmds:
+
+python manage.py migrate checkout zero
+python manage.py migrate checkout
+
+- These both run successfully so I run the below now to verify thatb the column exists. First I run:
+
+python manage.py shell
+
+- Then I run the below:
+
+from django.db import connection
+
+cursor = connection.cursor()
+cursor.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'checkout_orderlineitem';")
+
+columns = cursor.fetchall()
+print(columns)
+
+- This prints out the 'product_variant_id' column in the printout so I am going to test my checkout again. I can checkout now but notice that the size selector has been removed from the product_details and checkout views. The only thing that has really changed code wise is the fixtures so I troubleshoot this with ChatGPT who recommends querying the database in a Django shell using:
+
+python manage.py shell
+
+from merchandise.models import Product
+
+Product.objects.filter(has_sizes=True).count()
+
+- The value returned is 27 so this isn't right. ChatGPT recommends replacing the below code in my create_fixtures.py script:
+
+variant_title = row.get("variant_title", "")
+has_sizes = "/" in variant_title
+
+With:
+
+variant_title = row.get("variant_title", "")
+
+size_keywords = ["xs", "s", "m", "l", "xl", "xxl"]
+variant_title_clean = (variant_title or "").lower()
+
+has_sizes = any(size in variant_title_clean for size in size_keywords)
+
+- Once I have updated my create_fixtures code, I then rerun the script using:
+
+python create_fixtures.py
+
+- I then flush my database out after confirming the json files have created and populated correctly. I click yes to the prompt on flushing the database:
+
+python manage.py flush
+
+- Then once that has ran, I migrate the data:
+
+python manage.py migrate
+
+- Then i run the loaddata cmds on each of the newly created json files as below:
+
+python manage.py loaddata categories
+python manage.py loaddata products
+python manage.py loaddata variants
+
+- Once each of the above cmds has ran and installed each of the three datasets successfully, I then oipen a Django shell with the below cmd and then query the data to see if the amount of products with sizes has drastically increased as I am expecting it to:
+
+python manage.py shell
+
+from merchandise.models import Product
+Product.objects.filter(has_sizes=True).count()
+
+- This is now returning a value of 7396 which is much better. So I run my app on my dev server again to see what is coming through now on the product details and checkout pages and make sure size displays and is a changeable field for the user. I can see the size selector again on clothing now but I check non clothing items and these also have the size selector so I update my create_fixtures script with the below in place of my current code:
+
+variant_title = row.get("variant_title", "")
+category_name = (row.get("product_type") or "").lower()
+
+clothing_keywords = ["shirt", "top", "tank", "hoodie", "jacket", "shorts", "leggings", "joggers"]
+size_keywords = ["xs", "s", "m", "l", "xl", "xxl"]
+
+variant_title_clean = variant_title.lower()
+
+is_clothing = any(word in category_name for word in clothing_keywords)
+has_size_word = any(size in variant_title_clean for size in size_keywords)
+
+has_sizes = is_clothing and has_size_word
+
+- I run my create_fixtures script again using:
+
+python create_fixtures.py
+
+- The terminal tells me this has generated successfully so I flush the database again using the below and typing yes to the prompt:
+
+python manage.py flush
+
+- I then migrate the tables in the database using:
+
+python manage.py migrate
+
+- And finally run the following cmds to install the new fixture files:
+
+python manage.py loaddata categories
+python manage.py loaddata products
+python manage.py loaddata variants
+
+- These finish running successfully so I launch my dev server to see if this has brought back sizes and retained checkout success functionality too. I can see that the size selector is now back only on the appropriate items, I have looked at non-clothing items and they do not have a size anymore. I can add items of different sizes to the bag and check these out successfully now.
+
+- Now that the code is all working as it should be, I want to now reflect these changes on Heroku also. I first commit the changes to Github and Heroku using:
+
+
 
 ---
 
