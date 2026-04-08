@@ -1,3 +1,8 @@
+/* ChatGPT Code */
+$(document).ready(function() {
+    $('#loading-overlay').hide();
+});
+
 /* Code Institute Code */
 var stripe_public_key = $('#id_stripe_public_key').text().slice(1, -1);
 var client_secret = $('#id_client_secret').text().slice(1, -1);
@@ -44,6 +49,8 @@ form.addEventListener('submit', function(ev) {
     ev.preventDefault();
     card.update({ 'disabled': true});
     $('#submit-button').attr('disabled', true);
+    $('#payment-form').hide(); // ChatGPT Code
+    $('#loading-overlay').fadeIn(200); //ChatGPT Code
     stripe.confirmCardPayment(client_secret, {
         payment_method: {
             card: card,
@@ -57,6 +64,8 @@ form.addEventListener('submit', function(ev) {
                 </span>
                 <span>${result.error.message}</span>`;
             $(errorDiv).html(html);
+            $('#payment-form').fadeIn(100);
+            $('#loading-overlay').fadeOut(200);
             card.update({ 'disabled': false});
             $('#submit-button').attr('disabled', false);
         } else {

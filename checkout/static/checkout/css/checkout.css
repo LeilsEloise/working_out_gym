@@ -38,3 +38,30 @@
   color: #000;
   border: 1px solid #000;
 }
+
+
+/* ChatGPT - display update */
+#loading-overlay {
+    display: none !important;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* ChatGPT - Blur effect */
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+
+    /* ChatGPT - Optional: slight dim so text is readable */
+    background: rgba(255, 255, 255, 0.3);
+    z-index: 9999;
+}
+
+/* Code Institute CSS */
+.loading-spinner {
+	display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    height: 100%;
+}

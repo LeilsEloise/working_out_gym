@@ -13951,6 +13951,156 @@ Invalid block tag on line 63: 'endif', expected 'empty' or 'endfor'. Did you for
   {{ item.quantity }} × £{{ item.product_variant.price }} = £{{ item.lineitem_total }}
 </p>
 
+13. I refresh and the price now looks okay so I commit my code:
+
+![Checkout Success Order Summary now correct](/static/images/Stripe/Screenshot%20order%20summary%20now%20correct.png)
+
+14. I now want to add a loading overlay div underneath my main container in the checkout.html that will contain a big gaint spinner icon in the center of the screen with a blue overlay to cover the page and indicate that the payment is being processed. I am going to copy and paste this code from Code Institute's Boutique Ado to save time:
+
+    <div id="loading-overlay">
+        <h1 class="text-light logo-font loading-spinner">
+            <span class="icon">
+                <i class="fas fa-3x fa-sync-alt fa-spin"></i>
+            </span>
+        </h1>
+    </div>
+
+15. Then I am also going to borrow their css styles for the div and paste these into my checkout.css file at the very bottom:
+
+#loading-overlay {
+	display: none;
+	position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(23, 162, 184, .85);
+    z-index: 9999;
+}
+
+.loading-spinner {
+	display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    height: 100%;
+}
+
+16. Next I will update my checkout/static/checkout/stripe_elements.js file as Code Institute have with theirs so it triggers the overlay and fade out form when the user clicks the submit button and reverse it if there's any errors. Underneath the line of code for submit button ($('#submit-button').attr('disabled', true);) I add the below two lines of code directly beneath it. I copy and paste the 2 x line of code below and also paste them further down the line above the code for card.update (card.update({ 'disabled': false});):
+
+    $('#payment-form').fadeToggle(100);
+    $('#loading-overlay').fadeToggle(100);
+
+17. I save this and submit another order but use a different test card number to trigger a different authentication from Stripe to ensure that the pop-up stays above the loading overlay. I am going to do a hard refresh and clear the cache in devtools before updating my details and completing the order.
+
+The test card number I am using is: 4000 0025 0000 3155
+
+18. I complete the order using my test card number and do not see the blue overlay screen but do get a Stripe popup as shown below:
+
+![Checkout Success stripe popup no loading overlay](/static/images/Stripe/Screenshot%20stripe%20popup.png)
+
+19. I can see that something isn't right as when I look at my checkout page I can see the code for the loading overlay div being displayed as text on the page, see below:
+
+![Checkout showing code for div overlay](/static/images/Stripe/Screenshot%20div%20id%20for%20loading%20overlay%20wrong.png)
+
+20. I take a look at the code in my checkout.html file for the loading-overlay div and realise I haven't contained the div in an opening arrow so update this now and then refresh my page and try checking out again but its still showing the loading cursor running on the main checkout screen before I complete order and then not showing the blue loading overlay screen when I click complete order:
+
+![Checkout showing loading cursor](/static/images/Stripe/Screenshot%20loading%20cursor%20on%20checkout.png)
+
+21. I consult ChatGPT who advises that fadetoggle() is causing the overlay to be hidden so recommends using fadeIn when submitting and fadeOut when there is an error and it needs to hide the overlay. I replace this code:
+
+$('#loading-overlay').fadeToggle(100);
+
+With the below updates:
+
+    $('#payment-form').fadeOut(100); // ChatGPT Code
+    $('#loading-overlay').fadeIn(200); //ChatGPT Code
+    stripe.confirmCardPayment(client_secret, {
+        payment_method: {
+            card: card,
+        }
+    }).then(function(result) {
+        if (result.error) {
+            var errorDiv = document.getElementById('card-errors');
+            var html = `
+                <span class="icon" role="alert">
+                <i class="fas fa-times"></i>
+                </span>
+                <span>${result.error.message}</span>`;
+            $(errorDiv).html(html);
+            $('#payment-form').fadeIn(100);
+            $('#loading-overlay').fadeOut(200);
+            card.update({ 'disabled': false});
+
+22. I save the new code and then refresh to see how this looks now, however, I am still seeing the loading cursor on the checkout page permanently and seeing no overlay when I go to 'Complete Order'. The Javascript is correct now so ChatGPT recommends updating my loading-overlay css to this instead of usign cursor-wait as if there's any issues with the overlay not hiding it will affect the page. This adds !important to the display attribute to force it to hide on load:
+
+#loading-overlay {
+    display: none !important; 
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+
+    background: rgba(23, 162, 184, 0.85);
+    z-index: 9999;
+}
+
+23. I hard reload the page again but still getting the same. I inspect the page on devtools and click the loading-overlay div html and then check computed styles and can see that display is set to 'block' instead of 'none'. I open devtools console and refresh and then run the following, which returns a 'true' result, meaning that Javascript made it visible:
+
+('#loading-overlay').is(':visible')
+
+24. I therefore add the following to the very top of the stripe_elements.js file to force hide on page load:
+
+$(document).ready(function() {
+    $('#loading-overlay').hide();
+});
+
+25. I hard reload the page and test to see if this has fixed the issue but it still hasn't. I inspect in devtools and can see that I have display block but it's not got the !important meaning that checkout.css isn't being served somehow:
+
+![loading overlay inspect devtools](/static/images/Stripe/Screenshot%20loading%20overlay%20inspect%20devtools%20elements.png)
+
+26. I check the Devtools > Network tab and filter on css but can see the checkout.css file is in there. I then check my template for checkout.html and make sure that that my checkout.css is contained within an extra_css block which it is:
+
+{% block extra_css %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'checkout/css/checkout.css' %}">
+{% endblock %}
+
+- I also make sure that my base.html contains an empty block for extra css after my core css block which it does:
+
+    <!-- MAIN SITE CSS -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}"/>
+    {% endblock %}
+    
+    <!-- Page-specific CSS -->
+    {% block extra_css %}{% endblock %}
+
+- I do a hard reload and empty cache but its still not picking up the checkout.css display !important code. I consult ChatGPT who checks out my checkout.html file and spots the issue. The div overlay is being affected by this line of code at the top of the file:
+
+<div class="overlay"></div>
+
+- This is causing it to conflict with the div overlay at the bottom of the file because of the css rule I created for overlay. I remove this line and reload my page. However, its still showing the cursor on my checkout page. I take a look at the checkout.css file being served on the code but it stops at the #payment-form styles and doesn't have any of my rules for the overlay below it. I am going to trey recursing the static files, as I have checked that I am editing the correct file, and then I will collectstatic files again:
+
+Remove-Item -Recurse -Force staticfiles
+
+python manage.py collectstatic 
+
+- I have refreshed the page and now the loading cursor is removed. I want to update the background on the loading overlay so its not blue and instead blurred so ChatGPT provides me some css rules for this and I update the loading-overlay id rules:
+
+    /* ✨ Blur effect */
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+
+    /* Optional: slight dim so text is readable */
+    background: rgba(255, 255, 255, 0.3);
+
+- Now when I load the page and complete order, I can see a blurred background while I am waiting to confirm the order.
+
+![Loading overlay blurred background](/static/images/Stripe/Screenshot%20loading%20overlay%20works%20with%20blurred%20background.png)
+
+- I commit my code to Git and Heroku ready for implementing Webhooks next.
+
 ---
 
 # 6. Credits and Acknowledgements
@@ -14088,6 +14238,9 @@ The following parts of my Project were implemented using Bootstrap docs:
 - checkout_success views
 - checkout_success.html code
 - checkout_success rows for Order Summary
+- checkout.html loading-overlay div
+- checkout.css loading-overlay and loading-spinner styles
+- display css update for loading-cursor div
 
 
 
@@ -14154,6 +14307,9 @@ The following parts of my Project were implemented using Bootstrap docs:
 - editable fields code in checkout/admin for OrderLineItemAdminInline class
 - OrderAdmin class updates in chckoutadmin to make fields editable
 - item price calculation paragraph in checkout_success
+- loading overlay hide code in stripe_elements.js
+- loading-overlay div css rules for blurred background
+
 
 
 
