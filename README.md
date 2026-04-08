@@ -13414,7 +13414,542 @@ class OrderLineItemAdminInline(admin.TabularInline):
 
 - I run collectstatic and then commit to Git and Heroku before finalising my checkout success and payment process next.
 
+- I am receiving an error when I try to push my code to Heroku:
 
+remote: The conflict is caused by: remote: The user requested Django==3.2.25 remote: crispy-bootstrap5 0.7 depends on django>=3.2 remote: django-allauth 0.57.2 depends on Django>=3.2 remote: django-crispy-forms 2.5 depends on django>=4.2 remote: remote: Additionally, some packages in these conflicts have no matching distributions available for your environment: remote: django remote: remote: To fix this you could try to: remote: 1. loosen the range of package versions you've specified remote: 2. remove package versions to allow pip to attempt to solve the dependency conflict remote: remote: ERROR: ResolutionImpossible: for help visit https://pip.pypa.io/en/latest/topics/dependency-resolution/#dealing-with-dependency-conflicts remote: remote: ! Error: Unable to install dependencies using pip. remote: ! remote: ! See the log output above for more information. remote: remote: ! Push rejected, failed to compile Python app. remote: remote: ! Push failed remote: remote: ! Push rejected to working-out-gym. remote: To https://git.heroku.com/working-out-gym.git ! [remote rejected] main -> main (pre-receive hook declined
+
+- I consult ChatGPT who advises that this is a dependency conflict and easy to fix. I need to first update my requirements.txt file and replace this line:
+
+django-crispy-forms==2.5
+
+With:
+
+django-crispy-forms==1.14.0
+
+- Then reinstall Crsipyforms locally using:
+
+pip install django-crispy-forms==1.14.0
+
+- I then need to freeze my requirements.txt file again using:
+
+pip install django-crispy-forms==1.14.0
+
+- I commit my code and push again using:
+
+git add requirements.txt
+git commit -m "Fix crispy forms version for Django 3.2 compatibility"
+git push origin main
+git push heroku main
+
+- I have also accidentally committed staticfiles/ which should never be in Git so I add this it .gitignore and then remove from Git using the below cmds in the terminal:
+
+git rm -r --cached staticfiles
+git commit -m "Remove staticfiles from repo"
+git push origin main
+
+- I can now push my code to Heroku:
+
+git push heroku main
+
+- A quick check over my production app shows everything working as it should.
+
+---
+
+# Checkout Success - Order Summary
+
+1. I first go to my checkout_success html template and inside the empty column below my order information paragraph, I am going to create a bordered wrapper that will go around the order confirmation. Then inside the wrapper I am going to create 4 x rows with full width columns containing small muted text for each of the sections, as below. The first row will be called 'Order Info':
+
+                <div class="order-confirmation-wrapper p-2 border">
+                    <div class="row">
+                        <div class="col">
+                            <small class="text-muted">Order Info</small>
+                        </div>    
+                    </div>
+
+2. I copy and paste the Order Info div three more times as below, updating 'Order Info' to 'Order Details', 'Delivery Address' and 'Billing Details':
+
+                    <div class="row">
+                        <div class="col">
+                            <small class="text-muted">Order Details</small>
+                        </div>    
+                    </div>
+
+                    <div class="row">
+                        <div class="col">
+                            <small class="text-muted">Delivery Address</small>
+                        </div>    
+                    </div>
+
+                    <div class="row">
+                        <div class="col">
+                            <small class="text-muted">Billing Details</small>
+                        </div>    
+                    </div>
+
+3. Then underneath the Order Info section I create a new single row split into 2 columns: 1/3 and 2/3. The second column will use right-aligned text:
+
+<div class="row">
+    <div class="col-12 md-4"></div>
+    <div class="col-12 md-4 text-md-right"></div>
+</div>
+
+4. I then add a paragraph element to each of the columns. The first column will contain the label for the order number and the second column will display the actual order number:
+
+                        <div class="col-12 md-4">
+                            <p class="mb-0 text-black font-weight-bold">Order Number:</p>
+                        </div>
+                        <div class="col-12 md-4 text-md-right">
+                            <p class="mb-0>">{{ order.order_number}}</p>
+                        </div>
+
+5. I am then going to copy this entire row and paste back in directly below the Order Number row and change accordingly for the Order Date:
+
+                    <div class="row">
+                        <div class="col-12 md-4">
+                            <p class="mb-0 text-black font-weight-bold">Order Date:</p>
+                        </div>
+                        <div class="col-12 md-4 text-md-right">
+                            <p class="mb-0>">{{ order.date }}</p>
+                        </div>
+                    </div>
+
+6. As this is going to be a bit tedious typing out each row, I am going to borrow Code Institute's Boutique Ado code for checkout_success.html and tweak according to my own code and paste this in below the code I have already created for Order Info:
+
+ 
+
+          <div class="row">
+          <div class="col-12 col-md-4">
+            <p class="mb-0 text-black font-weight-bold">Order Number</p>
+          </div>
+          <div class="col-12 col-md-4 text-md-right">
+            <p class="mb-0">{{ order.order_number }}</p>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-12 col-md-4">
+            <p class="mb-0 text-black font-weight-bold">Order Date</p>
+          </div>
+          <div class="col-12 col-md-4 text-md-right">
+            <p class="mb-0">{{ order.date }}</p>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col">
+            <small class="text-muted">Order Details:</small>
+          </div>
+        </div>
+
+        {% for item in order.lineitems.all %}
+        <div class="row">
+          <div class="col-12 col-md-4">
+            <p class="small mb-0 text-black font-weight-bold">
+              {{ item.product.name }}{% if item.product_size %} - Size {{
+              item.product_size|upper }}{% endif %}
+            </p>
+          </div>
+          <div class="col-12 col-md-4 text-md-right">
+            <p class="small mb-0">
+              {{ item.quantity }} @ £{{ item.product.price }} each
+            </p>
+          </div>
+        </div>
+        {% endfor %}
+
+        <div class="row">
+          <div class="col">
+            <small class="text-muted">Delivery Address</small>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-12 col-md-4">
+            <p class="mb-0 text-black font-weight-bold">Full Name</p>
+          </div>
+          <div class="col-12 col-md-4 text-md-right">
+            <p class="mb-0">{{ order.full_name }}</p>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-12 col-md-4">
+            <p class="mb-0 text-black font-weight-bold">Address 1</p>
+          </div>
+          <div class="col-12 col-md-4 text-md-right">
+            <p class="mb-0">{{ order.street_address1 }}</p>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-12 col-md-4">
+            <p class="mb-0 text-black font-weight-bold">Address 2</p>
+          </div>
+          <div class="col-12 col-md-4 text-md-right">
+            <p class="mb-0">{{ order.street_address2 }}</p>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-12 col-md-4">
+            <p class="mb-0 text-black font-weight-bold">County</p>
+          </div>
+          <div class="col-12 col-md-4 text-md-right">
+            <p class="mb-0">{{ order.county }}</p>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-12 col-md-4">
+            <p class="mb-0 text-black font-weight-bold">Town or City</p>
+          </div>
+          <div class="col-12 col-md-4 text-md-right">
+            <p class="mb-0">{{ order.town_or_city }}</p>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-12 col-md-4">
+            <p class="mb-0 text-black font-weight-bold">Postal Code</p>
+          </div>
+          <div class="col-12 col-md-4 text-md-right">
+            <p class="mb-0">{{ order.postcode }}</p>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-12 col-md-4">
+            <p class="mb-0 text-black font-weight-bold">Country</p>
+          </div>
+          <div class="col-12 col-md-4 text-md-right">
+            <p class="mb-0">{{ order.country }}</p>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-12 col-md-4">
+            <p class="mb-0 text-black font-weight-bold">Phone Number</p>
+          </div>
+          <div class="col-12 col-md-4 text-md-right">
+            <p class="mb-0">{{ order.phone_number }}</p>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col">
+            <small class="text-muted">Billing Details:</small>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-12 col-md-4">
+            <p class="mb-0 text-black font-weight-bold">Order Total</p>
+          </div>
+          <div class="col-12 col-md-4 text-md-right">
+            <p class="mb-0">£{{ order.order_total }}</p>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-12 col-md-4">
+            <p class="mb-0 text-black font-weight-bold">Delivery</p>
+          </div>
+          <div class="col-12 col-md-4 text-md-right">
+            <p class="mb-0">£{{ order.delivery_cost }}</p>
+          </div>
+        </div>
+
+7. Some of the order fields are not required fields so need to be wrapped in 'if statements'  so these parts of the summary are only renders if the user has populated them. I need an if statement around Street Address 2, County and postcode as below:
+
+        {% if order.street_address2 %}
+        <div class="row">
+          <div class="col-12 col-md-4">
+            <p class="mb-0 text-black font-weight-bold">Address 2</p>
+          </div>
+          <div class="col-12 col-md-4 text-md-right">
+            <p class="mb-0">{{ order.street_address2 }}</p>
+          </div>
+        </div>
+        {% endif %}
+
+        {% if order.county %}
+        <div class="row">
+          <div class="col-12 col-md-4">
+            <p class="mb-0 text-black font-weight-bold">County</p>
+          </div>
+          <div class="col-12 col-md-4 text-md-right">
+            <p class="mb-0">{{ order.county }}</p>
+          </div>
+        </div>
+        {% endif %}
+
+        {% if order.postcode %}
+        <div class="row">
+          <div class="col-12 col-md-4">
+            <p class="mb-0 text-black font-weight-bold">Postal Code</p>
+          </div>
+          <div class="col-12 col-md-4 text-md-right">
+            <p class="mb-0">{{ order.postcode }}</p>
+          </div>
+        </div>
+        {% endif %}
+
+        {% if order.postcode %}
+        <div class="row">
+          <div class="col-12 col-md-4">
+            <p class="mb-0 text-black font-weight-bold">Postal Code</p>
+          </div>
+          <div class="col-12 col-md-4 text-md-right">
+            <p class="mb-0">{{ order.postcode }}</p>
+          </div>
+        </div>
+        {% endif %}                
+
+8. Once I have added my if statements to the non-required fields, I run my dev server and make an order to see how this looks now on my checkout success page. This looks good:
+
+![Successful order summary Checkout Success](/static/images/Stripe/Screenshot%20successful%20order%20with%20order%20summary.png)
+
+9. The columns are slightly off within the Order Summary and should be smaller, the second column in each of the rows should be col-md-8 and not col-md-4 so I go through and update these now as below:
+
+  <div class="row">
+    <div class="col-12 col-lg-7">
+      <div class="order-confirmation-wrapper p-2 border">
+        <div class="row">
+          <div class="col">
+            <small class="text-muted">Order Info</small>
+          </div>
+        </div>
+<!-- Code Institute - Boutique Ado -->
+        <div class="row">
+          <div class="col-12 col-md-4">
+            <p class="mb-0 text-black font-weight-bold">Order Number</p>
+          </div>
+          <div class="col-12 col-md-8 text-md-right">
+            <p class="mb-0">{{ order.order_number }}</p>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-12 col-md-4">
+            <p class="mb-0 text-black font-weight-bold">Order Date</p>
+          </div>
+          <div class="col-12 col-md-8 text-md-right">
+            <p class="mb-0">{{ order.date }}</p>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col">
+            <small class="text-muted">Order Details:</small>
+          </div>
+        </div>
+
+        {% for item in order.lineitems.all %}
+        <div class="row">
+          <div class="col-12 col-md-4">
+            <p class="small mb-0 text-black font-weight-bold">
+              {{ item.product.name }}{% if item.product_size %} - Size {{
+              item.product_size|upper }}{% endif %}
+            </p>
+          </div>
+          <div class="col-12 col-md-8 text-md-right">
+            <p class="small mb-0">
+              {{ item.quantity }} @ £{{ item.product.price }} each
+            </p>
+          </div>
+        </div>
+        {% endfor %}
+
+        <div class="row">
+          <div class="col">
+            <small class="text-muted">Delivery Address</small>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-12 col-md-4">
+            <p class="mb-0 text-black font-weight-bold">Full Name</p>
+          </div>
+          <div class="col-12 col-md-8 text-md-right">
+            <p class="mb-0">{{ order.full_name }}</p>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-12 col-md-4">
+            <p class="mb-0 text-black font-weight-bold">Address 1</p>
+          </div>
+          <div class="col-12 col-md-8 text-md-right">
+            <p class="mb-0">{{ order.street_address1 }}</p>
+          </div>
+        </div>
+
+        {% if order.street_address2 %}
+        <div class="row">
+          <div class="col-12 col-md-4">
+            <p class="mb-0 text-black font-weight-bold">Address 2</p>
+          </div>
+          <div class="col-12 col-md-8 text-md-right">
+            <p class="mb-0">{{ order.street_address2 }}</p>
+          </div>
+        </div>
+        {% endif %}
+
+        {% if order.county %}
+        <div class="row">
+          <div class="col-12 col-md-4">
+            <p class="mb-0 text-black font-weight-bold">County</p>
+          </div>
+          <div class="col-12 col-md-8 text-md-right">
+            <p class="mb-0">{{ order.county }}</p>
+          </div>
+        </div>
+        {% endif %}
+
+        <div class="row">
+          <div class="col-12 col-md-4">
+            <p class="mb-0 text-black font-weight-bold">Town or City</p>
+          </div>
+          <div class="col-12 col-md-8 text-md-right">
+            <p class="mb-0">{{ order.town_or_city }}</p>
+          </div>
+        </div>
+
+        {% if order.postcode %}
+        <div class="row">
+          <div class="col-12 col-md-4">
+            <p class="mb-0 text-black font-weight-bold">Postal Code</p>
+          </div>
+          <div class="col-12 col-md-8 text-md-right">
+            <p class="mb-0">{{ order.postcode }}</p>
+          </div>
+        </div>
+        {% endif %}
+
+        <div class="row">
+          <div class="col-12 col-md-4">
+            <p class="mb-0 text-black font-weight-bold">Country</p>
+          </div>
+          <div class="col-12 col-md-8 text-md-right">
+            <p class="mb-0">{{ order.country }}</p>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-12 col-md-4">
+            <p class="mb-0 text-black font-weight-bold">Phone Number</p>
+          </div>
+          <div class="col-12 col-md-8 text-md-right">
+            <p class="mb-0">{{ order.phone_number }}</p>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col">
+            <small class="text-muted">Billing Details:</small>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-12 col-md-4">
+            <p class="mb-0 text-black font-weight-bold">Order Total</p>
+          </div>
+          <div class="col-12 col-md-8 text-md-right">
+            <p class="mb-0">£{{ order.order_total }}</p>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-12 col-md-4">
+            <p class="mb-0 text-black font-weight-bold">Delivery</p>
+          </div>
+          <div class="col-12 col-md-8 text-md-right">
+            <p class="mb-0">£{{ order.delivery_cost }}</p>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-12 col-md-4">
+            <p class="mb-0 text-black font-weight-bold">Grand Total</p>
+          </div>
+          <div class="col-12 col-md-8 text-md-right">
+            <p class="mb-0">£{{ order.grand_total }}</p>
+          </div>
+        </div>
+
+10. I refresh my checkout success page from earlier to see how this looks now and notice that my Order Details isn't populating correctly. I should be seeing a list of the items titles that I ordered in one columns and the correct price alongside in the next column. I update my size and quantity sections as below so the tags match my code instead of Code Institute's:
+
+          <div class="col-12 col-md-4">
+            <p class="small mb-0 text-black font-weight-bold">
+              {{ item.product.title }}
+              {% if item.product_size %} 
+                - Size {{ item.variant.variant_title|upper }}
+              {% endif %}
+            </p>
+          </div>
+          <div class="col-12 col-md-8 text-md-right">
+            <p class="small mb-0">
+              {{ item.quantity }} × £{{ item.product.price }} = £{{ item.lineitem_total }}
+            </p>
+          </div>
+        </div>
+
+11. I refresh the page and this looks slightly better as I can see a price instead of £0 but it still doesn't look right:
+
+![Order Summary no items and price is wrong](/static/images/Stripe/Screenshot%20order%20summary%20price%20wrong.png)
+
+12. I consult ChatGPT who advises that the template is wrong as it is using:
+
+{{ item.product.title }}
+{{ item.product.price }}
+{{ item.variant.variant_title }}
+
+- But my model structure doesn't match this, I am using:
+
+class OrderLineItem(models.Model):
+    product_variant = models.ForeignKey(ProductVariant, ...)
+
+- It recommends updating my entire loop with:
+
+{% for item in order.lineitems.all %}
+<div class="row">
+  <div class="col-12 col-md-4">
+    <p class="small mb-0 text-black font-weight-bold">
+      {{ item.product_variant.product.title }}
+      {% if item.product_variant.variant_title %}
+        - {{ item.product_variant.variant_title|upper }}
+      {% endif %}
+    </p>
+  </div>
+  <div class="col-12 col-md-8 text-md-right">
+    <p class="small mb-0">
+      {{ item.quantity }} × £{{ item.product_variant.price }} = £{{ item.lineitem_total }}
+    </p>
+  </div>
+</div>
+{% endfor %}
+
+- I update this and refresh but get a server 500 error so I switch debug on and see what is happening and can see I have the following error:
+
+TemplateSyntaxError at /checkout/checkout_success/0EB040D6383C4537BB433F9C888266AA
+Invalid block tag on line 63: 'endif', expected 'empty' or 'endfor'. Did you forget to register or load this tag?
+
+- I update my template so that the faulting if tag is no longer split across 2 x lines like below:
+
+              {{ item.product_variant.product.title }} 
+              {% if item.product_variant.variant_title %} 
+              - {{item.product_variant.variant_title|upper }} 
+              {% endif %}
+
+- I refresh the page and this looks slightly better but the price still looks wrong:
+
+![Checkout Success Order Summary shows order item titles](/static/images/Stripe/Screenshotcheckout%20success%20now%20shows%20order%20items%20but%20not%20price.png)
+
+- I consult ChatGPT about this who recommends updating the code as below:
+
+<p class="small mb-0">
+  {{ item.quantity }} × £{{ item.product_variant.price }} = £{{ item.lineitem_total }}
+</p>
 
 ---
 
@@ -13552,6 +14087,7 @@ The following parts of my Project were implemented using Bootstrap docs:
 - checkout views checkout function stripe updates
 - checkout_success views
 - checkout_success.html code
+- checkout_success rows for Order Summary
 
 
 
@@ -13617,6 +14153,7 @@ The following parts of my Project were implemented using Bootstrap docs:
 - update to __str__ method in checkout/models OrderLineItem
 - editable fields code in checkout/admin for OrderLineItemAdminInline class
 - OrderAdmin class updates in chckoutadmin to make fields editable
+- item price calculation paragraph in checkout_success
 
 
 
