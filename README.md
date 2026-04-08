@@ -12903,6 +12903,294 @@ To:
         total += subtotal
         product_count += quantity
 
+- I need to fix the structure of the shopping bag so that I have a size column in my header, adding another table header column for size into the below code:
+
+<th scope="col">Price</th>
+<th scope="col">Size</th>
+<th scope="col">Qty</th>
+<th scope="col">Subtotal</th>
+
+- Then I need to split the table row as I have one td element doing too much:
+
+<td class="py-3 w-25">
+  <!-- size + quantity + form all here -->
+</td>
+
+- I remove size from this block:
+
+<td class="py-3 w-25">
+  <!-- size + quantity + form all here -->
+</td>
+
+- And create a new size column and add this after the price td element:
+
+<p class="my-0">
+  <strong>Size:</strong> {{ item.variant.variant_title|upper }}
+</p>
+
+- This is giving me errors so I consult ChatGPT who advises I have placed the code wrong in the wrong element so provides me with what full shoppingbag.html should be, I copy this in as below and reload the page:
+
+{% extends "base.html" %}
+{% load static %}
+
+{% block page_header %}
+<div class="container header-container">
+  <div class="row">
+    <div class="col"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container mb-2">
+  <div class="row">
+    <div class="col">
+      <hr />
+      <h2 class="logo-font mb-4">Shopping Bag</h2>
+      <hr />
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col">
+
+      {% if bag_items %}
+      <div class="table-responsive rounded">
+        <table class="table table-sm table-borderless">
+
+          <!-- HEADER -->
+          <thead class="text-black">
+            <tr>
+              <th scope="col">Product</th>
+              <th scope="col"></th>
+              <th scope="col">Price</th>
+              <th scope="col">Size</th>
+              <th scope="col">Qty</th>
+              <th scope="col">Subtotal</th>
+            </tr>
+          </thead>
+
+          <!-- ITEMS -->
+          <tbody>
+          {% for item in bag_items %}
+            <tr>
+
+              <!-- Image -->
+              <td class="p-3 w-25">
+                {% if item.product.image_src %}
+                  <img class="img-fluid rounded" src="{{ item.product.image_src }}">
+                {% endif %}
+              </td>
+
+              <!-- Product Info -->
+              <td class="py-3">
+                <p class="my-0"><strong>{{ item.product.title }}</strong></p>
+                <p class="my-0 small text-muted">SKU: {{ item.variant.sku }}</p>
+              </td>
+
+              <!-- Price -->
+              <td class="py-3">
+                <p class="my-0">£{{ item.price|floatformat:2 }}</p>
+              </td>
+
+              <!-- Size -->
+              <td class="py-3">
+                <p class="my-0">
+                  {{ item.variant.variant_title|upper }}
+                </p>
+              </td>
+
+              <!-- Quantity -->
+              <td class="py-3">
+                <form
+                  class="form update-form"
+                  method="POST"
+                  action="{% url 'shoppingbag:adjust_bag' item.variant_id %}"
+                >
+                  {% csrf_token %}
+                  <input type="hidden" name="variant_id" value="{{ item.variant_id }}">
+
+                  <div class="input-group input-group-sm" style="width: 120px">
+
+                    <button type="button"
+                      class="decrement-qty btn btn-black rounded-0"
+                      data-item_id="{{ item.variant_id }}"
+                      id="decrement-qty_{{ item.variant_id }}">
+                      <i class="fas fa-minus"></i>
+                    </button>
+
+                    <input
+                      class="form-control text-center qty_input"
+                      type="number"
+                      name="quantity"
+                      value="{{ item.quantity }}"
+                      min="1"
+                      max="99"
+                      data-item_id="{{ item.variant_id }}"
+                      id="id_qty_{{ item.variant_id }}"
+                    />
+
+                    <button type="button"
+                      class="increment-qty btn btn-black rounded-0"
+                      data-item_id="{{ item.variant_id }}"
+                      id="increment-qty_{{ item.variant_id }}">
+                      <i class="fas fa-plus"></i>
+                    </button>
+                  </div>
+
+                  <div class="mt-2">
+                    <a class="update-link text-info"><small>Update</small></a>
+                    <a class="remove-item text-danger" id="remove_{{ item.variant_id }}">
+                      <small>Remove</small>
+                    </a>
+                  </div>
+
+                </form>
+              </td>
+
+              <!-- Subtotal -->
+              <td class="py-3">
+                <p class="my-0">£{{ item.subtotal|floatformat:2 }}</p>
+              </td>
+
+            </tr>
+          {% endfor %}
+          </tbody>
+
+          <!-- TOTALS -->
+          <tr>
+            <td colspan="6" class="pt-5 text-right">
+              <h6><strong>Bag Total: £{{ total|floatformat:2 }}</strong></h6>
+              <h6>Delivery: £{{ delivery|floatformat:2 }}</h6>
+              <h4 class="mt-4">
+                <strong>Grand Total: £{{ grand_total|floatformat:2 }}</strong>
+              </h4>
+
+              {% if free_delivery_delta > 0 %}
+              <p class="mb-1 text-danger">
+                You could get free delivery by spending just
+                <strong>£{{ free_delivery_delta }}</strong> more!
+              </p>
+              {% endif %}
+            </td>
+          </tr>
+
+          <!-- BUTTONS -->
+          <tr>
+            <td colspan="6" class="text-right">
+              <a href="{% url 'merchandise:products' %}"
+                 class="btn btn-outline-black rounded-0 btn-lg">
+                <i class="fas fa-chevron-left"></i>
+                Keep Shopping
+              </a>
+
+              <a href="{% url 'checkout' %}"
+                 class="btn btn-black rounded-0 btn-lg">
+                Secure Checkout
+                <i class="fas fa-lock"></i>
+              </a>
+            </td>
+          </tr>
+
+        </table>
+      </div>
+
+      {% else %}
+        <p class="lead mb-5">Your bag is empty.</p>
+
+        <a href="{% url 'merchandise:products' %}"
+           class="btn btn-outline-black rounded-0 btn-lg">
+          <i class="fas fa-chevron-left"></i>
+          Keep Shopping
+        </a>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block postloadjs %}
+{{ block.super }}
+
+<script>
+  $(".update-link").click(function () {
+    $(this).closest("form").submit();
+  });
+
+  $(".remove-item").click(function () {
+    var csrfToken = "{{ csrf_token }}";
+    var itemId = $(this).attr("id").split("remove_")[1];
+    var url = "{% url 'shoppingbag:remove_from_bag' 0 %}".replace("0", itemId);
+
+    $.post(url, {
+      csrfmiddlewaretoken: csrfToken,
+      variant_id: itemId,
+    }).done(function () {
+      location.reload();
+    });
+  });
+</script>
+
+{% endblock %}
+
+- Refreshing the page shows that the shoppingbag looks as I want it to now, with all the fields having their own columns. I do a quick test of everything and find that removing the items from shoppingbag works, however, the quantity selector buttons aren't changing the number on the items in shoppingbag anymore. I realise that my quality_input_script.html is now longer in the shoppingbag template so I add this back in below my postloadjs block:
+
+{% include 'merchandise/includes/quantity_input_script.html' %}
+
+- I reload the page and now can see that the quantity increases/decreases and I can select 'Update' and the quantity is updated and reflected in final shoppingbag view:
+
+![Shopping Bag View and Functionality working](/static/images/Stripe/Screenshot%20shopping%20bag%20view%20fixed%20and%20quantity%20update%20working.png)
+
+55. I have made a lot of changes to the code so I am going to commit my changes here before taking a look at my toast_success html code as it appears to be using wrong code to show my size.
+
+56. After pushing the code to Heroku, I test the app there to make sure that nothing has broken during any of the database rebuilds and changes in the code I have made.
+
+57. Heroku is fine and working the same as the dev version.
+
+58. I go back to my dev version and update the code on my toast_success.html file and look at the code I am using to get the size. This is currently:
+
+          <p class="my-0"><strong>{{ item.product.title }}</strong></p>
+          <p class="my-0 small">
+            Size: {% if item.product.has_sizes %} 
+            {{ item.size|upper }} 
+              {% else%} N/A 
+              {% endif %}
+
+- I update this to:
+
+          <p class="my-0"><strong>{{ item.product.title }}</strong></p>
+          <p class="my-0 small">
+            Size: {% if item.product.has_sizes %} 
+            {{ item.size|upper }} 
+              {% else%} N/A 
+              {% endif %}
+
+- I test adding an item to the bag again now and can see this shows size correctly now:
+
+![Toast Success Size not populated correctly](/static/images/Stripe/size%20is%20now%20empty.png)
+
+- However, now there is no size populated at all. I realise I hadn't saved the code so do this now. This is now showing the size correctly in the shoppingbag preview from toast_success.html:
+
+![Toast Success Size populated correctly](/static/images/Stripe/Screenshot%20correct%20size%20now%20showing%20in%20toast%20success%20message.png)
+
+59. Now everything looks good on the shoppingbag and toast messages again, I will go through checkout and complete the order. The checkout page is okay, looks good and lets me populate details and payment forms successfully and lets me complete the order. However, there is no styling being applied so I take a look at this now:
+
+![Checkout_Success no styles being applied](/static/images/Stripe/Screenshot%20checkout%20dev%20version%20styles%20not%20applied#.png)
+
+60. I open devtools and go to the network tab, I can see it is only loading my checkout/static/css/checkout.css file and not the static/css/style.css that applies to the rest of my site. I look at my base.html and can see that I have placed my static css inside my extra_css block so when my checkout_success.html page tries to load the checkout.css file from that extra_css block in the checkout_success.html it overwrites my static styles.css file for the rest of the site. I take the link for my static css in base.html from the extra_css block and place above it instead with a comment:
+
+<!-- MAIN SITE CSS-->
+<link rel="stylesheet" href="{% static 'css/style.css' %}" />
+
+<!-- Page-specific CSS -->
+{% block extra_css %}{% endblock %}
+
+61. I hard refresh my page and see if this is applying the styles to checkout_success now but I am receiving a server 500 error. I turn Debug mode to true and see what the error is. It says there is a missing endblock tag after my css link in base.html, I add this after the link for static styles.css and reload and this has resolved now. I add some items to bag and then complete checkout and can see the styles are now applying correctly:
+
+![Checkout_Success styles now applied](/static/images/Stripe/Screenshot%20checkout%20success%20looks%20good%20now.png)
+
+62. I turn debug to false, commit my code to Github and Heroku. 
 
 ---
 
@@ -13100,6 +13388,8 @@ The following parts of my Project were implemented using Bootstrap docs:
 - calc_subtotal function code bag_tools.py
 - checkout/views variant id updates
 - merchandise/views and templates for product_detail with variiant id updates
+- shoppingbag.html complete update after changes to database
+- toast_success.html size update
 
 
 

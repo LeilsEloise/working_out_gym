@@ -53,9 +53,15 @@
 
         <div class="col-9">
           <p class="my-0"><strong>{{ item.product.title }}</strong></p>
+          <!-- ChatGPT Code-->
           <p class="my-0 small">
-            Size: {% if item.product.has_sizes %} {{ item.size|upper }} {% else
-            %} N/A {% endif %}
+            Size:
+              {% if item.variant %}
+                {{ item.variant.variant_title|upper }}
+              {% else %}
+                N/A
+              {% endif %}
+          </p>
           </p>
           <p class="my-0 small text-muted">Qty: {{ item.quantity }}</p>
         </div>
