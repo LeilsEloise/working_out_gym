@@ -32,5 +32,5 @@ class ProductAdmin(admin.ModelAdmin):
 class ProductVariantAdmin(admin.ModelAdmin):
     list_display = ("product", "variant_title", "sku", "price", "inventory_quantity", "is_active")
     list_filter = ("is_active",)
-    search_fields = ("sku", "product__title", "variant_title")
+    search_fields = ['product__name', 'sku']
     ordering = ("product__title", "variant_title")

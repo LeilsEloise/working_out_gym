@@ -70,6 +70,7 @@ class OrderLineItem(models.Model):
         """
         self.lineitem_total = self.product_variant.price * self.quantity
         super().save(*args, **kwargs)
-
+        self.order.update_total()
+# ChatGPT Code
     def __str__(self):
-        return f'SKU {self.product_variant.sku} on order {self.order.order_number}'
+        return f'LineItem {self.id}'

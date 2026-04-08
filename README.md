@@ -13192,6 +13192,230 @@ To:
 
 62. I turn debug to false, commit my code to Github and Heroku. 
 
+63. I now login to Stripe and check my dashboard to see if all the payments have been coming through when I have been completing my orders. I can see that they have when I click 'Payments' down the left hand side:
+
+![Successful Payments on Stripe](/static/images/Stripe/Screenshot%20payments%20working%20on%20Stripe.png)
+
+64. Next I login to the admin panel of my site as my superuser and check that the orders are being created correctly. I realise that I haven't recreated my superuser since the last db rebuild so I try doing this now but I am receiving an error in the terminal when I try to run the cmd:
+
+KeyboardInterrupt
+PS C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym> python3 manage.py createsuperuser
+Traceback (most recent call last):
+  File "C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\manage.py", line 22, in <module>
+    main()
+  File "C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\manage.py", line 18, in main
+    execute_from_command_line(sys.argv)
+  File "C:\Users\leila\AppData\Roaming\Python\Python312\site-packages\django\core\management\__init__.py", line 419, in execute_from_command_line
+    utility.execute()
+  File "C:\Users\leila\AppData\Roaming\Python\Python312\site-packages\django\core\management\__init__.py", line 413, in execute
+    self.fetch_command(subcommand).run_from_argv(self.argv)
+  File "C:\Users\leila\AppData\Roaming\Python\Python312\site-packages\django\core\management\base.py", line 354, in run_from_argv
+    self.execute(*args, **cmd_options)
+  File "C:\Users\leila\AppData\Roaming\Python\Python312\site-packages\django\contrib\auth\management\commands\createsuperuser.py", line 79, in execute
+    return super().execute(*args, **options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\leila\AppData\Roaming\Python\Python312\site-packages\django\core\management\base.py", line 393, in execute
+    self.check()
+  File "C:\Users\leila\AppData\Roaming\Python\Python312\site-packages\django\core\management\base.py", line 419, in check
+    all_issues = checks.run_checks(
+                 ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\leila\AppData\Roaming\Python\Python312\site-packages\django\core\checks\registry.py", line 76, in run_checks
+    new_errors = check(app_configs=app_configs, databases=databases)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\leila\AppData\Roaming\Python\Python312\site-packages\django\core\checks\urls.py", line 13, in check_url_config
+    return check_resolver(resolver)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\leila\AppData\Roaming\Python\Python312\site-packages\django\core\checks\urls.py", line 23, in check_resolver
+    return check_method()
+           ^^^^^^^^^^^^^^
+  File "C:\Users\leila\AppData\Roaming\Python\Python312\site-packages\django\urls\resolvers.py", line 416, in check
+    for pattern in self.url_patterns:
+                   ^^^^^^^^^^^^^^^^^
+  File "C:\Users\leila\AppData\Roaming\Python\Python312\site-packages\django\utils\functional.py", line 48, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\leila\AppData\Roaming\Python\Python312\site-packages\django\urls\resolvers.py", line 602, in url_patterns
+    patterns = getattr(self.urlconf_module, "urlpatterns", self.urlconf_module)
+                       ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\leila\AppData\Roaming\Python\Python312\site-packages\django\utils\functional.py", line 48, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\leila\AppData\Roaming\Python\Python312\site-packages\django\urls\resolvers.py", line 595, in urlconf_module
+    return import_module(self.urlconf_name)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python312\Lib\importlib\__init__.py", line 90, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\working_out_gym\urls.py", line 24, in <module>
+    path("checkout/", include("checkout.urls")),
+                      ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\leila\AppData\Roaming\Python\Python312\site-packages\django\urls\conf.py", line 34, in include
+    urlconf_module = import_module(urlconf_module)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python312\Lib\importlib\__init__.py", line 90, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\checkout\urls.py", line 2, in <module>
+    from . import views
+  File "C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\checkout\views.py", line 12, in <module>
+    import stripe
+ModuleNotFoundError: No module named 'stripe'
+
+- I query ChatGPT about this who advises I haven't installed the Stripe module so to do this now using:
+
+pip install stripe
+
+- Once this installs successfully, I then add to my requirements.txt file:
+
+pip3 freeze > requirements.txt
+
+- I notice I am being asked to upgrade pip so do this now and then add to requirements.txt:
+
+python.exe -m pip install --upgrade pip
+
+- I try creating superuser again and this time can do so successfully. I login to the admin panel on the dev console and can see Checkout and Orders:
+
+![Admin Panel Checkout Orders](/static/images/Stripe/Screenshot%20admin%20panel%20orders%20showing.png)
+
+- If I click 'Change' then I am redirected to a page containing a list of the created orders:
+
+![Admin Panel Checkout Orders List](/static/images/Stripe/Screenshot%20admin%20orders%20list.png)
+
+- Then if I click into one of these, then I nothing happens and I just have a loading circle in the browser tab. I consult ChatGPT about this who identifies this line of code in checkout/models as the cause of this:
+
+return f'SKU {self.product_variant.sku} on order {self.order.order_number}'
+
+- in Django admin this can cause multiple database lookups, recursive loading via relationships and admin trying to render many of these at once; especially with inlines. This goes through the following steps which cause it to break:
+
+Django loads the Order
+Then loads all lineitems (because of inline)
+Then calls __str__() on each one
+Each call hits:
+self.product_variant.sku (DB lookup)
+self.order.order_number (DB lookup)
+
+- I replace this with the below code:
+
+def __str__(self):
+    return f'LineItem {self.id}'
+
+- I save the code and restart the server but the orders are still hanging. ChatGPT recommends commenting out the inlines code on my checkout/admin file OrderAdmin class as below:
+
+inlines = (OrderLineItemAdminInline,)
+
+- I comment this out and reload the page and can see the orders now and see these have all the expected line items and the order total and delivery cost are being correctly calculated:
+
+![Admin Panel Checkout Order](/static/images/Stripe/Screenshot%20indivual%20orders%20showing%20in%20admin.png)
+
+- The only issue now is that I cannot edit the quantity and size at the bottom of the orders so look to see how I could make this happen now. ChatGPT advises me to update my OrderLineItemAdminInline as below in checkout/admin:
+
+class OrderLineItemAdminInline(admin.TabularInline):
+    model = OrderLineItem
+    extra = 0
+
+    # 👇 THIS makes fields editable
+    fields = ('product_variant', 'quantity', 'lineitem_total')
+    readonly_fields = ('lineitem_total',)
+
+
+- And in the same file to update my OrderAdmin as below:
+
+class OrderAdmin(admin.ModelAdmin):
+    inlines = (OrderLineItemAdminInline,)
+
+    readonly_fields = (
+        'order_number',
+        'date',
+        'delivery_cost',
+        'order_total',
+        'grand_total',
+    )
+
+    fields = (
+        'order_number',
+        'full_name',
+        'email',
+        'phone_number',
+        'country',
+        'postcode',
+        'town_or_city',
+        'street_address1',
+        'street_address2',
+        'county',
+        'date',
+        'delivery_cost',
+        'order_total',
+        'grand_total',
+    )
+
+- It also recommends that I update my save function in checkout/models as it needs to force recalculation when it saves:
+
+def save(self, *args, **kwargs):
+    self.lineitem_total = self.product_variant.price * self.quantity
+    super().save(*args, **kwargs)
+    self.order.update_total()  
+
+- I make the changes and refresh but now the order is hanging before like the last time I had inlines in the code. ChatGPT now recommends updating my OrderLineItemAdminInline class in checkout/admin to:
+
+class OrderLineItemAdminInline(admin.TabularInline):
+    model = OrderLineItem
+    extra = 0
+
+    fields = ('product_variant', 'quantity', 'lineitem_total')
+    readonly_fields = ('lineitem_total',)
+
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        return queryset.select_related('product_variant', 'product_variant__product')
+
+- It also advises that my product_variant field is a dropdown and if I have too many variants then it can try loading all of them so to resolve this I need to replace this line of code in my checkout/admin for OrderLineItemAdminLine:
+
+fields = ('product_variant', 'quantity', 'lineitem_total')
+
+To:
+
+autocomplete_fields = ['product_variant']
+fields = ('product_variant', 'quantity', 'lineitem_total'
+
+
+- I then also need to updat my ProductVariantAdmin class search fields code to the below:
+
+search_fields = ['product__name', 'sku']
+
+- I also need to update OrderLineItemAdminInline as below:
+
+class OrderLineItemAdminInline(admin.TabularInline):
+    model = OrderLineItem
+    extra = 0
+    fields = ('product_variant', 'quantity', 'lineitem_total')
+    readonly_fields = ('lineitem_total',)
+    autocomplete_fields = ['product_variant']
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related(
+            'product_variant', 'product_variant__product'
+        )
+
+- I make these changes and reload the server and find I can now edit the line items on the orders and save these successfully. If I check the checkbox next to an item for 'delete' and click save then it successfully removes that line item.
+
+![Admin Panel Checkout Order Inline Items showing and editable](/static/images/Stripe/Screenshot%20admin%20order%20line%20items%20editable.png)
+
+- I run collectstatic and then commit to Git and Heroku before finalising my checkout success and payment process next.
+
+
+
 ---
 
 # 6. Credits and Acknowledgements
@@ -13390,6 +13614,9 @@ The following parts of my Project were implemented using Bootstrap docs:
 - merchandise/views and templates for product_detail with variiant id updates
 - shoppingbag.html complete update after changes to database
 - toast_success.html size update
+- update to __str__ method in checkout/models OrderLineItem
+- editable fields code in checkout/admin for OrderLineItemAdminInline class
+- OrderAdmin class updates in chckoutadmin to make fields editable
 
 
 
