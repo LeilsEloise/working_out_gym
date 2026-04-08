@@ -1,17 +1,21 @@
-{% extends "base.html" %}
-{% load static %}
-
-{% block content %}
+{% extends "base.html" %} {% load static %} {% block content %}
 <div class="container my-5">
   <div class="row g-4">
-
     <div class="col-12 col-md-6">
       {% if product.image_src %}
-        <a href="{{ product.image_src }}" target="_blank" rel="noopener">
-          <img class="img-fluid" src="{{ product.image_src }}" alt="{{ product.title }}">
-        </a>
+      <a href="{{ product.image_src }}" target="_blank" rel="noopener">
+        <img
+          class="img-fluid"
+          src="{{ product.image_src }}"
+          alt="{{ product.title }}"
+        />
+      </a>
       {% else %}
-        <img class="img-fluid" src="{% static 'images/noimage.png' %}" alt="{{ product.title }}">
+      <img
+        class="img-fluid"
+        src="{% static 'images/noimage.png' %}"
+        alt="{{ product.title }}"
+      />
       {% endif %}
     </div>
 
@@ -19,71 +23,101 @@
       <h3 class="mb-2">{{ product.title }}</h3>
 
       {% if product.category %}
-        <p class="text-muted mb-2">
-          <a class="text-muted" href="{% url 'merchandise:products' %}?category={{ product.category.name }}">
-            <i class="fas fa-tag mr-1"></i>{{ product.category.name }}
-          </a>
-        </p>
-      {% endif %}
-
-      {% if product.from_price %}
-        <p class="lead fw-bold">From £{{ product.from_price }}</p>
+      <p class="text-muted mb-2">
+        <a
+          class="text-muted"
+          href="{% url 'merchandise:products' %}?category={{ product.category.name }}"
+        >
+          <i class="fas fa-tag mr-1"></i>{{ product.category.name }}
+        </a>
+      </p>
+      {% endif %} 
+      
+      {% if min_price %}
+      <p class="lead mb-0 text-left font-weight-bold">
+        From £{{ min_price|floatformat:2 }}
+      </p>
       {% endif %}
 
       <p class="text-muted">{{ product.vendor }}</p>
       <!-- ChatGPT ACK - Size Selector -->
-<form action="{% url 'shoppingbag:add_to_bag' product.id %}" method="POST">
-    {% csrf_token %}
+      <form
+        action="{% url 'shoppingbag:add_to_bag' product.id %}"
+        method="POST"
+      >
+        {% csrf_token %}
 
-    <!-- Size + Quantity row -->
-    <div class="d-flex align-items-end flex-wrap mb-3">
-        <!-- Size selector -->
-        {% with product.has_sizes as s %}
-        {% if s %}
-            <div class="me-2 mb-2" style="min-width: 100px;">
-                <label for="id_product_size" class="form-label"><strong>Size:</strong></label>
-                <select class="form-control form-control-sm rounded-0" name="product_size" id="id_product_size">
-                    <option value="xs">XS</option>
-                    <option value="s">S</option>
-                    <option value="m" selected>M</option>
-                    <option value="l">L</option>
-                    <option value="xl">XL</option>
-                </select>
-            </div>
-        {% endif %}
-        {% endwith %}
+        <!-- Size + Quantity row -->
+        <div class="d-flex align-items-end flex-wrap mb-3">
+          <!-- Size selector -->
+          {% if product.variants.all %}
+          <div class="me-2 mb-2" style="min-width: 150px">
+            <label for="id_variant" class="form-label"
+              ><strong>Size:</strong></label
+            >
+            <select
+              class="form-control form-control-sm rounded-0"
+              name="variant_id"
+              id="id_variant"
+            >
+              {% for variant in product.variants.all %}
+              <option value="{{ variant.id }}">
+                {{ variant.variant_title }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          {% endif %}
 
-        <!-- Quantity selector -->
-        <div class="me-2 mb-2">
-            <label for="id_qty_{{ product.id }}" class="form-label d-block"><strong>Quantity:</strong></label>
-            <div class="input-group input-group-sm" style="width: 120px;">
-                <button type="button" class="decrement-qty btn btn-black rounded-0"
-                    data-item_id="{{ product.id }}" id="decrement-qty_{{ product.id }}">
-                    <span class="icon"><i class="fas fa-minus"></i></span>
-                </button>
-                <input class="form-control text-center qty_input" type="number" name="quantity" value="1"
-                    min="1" max="99" data-item_id="{{ product.id }}" id="id_qty_{{ product.id }}">
-                <button type="button" class="increment-qty btn btn-black rounded-0"
-                    data-item_id="{{ product.id }}" id="increment-qty_{{ product.id }}">
-                    <span class="icon"><i class="fas fa-plus"></i></span>
-                </button>
+          <!-- Quantity selector -->
+          <div class="me-2 mb-2">
+            <label for="id_qty_{{ product.id }}" class="form-label d-block"
+              ><strong>Quantity:</strong></label
+            >
+            <div class="input-group input-group-sm" style="width: 120px">
+              <button
+                type="button"
+                class="decrement-qty btn btn-black rounded-0"
+                data-item_id="{{ product.id }}"
+                id="decrement-qty_{{ product.id }}"
+              >
+                <span class="icon"><i class="fas fa-minus"></i></span>
+              </button>
+              <input
+                class="form-control text-center qty_input"
+                type="number"
+                name="quantity"
+                value="1"
+                min="1"
+                max="99"
+                data-item_id="{{ product.id }}"
+                id="id_qty_{{ product.id }}"
+              />
+              <button
+                type="button"
+                class="increment-qty btn btn-black rounded-0"
+                data-item_id="{{ product.id }}"
+                id="increment-qty_{{ product.id }}"
+              >
+                <span class="icon"><i class="fas fa-plus"></i></span>
+              </button>
             </div>
+          </div>
         </div>
+
+        <!-- Add to Bag row -->
+        <div class="mb-3">
+          <input
+            type="submit"
+            value="Add to Bag"
+            class="btn btn-black rounded-0"
+          />
+        </div>
+
+        <input type="hidden" name="redirect_url" value="{{ request.path }}" />
+      </form>
     </div>
-
-    <!-- Add to Bag row -->
-    <div class="mb-3">
-        <input type="submit" value="Add to Bag" class="btn btn-black rounded-0">
-    </div>
-
-    <input type="hidden" name="redirect_url" value="{{ request.path }}">
-</form>
-
+  </div>
+  {% endblock %} {% block postloadjs %} {{ block.super }} 
+  {% endblock %}
 </div>
-</div>
-{% endblock %}
-
-{% block postloadjs %}
-{{ block.super }}
-{% include 'merchandise/includes/quantity_input_script.html' %}
-{% endblock %}

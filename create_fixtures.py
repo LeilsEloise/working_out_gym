@@ -32,33 +32,33 @@ category_id = 1
 product_id = 1
 variant_id = 1
 
-with open(INPUT_CSV, newline='', encoding='utf-8') as csvfile:
+with open(INPUT_CSV, newline="", encoding="utf-8") as csvfile:
     reader = csv.DictReader(csvfile)
 
-    for row in reader:
-        # --- CATEGORY ---
-        category_name = (row.get("product_type") or "Uncategorized").strip()
+for row in reader:
+    # --- CATEGORY ---
+    category_name = (row.get("product_type") or "Uncategorized").strip()
 
-        if category_name not in category_map:
-            category_map[category_name] = category_id
+    if category_name not in category_map:
+        category_map[category_name] = category_id
 
-            slug = unique_slug(category_name, existing_category_slugs)
+        slug = unique_slug(category_name, existing_category_slugs)
 
-            categories[category_id] = {
-                "model": "merchandise.category",
-                "pk": category_id,
-                "fields": {
-                    "name": category_name,
-                    "slug": slug,
-                }
-            }
+        categories[category_id] = {
+            "model": "merchandise.category",
+            "pk": category_id,
+            "fields": {
+                "name": category_name,
+                "slug": slug,
+            },
+        }
 
-            category_id += 1
+        category_id += 1
 
-        cat_id = category_map[category_name]
+    cat_id = category_map[category_name]
 
-        # --- PRODUCT ---
-        product_key = (row.get("handle") or row.get("title") or "").strip().lower()
+    # --- PRODUCT ---
+    product_key = (row.get("handle") or row.get("title") or "").strip().lower()
 
         if product_key not in product_map:
             product_map[product_key] = product_id

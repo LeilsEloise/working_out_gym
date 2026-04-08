@@ -1,57 +1,40 @@
 from decimal import Decimal
 from django.conf import settings
-from django.shortcuts import get_object_or_404
-from merchandise.models import Product
+from merchandise.models import ProductVariant
 
-# ChatGPT Code
+
 def bag_contents(request):
     bag_items = []
     total = Decimal('0.00')
     product_count = 0
     bag = request.session.get('bag', {})
 
-    for product_id, item_data in bag.items():
-        product = get_object_or_404(Product, pk=product_id)
+    for variant_id, quantity in bag.items():
+        variant = ProductVariant.objects.filter(pk=variant_id).first()
 
-        if isinstance(item_data, int):
-            # Non-sized product
-            quantity = item_data
-            price = product.variants.first().price if product.variants.exists() else Decimal('0.00')
-            subtotal = quantity * price
-            total += subtotal
-            product_count += quantity
+        if not variant:
+            continue  # skip broken/old session items
 
-            bag_items.append({
-                'product_id': product_id,
-                'quantity': quantity,
-                'product': product,
-                'price': price,
-                'subtotal': subtotal,
-            })
+        subtotal = quantity * variant.price
+        total += subtotal
+        product_count += quantity
 
-        else:
-            # Product with sizes
-            for size, quantity in item_data['items_by_size'].items():
-                price = product.variants.first().price if product.variants.exists() else Decimal('0.00')
-                subtotal = quantity * price
-                total += subtotal
-                product_count += quantity
-                bag_items.append({
-                    'product_id': product_id,
-                    'quantity': quantity,
-                    'product': product,
-                    'size': size,
-                    'price': price,
-                    'subtotal': subtotal,
-                })
+        bag_items.append({
+            'variant_id': variant_id,
+            'quantity': quantity,
+            'product': variant.product,
+            'variant': variant,
+            'price': variant.price,
+            'subtotal': quantity * variant.price,
+        })
 
     # Delivery calculations
     if total < settings.FREE_DELIVERY_THRESHOLD:
         delivery = total * Decimal(settings.STANDARD_DELIVERY_PERCENTAGE / 100)
         free_delivery_delta = settings.FREE_DELIVERY_THRESHOLD - total
     else:
-        delivery = 0
-        free_delivery_delta = 0
+        delivery = Decimal('0.00')
+        free_delivery_delta = Decimal('0.00')
 
     grand_total = total + delivery
 

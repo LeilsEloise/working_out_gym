@@ -84,12 +84,14 @@ def product_detail(request, product_id):
         Product.objects.annotate(from_price=Min("variants__price")),
         pk=product_id
     )
+    min_price = product.variants.order_by('price').first().price if product.variants.exists() else None
 
     current_categories = Category.objects.all()
     active_badges = Badge.objects.filter(is_active=True)
 
     context = {
         "product": product,
+        'min_price': min_price,
         "current_categories": current_categories,
         "active_badges": active_badges,
     }

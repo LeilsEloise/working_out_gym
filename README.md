@@ -12194,6 +12194,714 @@ python manage.py loaddata variants
 
 - Now that the code is all working as it should be, I want to now reflect these changes on Heroku also. I first commit the changes to Github and Heroku using:
 
+git add .
+git commit -m "Fix size detection logic and regenerate fixtures"
+git push origin main
+git push heroku main
+
+- I now need to reset my Heroku database as it is still using the old bad data. I do this using the following cmd and typing yes on the prompt:
+
+heroku run python manage.py flush -a working-out-gym
+
+- Next, I run migrations on my Heroku database using:
+
+heroku run python manage.py migrate -a working-out-gym
+
+- Finally, I load the new fixtures on Heroku using:
+
+heroku run python manage.py loaddata categories -a working-out-gym
+heroku run python manage.py loaddata products -a working-out-gym
+heroku run python manage.py loaddata variants -a working-out-gym
+
+49. I now test my production app on Heroku but I realise that the price is now removed. I check the dev version and this is the same. I consult ChatGPT about this who advise that on my Product page my template tries product.price but this doesn't exist and shows 'price unavailable' as when I am in the Merchandise listing view all products show 'price unavailable'. Then in my bag I am using item.price but I am not pulling from the variant so it defaults to 0.
+
+50. The first step I do is confirm that my data is correct:
+
+python manage.py shell
+
+from merchandise.models import ProductVariant
+ProductVariant.objects.exclude(price=0).count()
+
+- This returns a value of 0
+
+51. ChatGPT recommends that I update my create_fixtures file as below and remove the code beneathe it for now:
+
+with open(INPUT_CSV, newline="", encoding="utf-8") as csvfile:
+    reader = csv.DictReader(csvfile)
+
+    for row in reader:
+        print(row.get("price"))
+        break
+
+52. I then run:
+
+python create_fixtures.py
+
+- This gives: '35.00' as the value returned in the terminal so I delete the two new lines of code in the script and replace with the loop I had previously:
+
+for row in reader:
+    # --- CATEGORY ---
+    category_name = (row.get("product_type") or "Uncategorized").strip()
+
+    if category_name not in category_map:
+        category_map[category_name] = category_id
+
+        slug = unique_slug(category_name, existing_category_slugs)
+
+        categories[category_id] = {
+            "model": "merchandise.category",
+            "pk": category_id,
+            "fields": {
+                "name": category_name,
+                "slug": slug,
+            },
+        }
+
+        category_id += 1
+
+    cat_id = category_map[category_name]
+
+- I confirm that there is a price being generated in the variants.json file against the products so ChatGPT recommends a proper reload of the database. To do this, I first run the below and type yes:
+
+python manage.py flush
+
+- I then re-run migrations:#
+
+python manage.py migrate
+
+- Next, I reload all the fixtures again:
+
+python manage.py loaddata categories
+python manage.py loaddata products
+python manage.py loaddata variants
+
+- These install successfully, and then I run the following in the terminal to verify the data, expecting to see a number surplus of 7000:
+
+python manage.py runserver
+
+from merchandise.models import ProductVariant
+ProductVariant.objects.exclude(price=0).count()
+
+- This returns the result of 44830. I will now run the local dev server and see if this has resolved the pricing issue. It has brought the price back but removed the size selector again.
+
+53. I run the Django shell again and check if my data still has sizes using:
+
+python manage.py shell
+
+from merchandise.models import Product
+
+Product.objects.filter(has_sizes=True).count()
+
+- This returns a value of 4453 so the data is fine and I don't need to regenerate my fixtures again.
+
+54. Then back in the shell I run the below to check a specific product for sizes:
+
+p = Product.objects.filter(has_sizes=True).first()
+p.variants.all()[:5]
+
+- This returns the following results meaning that the issue is due to my template logic:
+
+<QuerySet [<ProductVariant: Gymshark Vital Crop Top - Base Green Marl — Extra Small>, <ProductVariant: Gymshark Vital Crop Top - Base Green Marl — Small>, <ProductVariant: Gymshark Vital Crop Top - Base Green Marl — Medium>, <ProductVariant: Gymshark Vital Crop Top - Base Green Marl — Large>, <ProductVariant: Gymshark Vital Crop Top - Base Green Marl — Extra Large>]>
+
+- I need to update my product_detail.html template to use variants directly and not just the has_sizes variable. To do this, I will replace the below code, which uses hardcoded sizes and ignores my ProductVariant data:
+
+{% with product.has_sizes as s %}
+{% if s %}
+    <div class="me-2 mb-2" style="min-width: 100px;">
+        <label for="id_product_size" class="form-label"><strong>Size:</strong></label>
+        <select class="form-control form-control-sm rounded-0" name="product_size" id="id_product_size">
+            <option value="xs">XS</option>
+            <option value="s">S</option>
+            <option value="m" selected>M</option>
+            <option value="l">L</option>
+            <option value="xl">XL</option>
+        </select>
+    </div>
+{% endif %}
+{% endwith %}
+
+= With this: 
+
+{% if product.variants.all %}
+    <div class="me-2 mb-2" style="min-width: 150px;">
+        <label for="id_variant" class="form-label"><strong>Size:</strong></label>
+        <select class="form-control form-control-sm rounded-0" name="variant_id" id="id_variant">
+            {% for variant in product.variants.all %}
+                <option value="{{ variant.id }}">
+                    {{ variant.variant_title }} - £{{ variant.price }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+{% endif %}
+
+- Then after making the updates to the product_detail template, I need to update shoppingbag/views and update my add_to_bag function so that it uses the correct logic to obtain the sizes of the clothing items. My current bag structure is as follows so it is breaking the sizes and prices:
+
+bag = {
+    product_id: {
+        "items_by_size": {
+            "m": 2
+        }
+    }
+}
+
+- The correct structure should be:
+
+bag = {
+    product_id: {
+        "items_by_size": {
+            "m": 2
+        }
+    }
+}
+
+- The first thing I do is import ProductVariant at the top of the file with Product:
+
+from merchandise.models import Product, ProductVariant
+
+- ChatGPT recommends replacing my add_to_bag function code with the below so I do this:
+
+def add_to_bag(request, product_id):
+    quantity = int(request.POST.get('quantity', 1))
+    redirect_url = request.POST.get('redirect_url', '/')
+    variant_id = request.POST.get('variant_id')
+
+    variant = get_object_or_404(ProductVariant, pk=variant_id)
+
+    bag = request.session.get('bag', {})
+
+    variant_id = str(variant_id)
+
+    if variant_id in bag:
+        bag[variant_id] += quantity
+        messages.success(
+            request,
+            f'Updated {variant.product.title} ({variant.variant_title}) quantity to {bag[variant_id]}'
+        )
+    else:
+        bag[variant_id] = quantity
+        messages.success(
+            request,
+            f'Added {variant.product.title} ({variant.variant_title}) to your bag'
+        )
+
+    request.session['bag'] = bag
+    return redirect(redirect_url)
+
+- It also recommends that I update my adjust_bag function code with the below so I update this as well:
+
+def adjust_bag(request, product_id):
+    quantity = int(request.POST.get('quantity'))
+    variant_id = request.POST.get('variant_id')
+
+    bag = request.session.get('bag', {})
+    variant_id = str(variant_id)
+
+    variant = get_object_or_404(ProductVariant, pk=variant_id)
+
+    if quantity > 0:
+        bag[variant_id] = quantity
+        messages.success(
+            request,
+            f'Updated {variant.product.title} ({variant.variant_title}) quantity to {quantity}'
+        )
+    else:
+        bag.pop(variant_id)
+        messages.success(
+            request,
+            f'Removed {variant.product.title} ({variant.variant_title}) from your bag'
+        )
+
+- And finally replace my remove_from_bag with the below code:
+
+def remove_from_bag(request, product_id):
+    try:
+        variant_id = request.POST.get('variant_id')
+        variant_id = str(variant_id)
+
+        bag = request.session.get('bag', {})
+
+        variant = get_object_or_404(ProductVariant, pk=variant_id)
+
+        bag.pop(variant_id)
+
+        messages.success(
+            request,
+            f'Removed {variant.product.title} ({variant.variant_title}) from your bag'
+        )
+
+        request.session['bag'] = bag
+        return HttpResponse(status=200)
+
+    except Exception as e:
+        messages.error(request, f'Error removing item: {e}')
+        return HttpResponse(status=500)
+
+- I now also need to make sure that I am using variant_id in place of product_size anywhere that the latter is on my templates. I update the product_size line of code in shoppingbag.html to:
+
+<select name="variant_id" value="{{ item.variant.id }}"" class="form-control form-control-sm rounded-0">
+
+- I test adding to the bag to see what happens, expecting a break but I can now see the size selector again, however, the sizes also contain the price so this isn't right:
+
+![Size selector also contains price](/static/images/Stripe/Screenshot%20price%20and%20size%20selector%20showing%20together.png)
+
+55. I consult ChatGPT about this and thery advise me to remove 'From £' in if statement for price on my product_detail template. I update this from:
+
+{% if product.from_price %}
+    <p class="lead fw-bold">From £{{ product.from_price }}</p>
+{% endif %}
+
+
+To: 
+
+<p class="lead fw-bold">Select a size to see price</p>
+
+- Also in the file, I remove price from the dropdownm by removing the below line of code froim the option dropdown for sizes:
+
+- £{{ variant.price }}
+
+- I refresh my dev server to see how this is looking now and can see this has removed the price from the dropdown now:
+
+![Size selector no longer has price](/static/images/Stripe/Screenshot%20price%20now%20removed%20from%20size%20dropdow.png)
+
+- I have tested checking out an order and this looks good now apart from the fact that the navbar styles aren't rendering on checkout_success page. I consult ChatGPT about this who advises that the issue is in my checkout_successs.html code below:
+
+<div class="overlay"></div>
+
+- ChatGPT thinks this is sitting on top of my navbar and stopping it from rendering so I remove the line of code from checkout_success and then test checkout again to see if this change is right. I have  tried adding a couple of different items to the bag and they were adding successfully but now I am receiving errors of 'Product Not Found'. I have now tried cancelling and rerunning my server but I am getting the following page now:
+
+![Page not found error](/static/images/Stripe/Screenshot%20page%20not%20found%20error.png)
+
+- I consult ChatGPT about this is not a routing issue but that my home view is trying to fetch a product that doesn't exist. It believes that my home/views is likely using the below code:
+
+Product.objects.get(...)
+
+- After some troubleshooting, ChatGPT has identified the issue as being my bag context processor. I have recently switched variables in the fixtures data from product_size > variant_id. It thinks that the session may be containing old and new strucutural data that are conflicting with one another. To resolve this, it recommends replacing the below line of code from:
+
+product = get_object_or_404(Product, pk=product_id)
+
+To: 
+
+product = Product.objects.filter(pk=product_id).first()
+if not product:
+    continue
+
+- I reload the page with the new code but it is not right, the indentation is wrong and the for loop wasn't inside the function so I have rectified this by replacing the contexts.py file with the below:
+
+from decimal import Decimal
+from django.conf import settings
+from merchandise.models import Product
+
+def bag_contents(request):
+    bag_items = []
+    total = Decimal('0.00')
+    product_count = 0
+    bag = request.session.get('bag', {})
+
+    for product_id, item_data in bag.items():
+        product = Product.objects.filter(pk=product_id).first()
+
+        if not product:
+            continue  # skip broken/old session items
+
+        if isinstance(item_data, int):
+            # Non-sized product
+            quantity = item_data
+            price = product.variants.first().price if product.variants.exists() else Decimal('0.00')
+            subtotal = quantity * price
+            total += subtotal
+            product_count += quantity
+
+            bag_items.append({
+                'product_id': product_id,
+                'quantity': quantity,
+                'product': product,
+                'price': price,
+                'subtotal': subtotal,
+            })
+
+        else:
+            # Product with sizes
+            for size, quantity in item_data['items_by_size'].items():
+                price = product.variants.first().price if product.variants.exists() else Decimal('0.00')
+                subtotal = quantity * price
+                total += subtotal
+                product_count += quantity
+
+                bag_items.append({
+                    'product_id': product_id,
+                    'quantity': quantity,
+                    'product': product,
+                    'size': size,
+                    'price': price,
+                    'subtotal': subtotal,
+                })
+
+    # Delivery calculations
+    if total < settings.FREE_DELIVERY_THRESHOLD:
+        delivery = total * Decimal(settings.STANDARD_DELIVERY_PERCENTAGE / 100)
+        free_delivery_delta = settings.FREE_DELIVERY_THRESHOLD - total
+    else:
+        delivery = 0
+        free_delivery_delta = 0
+
+    grand_total = total + delivery
+
+    return {
+        'bag_items': bag_items,
+        'total': total,
+        'product_count': product_count,
+        'delivery': delivery,
+        'free_delivery_delta': free_delivery_delta,
+        'free_delivery_threshold': settings.FREE_DELIVERY_THRESHOLD,
+        'grand_total': grand_total,
+    }
+
+- I then run Django shell and import the session using the below cmd and then delete all session objects too:
+
+python manage.py shell
+from django.contrib.sessions.models import Session
+Session.objects.all().delete()
+
+- I test my Homepage to see if this is now rendering but when I add this product to the bag it is not showing it as being added to the bag even though it says it has but then when I go to the bag I cannot see the product I added to the bag, it is showing me different products:
+
+![Product added to the bag](/static/images/Stripe/Screenshot%20items%20added%20to%20bag%20not%20right.png)
+
+![Shopping Bag Preview](/static/images/Stripe/Screenshot%20items%20added%20to%20bag%20not%20right%20shoppingbag%20preview.png)
+
+![Checkout showing wrong items added](/static/images/Stripe/Screenshot%20wrongn%20products%20added%20to%20bag.png)
+
+- I consult ChatGPT about this who advises that the following line of code in my context processor is the problem:
+
+price = product.variants.first().price
+
+- I am not storing the variant which was selected as my bag currently uses:
+
+bag = {
+    "product_id": {
+        "items_by_size": {
+            "XS": 1
+        }
+    }
+}
+
+- However, now I have changed how the database reads in the data, i.e. Product has many variants and each variant has size and price variables to it. But my bag only stores size and doesn't store variant_id so Django just grabs:
+
+product.variants.first()
+
+- This could contain the wrong sizing, pricing or variant so on. Also my products is looking wrong as it is still holding on to old data. I send over my shopppingbag views file to ChatGPT and it advises that my python code for the bag looks like this:
+
+{
+    "12": 2,   # variant_id
+    "45": 1
+}
+
+- But my contexts.py file contradicts this as it is treating variant_id as the product_id, so when the completely wrong product is being returned. To resolve this I need to update my contexts file as below:
+
+
+from decimal import Decimal
+from django.conf import settings
+from merchandise.models import ProductVariant
+
+
+def bag_contents(request):
+    bag_items = []
+    total = Decimal('0.00')
+    product_count = 0
+    bag = request.session.get('bag', {})
+
+    for variant_id, quantity in bag.items():
+        variant = ProductVariant.objects.filter(pk=variant_id).first()
+
+        if not variant:
+            continue  # skip broken/old session items
+
+        product = variant.product
+        price = variant.price
+        subtotal = quantity * price
+
+        total += subtotal
+        product_count += quantity
+
+        bag_items.append({
+            'variant_id': variant_id,
+            'quantity': quantity,
+            'product': product,
+            'variant': variant,
+            'size': variant.variant_title,
+            'price': price,
+            'subtotal': subtotal,
+        })
+
+    # Delivery calculations
+    if total < settings.FREE_DELIVERY_THRESHOLD:
+        delivery = total * Decimal(settings.STANDARD_DELIVERY_PERCENTAGE / 100)
+        free_delivery_delta = settings.FREE_DELIVERY_THRESHOLD - total
+    else:
+        delivery = Decimal('0.00')
+        free_delivery_delta = Decimal('0.00')
+
+    grand_total = total + delivery
+
+    return {
+        'bag_items': bag_items,
+        'total': total,
+        'product_count': product_count,
+        'delivery': delivery,
+        'free_delivery_delta': free_delivery_delta,
+        'free_delivery_threshold': settings.FREE_DELIVERY_THRESHOLD,
+        'grand_total': grand_total,
+    }
+
+- This completely deletes the Product import, product_id logic, items_by_size logic so that my system is 100% variant based. I update my contexts file with this code and then run the below to clear my sessions again:
+
+python manage.py shell
+
+from django.contrib.sessions.models import Session
+Session.objects.all().delete()
+
+- However, I am still seeing issues so I consult ChatGPT again who advises that the form action in my template is wrong - it is still using product_id whereas it should be using variant_id, so I update this now from:
+
+action="{% url 'shoppingbag:adjust_bag' item.product_id %}"
+
+To:
+
+action="{% url 'shoppingbag:adjust_bag' item.product_id %}"
+
+- Then still in the form I add the below line just below the csrf token import, I add the new line of code to add a hidden variant_id input:
+
+<input type="hidden" name="variant_id" value="{{ item.variant_id }}">
+
+- Then I want to remove the size dropdown in place of a simple display usiong this line of code:
+
+<p class="my-0">
+    <strong>Size:</strong> {{ item.size|upper }}
+</p>
+
+- Then I want to fix the quantity buttons using variant_id again, so I replace the following code:
+
+<p class="my-0">
+    <strong>Size:</strong> {{ item.size|upper }}
+</p>
+
+With:
+
+data-item_id="{{ item.product.id }}"
+id="id_qty_{{ item.product.id }}"
+
+
+- I then need to fix the remove button as it is currently:
+
+data-item_id="{{ item.variant_id }}"
+id="id_qty_{{ item.variant_id }}"
+
+I change this to:
+
+<a
+  class="remove-item text-danger float-right"
+  id="remove_{{ item.variant_id }}"
+>
+  <small>Remove</small>
+</a>
+
+- I also need to update my 'remove-item' Javascript code with the below:
+
+$('.remove-item').click(function(e) {
+    var csrfToken = "{{ csrf_token }}";
+    var itemId = $(this).attr('id').split('remove_')[1];
+    var url = "{% url 'shoppingbag:remove_from_bag' 0 %}".replace('0', itemId);
+
+    var data = {
+        'csrfmiddlewaretoken': csrfToken,
+        'variant_id': itemId
+    };
+
+    $.post(url, data)
+     .done(function() {
+         location.reload();
+     });
+});
+
+- Finally I update my template tag for SKU so it is using the variant id over product id:
+
+{{ item.variant.sku }}
+
+- After making all these changes to the template so that it matches my new views, I run my page on the dev server again. Everything looks a lot better. I can add a product to the bag and it adds the correct product now, I can see this product at the checkout and it has a price. The only thing that I have an issue with is that the user isn't being shown a price on the product detail page. They have to select a size and add to bag before they can then see the price in the shopping bag preview or if they go to the checkout view:
+
+![Product Details page doesn't show price](/static/images/Stripe/Screenshot%20price%20doesn't%20show.png)
+
+![Price shows in shopping bag preview](/static/images/Stripe/Screenshot%20price%20shown%20in%20shopping%20bag%20preview.png)
+
+- After consulting with ChatGPT I decide to go back to showing a 'From price' as this is what will work best with the data I have used in my fixtures as there is so many variants. To do this, I need to update my product_detail view in the merchandise app, to add the below line of code under my product variable within the function:
+
+min_price = product.variants.order_by('price').first().price if product.variants.exists() else None
+
+- Then I need to update my context dictionary with the below so it reads the new code:
+
+'min_price': min_price,
+
+- Finally, in my product_detail.html template, I replace the text for 'Select a size to see a price' with this new code so that it looks at our new min_price context:
+
+{% if min_price %}
+    <p class="lead mb-0 text-left font-weight-bold">
+        From £{{ min_price|floatformat:2 }}
+    </p>
+{% endif %}
+
+- Now that I have made these changes, I run my dev server again and see how this is looking now.
+
+![Price shows on product_detail page again](/static/images/Stripe/Screenshot%20price%20now%20shows%20on%20product_detail%20page.png)
+
+- I notice that there oa a stray piece of code on the product_detail page after the footer, so I look for this code in the product_detail.html file and remove it:
+
+{% include 'merchandise/includes/quantity_input_script.html' %}
+
+- Now when I refresh the view looks great:
+
+![Unneccessary tag removed from product detail template](/static/images/Stripe/Screenshot%20unneccessary%20script%20tag%20removed%20from%20product_detail%20template.png)
+
+- I want to test that checkout is still working so I test this now. If I click 'Secure Checkout' then this takes me to the checkout view. I can populate the checkout form with all the relevant details, however, when I click 'Complete Order' I am taken to an error page:
+
+![Error at Checkout product matching query doesn't exist](/static/images/Stripe/Screenshot%20checkout%20product%20matching%20query%20doesn't%20exist%20error.png)
+
+- This is happening because somewhere in my checkout view I am using this code:
+
+product = Product.objects.get(pk=item_id)
+
+- But now I am using:
+
+item_id = variant_id
+
+- I go to my checkout/views file and replace this logic:
+
+for item_id, item_data in bag.items():
+    product = Product.objects.get(pk=item_id)#
+
+- With:
+
+for variant_id, quantity in bag.items():
+    variant = get_object_or_404(ProductVariant, pk=variant_id)
+
+    order_line_item = OrderLineItem(
+        order=order,
+        product=variant.product,
+        variant=variant,  # if your model supports it
+        quantity=quantity,
+        lineitem_total=variant.price * quantity,
+    )
+
+    order_line_item.save()
+
+
+- I try to go through Checkout again but this time experience a different error:
+
+![Type error at checkout](/static/images/Stripe/Screenshot%20type%20error%20at%20checkout.png)
+
+- I consult ChatGPT who advises that the error means: OrderLineItem() got unexpected keyword arguments: 'product' but my model doesn't have a product field and my view is trying to do:
+
+OrderLineItem() got unexpected keyword arguments: 'product'
+
+- I need to update my order_line_item context and remove the product_variant=variant, line of code:
+
+order_line_item = OrderLineItem(
+    order=order,
+    product=variant.product,
+    product_variant=variant,
+    quantity=quantity,
+)
+
+- I update thisn and can now checkout successfully. The next issue I have spotted is that the 'update button' has gone from the checkout view so need to recitfy this before moving on. I go to my shoppingbag.html template and go to the code for the remove button and can see that the code for 'update' has gone. I copy and paste the code for my remove button just above it and tweak accordingly:
+
+<a class="update-link text-info">
+  <small>Update</small>
+</a>
+
+- I refresh and can see the 'Update' button again, however, when I try using the quantity selector buttons they do not work. I also spot that there is 2 x fields for size with one populated with the selected size and the other is empty. The size field isn't changeable as I would like it to be either. And the quantity and size fields are sitting in the same column which doesn't work so I want to rectify this. Looking at my code in shoppingbag.html I can see that I have this code in my size selector section:
+
+                 <!-- Size selector - ChatGPT -->
+                  {% with item.product.has_sizes as s %} {% if s %}
+                  <div class="me-2 mb-2" style="min-width: 100px">
+                    <label for="id_product_size" class="form-label">
+                      <strong>Size:</strong>
+                    </label>
+                    <p class="my-0">
+                      <strong>Size:</strong> {{ item.size|upper }}
+                    </p>
+                  </div>
+
+- So first thing I need to do is remove the label for element as this is from the old code before I updates fixtures and database. Now when I refresh there is only 1 x size field:
+
+![Extra size field removed](/static/images/Stripe/Screenshot%20extra%20size%20field%20removed%20from%20shoppingbag.png)
+
+- The next thing I want to look at is the fact that the size and quantity fields sit in the same column so I inspect on devtools to see where these two pieces of code sit on the template and can see that they both sit in this div together:
+
+<div class="d-flex align-items-end flex-wrap mb-3">
+                  {% with item.product.has_sizes as s %} {% if s %}
+                  <div class="me-2 mb-2" style="min-width: 100px">
+                    <p class="my-0">
+                      <strong>Size:</strong> {{ item.size|upper }}
+                    </p>
+                  </div>
+                  {% endif %} {% endwith %}
+
+                  <!-- Quantity selector -->
+                  <div class="me-2 mb-2">
+                    <label
+                      for="id_qty_{{ item.variant_id }}"
+                      class="form-label d-block"
+                    >
+                      <strong>Quantity:</strong>
+                    </label>
+
+- I remove the code for them within the div and replace with the below cleaner layout which will stack them vertically instead of squashing:
+
+                  {% with item.product.has_sizes as s %} {% if s %}
+                  <div class="me-2 mb-2" style="min-width: 100px">
+                    <p class="my-0">
+                      <strong>Size:</strong> {{ item.size|upper }}
+                    </p>
+                  </div>
+                  {% endif %} {% endwith %}
+
+                  <!-- Quantity selector -->
+                  <div class="me-2 mb-2">
+                    <label
+                      for="id_qty_{{ item.variant_id }}"
+                      class="form-label d-block"
+                    >
+                      <strong>Quantity:</strong>
+                    </label>
+To:
+
+<div class="mb-2">
+  <p class="my-0">
+    <strong>Size:</strong> {{ item.variant.variant_title|upper }}
+  </p>
+</div>
+
+<div class="mb-2">
+  <label for="id_qty_{{ item.variant_id }}" class="form-label">
+    <strong>Quantity:</strong>
+  </label>
+
+- I refresh but its still keeping the code in one column. ChatGPT recommends I update my bag_contents contents append statement to include variant so I update the product to:
+
+    'product': variant.product,
+
+- I remove this line of code completely:
+
+            'size': variant.variant_title,
+
+- And update the price and subtotals to:
+
+    'price': variant.price,
+    'subtotal': quantity * variant.price,
+
+- I also fix the update totals with the below code in place of what I currently have set:
+
+        subtotal = quantity * variant.price
+        total += subtotal
+        product_count += quantity
 
 
 ---
@@ -12390,6 +13098,8 @@ The following parts of my Project were implemented using Bootstrap docs:
 - if size statement block in add_to_bag view in shoppingbag app
 - .custom-toast css styles
 - calc_subtotal function code bag_tools.py
+- checkout/views variant id updates
+- merchandise/views and templates for product_detail with variiant id updates
 
 
 

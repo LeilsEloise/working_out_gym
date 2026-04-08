@@ -30,56 +30,48 @@ def checkout(request):
             'street_address2': request.POST['street_address2'],
             'county': request.POST['county'],
         }
+
         order_form = OrderForm(form_data)
+
         if order_form.is_valid():
             order = order_form.save()
 
-            print("BAG CONTENTS:", shoppingbag)
-
-            for item_id, item_data in shoppingbag.items():
+            for variant_id, quantity in shoppingbag.items():
                 try:
-                    product = Product.objects.get(id=item_id)
-                    product_variant = product.variants.first()
-                    if isinstance(item_data, int):
-                        order_line_item = OrderLineItem(
-                            order=order,
-                            product_variant=product_variant,
-                            quantity=item_data,
-                        )
-                        order_line_item.save()
-                    else:
-                        for size, quantity in item_data['items_by_size'].items():
-                            order_line_item = OrderLineItem(
-                                order=order,
-                                product_variant=product_variant,
-                                quantity=quantity,
-                                product_size=size,
-                                )
-                            order_line_item.save()
+                    variant = ProductVariant.objects.get(pk=variant_id)
+
+                    order_line_item = OrderLineItem(
+                        order=order,
+                        product_variant=variant,
+                        quantity=quantity,
+                    )
+                    order_line_item.save()
+
                 except ProductVariant.DoesNotExist:
                     messages.error(request, (
                         "One of the products in your bag wasn't found in our database. "
                         "Please call us for assistance!")
                     )
                     order.delete()
-                    return redirect(reverse('view_bag'))       
-                     
+                    return redirect(reverse('view_bag'))
+
             request.session['save_info'] = 'save-info' in request.POST
             return redirect(reverse('checkout_success', args=[order.order_number]))
+
         else:
-            messages.error(request, 'There was an error with your form. \
-                Please double check your information.')
+            messages.error(request, 'There was an error with your form. Please double check your information.')
 
-
-    else: 
+    else:
         shoppingbag = request.session.get('bag', {})
+
         if not shoppingbag:
             messages.error(request, "Your bag is currently empty.")
             return redirect(reverse('merchandise'))
-        
+
         current_bag = bag_contents(request)
         total = current_bag['grand_total']
         stripe_total = round(total * 100)
+
         stripe.api_key = stripe_secret_key
         intent = stripe.PaymentIntent.create(
             amount=stripe_total,
@@ -89,14 +81,13 @@ def checkout(request):
         order_form = OrderForm()
 
         if not stripe_public_key:
-            messages.warning(request, 'Stripe public key is missing. Did you forget to set it in your environment?')
-
+            messages.warning(request, 'Stripe public key is missing.')
 
         template = 'checkout/checkout.html'
         context = {
-          'order_form': order_form,
-          'stripe_public_key': stripe_public_key,
-          'client_secret': intent.client_secret,
+            'order_form': order_form,
+            'stripe_public_key': stripe_public_key,
+            'client_secret': intent.client_secret,
         }
 
         return render(request, template, context)
