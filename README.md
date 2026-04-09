@@ -14125,17 +14125,264 @@ class StripeWH_Handler:
             content=f'Webhook received: {event["type"]}',
             status=200)
 
-5. Now that's added I will commit my changes and then look at adding the methods needed to start using it on my site:
+5. Now that's added I will commit my changes and then look at adding the methods needed to start using it on my site.
+
+6. I am now going to add a couple more methods to my Webhook Handler class and then set it up so it can actually listen for the Webhooks. To create the new methods I am just going to copy and paste the handle_event code and paste it again twice and then change the names accordingly. For each different event of Webhook I want its own method that's easy to manage and is easy to add more as Stripe creates new ones. The first method I create is called handle_payment_intent_succeeded which will handle the payment intent succeeded Webhook from Stripe and will be sent each time a user completes the payment process:
+
+    def handle_payment_intent_succeeded(self, event):
+        """Handle the payment_intent.succeeded Webhook from Stripe"""
+        return HttpResponse(
+            content=f'Webhook received: {event["type"]}',
+            status=200)   
+
+7. Then I create another method which occurs in the event of their payment failing which listens for this webhook:
+
+    def handle_payment_intent_payment_failed(self, event):
+        """Handle the payment_intent.payment_failed Webhook from Stripe"""
+        return HttpResponse(
+            content=f'Webhook received: {event["type"]}',
+            status=200) 
+
+8. Then back in the handle_event method I update content to 'unhandled webhook receive':
+
+    def handle_event(self, event):
+        """Handle generic, unknown & unexpected Webhook events"""
+        return HttpResponse(
+            content=f'Unhandled Webhook received: {event["type"]}',
+            status=200)
+
+9. Now I want to get my new class listening so I create the URL for this in my checkout/urls file. The path will be called 'WH' which returns a function called Webhook with the name of Webhook:
+
+path('wh/', webhook, name='webhook'),
+
+10. Then the function for Webhook will come from a file called webhooks.py so I import this function from .webhooks at the top of the file:
+
+from .webhooks import webhook
+
+11. I now create this file for webhooks in the root of my checkout app directory again. The file is called webhooks.py. Then inside this file I am going to create the webhook function which takes in request and the code I am using for this has come from Stripe (Handle Webhook Events) (via Code Institute) which I have then tweaked as Code Institute did for their Boutique Ado. The name will be wh_secret, it will have a generic exception handler to catch any exceptions other than the two that Stripe has provided. Then the last part of code will be given an event and will get its type to decide which method from the webhook handler will be called to handle it:
+
+def webhook(request):
+    """Listen for webhooks from Stripe"""
+    # Setup
 
 
+    # get the webhook data and verify its signature
+    payload = request.body
+    sig_header = request.META['HTTP_STRIPE_SIGNATURE']
+    event = None
+
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, settings.STRIPE_WH_SECRET
+        )
+    except ValueError as e:
+        # Invalid payload
+        return HttpResponse(status=400)
+    
+    except stripe.error.SignatureVerificationError as e:
+        # Invalid signature
+        return HttpResponse(status=400)
+    
+    except Exception as e:
+        return HttpResponse(content=e, status=400)
+
+12. I now need to set up the Stripe API key and the Webhook Secret at the top of the file so they can be used to verify that the Webhook actually came from Stripe:
+
+def webhook(request):
+    """Listen for webhooks from Stripe"""
+    # Setup
+    wh_secret = settings.STRIPE_WH_SECRET
+    stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
+    # get the webhook data and verify its signature
+    payload = request.body
+    sig_header = request.META['HTTP_STRIPE_SIGNATURE']
+    event = None
+
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, settings.STRIPE_WH_SECRET
+        )
+    except ValueError as e:
+        # Invalid payload
+        return HttpResponse(status=400)
+    
+    except stripe.error.SignatureVerificationError as e:
+        # Invalid signature
+        return HttpResponse(status=400)
+    
+    except Exception as e:
+        return HttpResponse(content=e, status=400)
+
+13. Then at the top of the file I need to make some imports. I will need to import my settings file to get the webhook and Stripe API secrets and I need HttpResponse so that the exception handler will work with the Webhook class and Stripe too:
+
+from django.conf import settings
+from django.http import HttpResponse
+
+from checkout.webhook_handler import StripeWH_Handler
+
+import Stripe
+
+14. Then above the import for StripeWH_Handler class, I import 2 x decorators: require_post (This will make this view require a post request and reject get requests) and CSRF exempt since Stripe will not send a CSRF token to as we normally would need:
+
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
+
+- Then add the below above the method for webhook:
+
+@require_POST
+@csrf_exempt
+
+15. I save this and then go to my settings file and add new environment variable called stripe webhook secret which I will get from Stripe next. I add this new variable at the bottom of the file with the other Stripe variables in the Stripe section:
+
+STRIPE_WH_SECRET = os.getenv('STRIPE_WH_SECRET ', '')
+
+16. I now need to test my webhook. To do this my website needs a URL that Stripe can access to send the webhooks to and from. In order to get this functionality in my local IDE environment, I need to use Stripe CLI in my Visual Studio Code's terminal. To start with, I am going to install Stripe CLI for Windows using the steps in the installation guide here: 
+
+https://codeinstitute.s3.eu-west-1.amazonaws.com/vscode-migration-pdf-guides/stripe-cli-installation-guide-windows.pdf
+
+17. I scroll down the page and find the section for '1. Install the Stripe CLI' and click the Windows tab and then click the Github link there to download the latest Windows zip file from the Github library:
+
+https://github.com/stripe/stripe-cli/releases/tag/v1.40.3
+
+18. Once on the link, I click the stripe_1.40.3_windows_x86_64.zip file and once downloaded, I unzip this to a more suitable location than downloads, I unzip to this path:
+
+C:\Users\leila\Documents\stripe-cli
+
+19. I then add the path to the unzipped stripe.exe file to my Path environment variable, I copy the below path and then search for Environment Variables on Windows and then click the option for 'Edit the system environment variables' that appears. Then in the 'Advanced' tab at the bottom is an option for 'Environment Variables', I click this and then I am taken to a menu with the Environment Variables settings. I click the option for 'Path' in the list and then click the 'Edit' button below this. Then in the new window, I click 'New' and add the path I pasted above for 'stripe-cli' and then hit 'OK'. Then I need to restart my machine for this to take affect. 
+
+20. Now when I run the below a version for Stripe is being returned so I know the install has been successful:
+
+stripe version
+stripe version 1.40.3
+
+21. Next, I type stripe login and press enter. I click the browser prompt when it appears to open the link in Chrome and then follow the on-screen instructions on the next page, allowing Stripe CLI access ny clicking 'Allow Access' in the prompt shown below:
+
+![Stripe CLI Allow Access](/static/images/Stripe/Screenshot%20stripe%20cli%20install%20allow%20access.png)
+
+22. After allowing access, I close the window and return to my terminal and can see I have a pairing code and confirmation that the Stripe CLI is now configured for bsuiness sandbox with its own account id. This will be valid for 90 days but now I have Stripe CLI installed on my machine and I can start testing my webhooks. 
+
+23. To confirm that my webhook is working, I am going to add a print statement and return a 200 response. In my webhooks.py file, I am going to add this at the end of my webhook function as below:
+
+print('Success!')
+return HttpResponse(status=200)
+
+24. Then in settings.py, I updated my ALLOWED_HOSTS so that both the VS Code preview and the Stripe portal will work:
+
+    'localhost',
+
+25. Then in order to then test my webhook, I opem three terminals at once within my local IDE: Python server - to run my local preview of the webpage, Stripe portal to generate a url that Stripe can send and receive webhooks from and Terminal to send the test webhook cmds. 
+
+26. First, I run my Python server to display my local webpage using:
+
+python manage.py runserver
+
+- This opens up successfully.
+
+27. Then, I open a new terminal for my Stripe portal and then enter the following code into the cmd and hit enter. This command opens the Stripe portal:
+
+stripe listen --forward-to localhost:8000/checkout/wh/
+
+- I then copy the webhook signing secret generated in the terminal.
+
+- I add the signing secret to env.py as below:
+
+os.environ.setdefault("STRIPE_WH_SECRET", "your signing secret here")
+
+28. Now that my STRIPE_WH_SECRET value has been created in the environment, I need to restart my Python server to ensure that the project can access this. I go to the terminal for my Python server and hit CTRL + C to cancel the server, then go up on the keyboard to bring the cmd back and run the server again.
+
+29. Next, I need to open the last terminal needed where I will enter my Stripe webhook triggers. I open a new terminal and enter the following cmd and hit enter which will trigger a webhook:
+
+stripe trigger payment_intent.created
+
+- This sets up the fixture for payment_intent, then runs it and shows that the trigger has succeeded and advises to check the dashboard for event details.
+
+- However, when I return to the first Python terminal where I am running my server from I see the following response instead of 'Success' as I would of expected. 
+
+- I take a look at my settings.py variables again and realise there is a space at the end of the 'STRIPE_WH_SECRET ' variable, so I remove this and save and then restart my Python server. Now when I run the below, I can see a success message on my first python server:
+
+stripe trigger payment_intent.created
+
+30. With this returned, I have confirmed that anytime Stripe sends a webhook that the webhook view will be executed and any event will be handled accordingly. I have set up a listener to listen to messages from Stripe. I will next look at customising the webhook handler even more to handle even more types of webhook requests and responses.
+
+31. The webhook handler class retruns a response directly from the webhook view and if I use an if statement to check what kind of event is being seen then there could be a hundred different webhooks returned due to the hundred of different possibilities available. So to make this cleaner, I pass the event to the webhook handler with a more convenient method written up for the different types of webhooks. By using a class, I can import into other projects and subclass it to override the methods to suit the project. 
+
+I am now going to moderate my webhook view to use the webhook handler. To do this, I first create an instance of it passing in the request and then create a dictionary called event map where the dictionary keys will be the names of the webhooks coming from stripe and its values will be the actual methods inside the handler:
+
+    # Set up a webhook handler
+    handler = StripeWH_Handler(request)
+
+    # Map webhook events to relevant handler functions
+    event_map = {
+        'payment_intent.succeeded': handler.handle_payment_intent_succeeded,
+        'payment_intent.payment_failed': handler.handle_payment_intent_payment_failed,
+    }    
+
+32. Next, I want to get the type of the event from Stripw and store this ina key called type. This returns something like payment intent.succeeded or payment intent.payment failed:
+
+    # Get the webhook type from Stripe
+    event_type = event['type']
+
+33. Then I want to look up the key in the dictionary and assign its value to a variable called event handler which is nothing more than an alias for whatever function was just pulled from the dictionary:
+
+    # If there's a handler for it, get it from the event map
+    # Use the generic one by default
+    event_handler = event_map.get(event_type, handler.handle_event)
+
+34. Then finally, we can call it just like any other function, call the event handler and pass it the event and return the response to Stripe as below:
+
+    # Call the event handler with the event
+    response = event_handler(event)
+    return response
+
+35. I now want to test my webhooks again using the same process as before. I have 3 x terminals open:
+
+- One Python terminal to run my local server using:
+
+python manage.py runserver
+
+- 1 x terminal running my Stripe portal:
+
+ stripe listen --forward-to localhost:8000/checkout/wh/
+
+ - 1 x Python terminal which is blank where I can trigger my webhook from.
+
+ 36. I have the three terminals open, I am going to confirm the 'Unhandled webhook event'. In my third terminal, I type the below:
+
+ stripe trigger payment_intent.created
+
+- This successfully sets up and runs the fixtures and tells me the trigger has succeeded. 
+
+37. Next, I login to the Stripe dashboard, go to Settings > Developers and then search Events and click to go to the Events tab.
+
+- I select the top event for payment_intent.created and then scroll to the bottom of the page and look under 'Webhook CLI responses' and click the chevron next to my device name to expand the information about my webhook attempt.
+
+38. I now want to confirm the payment intent succeeded event. I return to the third terminal where I have been writing my Stripe triggers and test the payment intent succeeded webhook using:
+
+stripe trigger payment_intent.succeeded
+
+- This sets up and runs the fixtures and then tells me the trigger has succeeded.
+
+39. I check Events and scroll to the top and can see the event for payment succeeded.
+
+40. I repeat the same steps to confirm the payment failed event now works, running the following cmd in the third terminal now:
+
+- This sets up and runs the fixtures successfully and tells me that the trigger has succeeded
+
+41. I check the events on Stripe again and can see this has generated the event for payment failed.
+
+42. Now I have confirmed everything is working as should be, I will save and commit my changes to Git and Heroku.
 
 ---
 
 # 6. Credits and Acknowledgements
 
 ### Content
+
+#### Code Institute Documentation
+
+- Stripe CLI Installation Guide for Windows: https://codeinstitute.s3.eu-west-1.amazonaws.com/vscode-migration-pdf-guides/stripe-cli-installation-guide-windows.pdf
 
 #### Bootstrap Documentation
 
@@ -14176,6 +14423,8 @@ The following parts of my Project were implemented using Bootstrap docs:
 - Documentation on accepting payments: https://docs.stripe.com/payments/accept-a-payment
 - Basic Javascript styles for 'var' and 'invalid'
 - CSS styles for Stripe Elements
+- Handle Webhook Events code
+- Stripe CLI Installation Guide for Windows
 
 ---
 
@@ -14271,6 +14520,7 @@ The following parts of my Project were implemented using Bootstrap docs:
 - checkout.html loading-overlay div
 - checkout.css loading-overlay and loading-spinner styles
 - display css update for loading-cursor div
+- handle webhooks event code - webhooks.py
 
 
 
