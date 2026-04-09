@@ -14101,6 +14101,36 @@ python manage.py collectstatic
 
 - I commit my code to Git and Heroku ready for implementing Webhooks next.
 
+# Checkout - Webhooks for Payment Status Tracking
+
+1. So from the tests done previously, I can see that my orders are being created and stored in the database after checking my Admin panel. However, if a user closes the browser after the payment is confirmed and sent to Stripe but before form is submitted then there will be no order in the database. Things like internal email notificaitons would not be triggered because the user never fully completes their order. Which could result in charges to the user with no confirmation email or getting wrong orders. To prevent this, I will add redundancy and each time and event occurs on Stripe such as a payment intent being created, a payment being completed, etc. then Stripe will send out a Webhook to listen for. (Webhooks are the signal that Django sends each time a model is saved or deleted).
+
+2. In order to handle the new webhooks I will be creating, I need to create my first custom class. I start by creating a new file called webhook_handler.py in the root of my checkout app directory. At the top of this file, I import the HttpResponse from Django.http:
+
+from django.http import HttpResponse
+
+3. Next I am going to create a class called StripeWH_Handler and pass the init method to this with 'self' and 'request' attributes. The init method of the class is a setup method that's called every time an instance of the class is created. The request attribute allows us to access any attributes of the request coming from Stripe:
+
+class StripeWH_Handler:
+    """Handle Stripe Webhooks"""
+
+    def __init__(self, request):
+        self.request = request
+
+4. Next I will create a class method called handle event which will take the event that Stripe is sending us and simply return an HTTP reponse to indicate that it was received:
+
+    def handle_event(self, event):
+        """Handle generic, unknown & unexpected Webhook events"""
+        return HttpResponse(
+            content=f'Webhook received: {event["type"]}',
+            status=200)
+
+5. Now that's added I will commit my changes and then look at adding the methods needed to start using it on my site:
+
+
+
+
+
 ---
 
 # 6. Credits and Acknowledgements
