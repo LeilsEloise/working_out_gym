@@ -14374,6 +14374,408 @@ stripe trigger payment_intent.succeeded
 
 42. Now I have confirmed everything is working as should be, I will save and commit my changes to Git and Heroku.
 
+43. I now want to write the code for my payment intent succeeded webhook handler which will ensure that the payment process is reliable by always guaranteeing, no matter the action of the user, that during checkout that if Stripe successfully processes their payment then the order will definitely be processed.
+
+44. The payment system for my e-commerce store is almost complete. I now need to write the code to create any necessary database objects in the webhook handler. The first thing I will do is update the stripe_elements.js file as the payment intent.succeeded webhook will be coming from Stripe and not from my code into the webhook handler so I want to put the form data into the payment intent object so that I can retrieve it once I have the webhook. I can mostly achieve this simply adding the form data to the confirmed card payement method like below. If you look at the structure of the payment intent object in Stripe then you can see it has a space for billing details object that can be added below the card. The fields it can take are name, email, phone number and address - which are pretty much the sam details as are in the form. I add the fields in and get the data from the form and use the trim method to strip off any excess whitespace:
+
+            billing_details: {
+                name: $.trim(form.full_name.value),
+                phone: $.trim(form.phone_number.value),
+                email: $.trim(form.email.value),
+                address:{
+                    line1: $.trim(form.street_address1.value),
+                    line2: $.trim(form.street_address2.value),
+                    city: $.trim(form.town_or_city.value),
+                    country: $.trim(form.country.value),
+                    state: $.trim(form.county.value),
+                }
+            }
+
+55. I then do the same for shipping_details but remove the attribute for email address:
+
+        shipping: {
+            name: $.trim(form.full_name.value),
+            phone: $.trim(form.phone_number.value),
+            address: {
+                line1: $.trim(form.street_address1.value),
+                line2: $.trim(form.street_address2.value),
+                city: $.trim(form.town_or_city.value),
+                country: $.trim(form.country.value),
+                postal_code: $.trim(form.postcode.value),
+                state: $.trim(form.county.value),
+            }
+        },
+
+56. Next I am going to create a new view in checkout/views which will allow use to determine in the webhook whether a user had the 'save info' checkbox ticked. I create a new view called cache_checkout_data which expects the POST method and use the require_POST decorator:
+
+@require_POST
+def cache_checkout_data(request):
+
+57. Then at the top of the file, I import the decorator and HttpResponse at the top of the file:
+
+from django.shortcuts import render, redirect, reverse, get_object_or_404, HttpResponse
+from django.views.decorators.http import require_POST
+
+58. What this will do is call the confirm card payment method from the stripe_elements.js, it will make a POST request to this view and give it the client secret from payment intent:
+
+        pid = request.POST.get('client_secret').split('_secret')[0]
+
+59. Next, I set up Stripe with the secret key so we can modify the payment intent:
+
+        stripe.api_key = settings.STRIPE_SECRET_KEY
+
+60. This is done below by calling the stripe.PayementIntent.modify give it the pid and tell it what we want to modify and then pass the metadata for what we want as below (this add the user who places the order, whether they clicked save info and a json dump of their shopping bag)
+
+        stripe.PaymentIntent.modify(pid, metadata={
+            'shoppingbag': json.dumps(request.session.get('shoppingbag', {})),
+            'save_info': request.POST.get('save_info'),
+            'username': request.user,
+        })
+
+61. Then I want to return an HttpResponse with the status 200 for okay and wrap it in an except block and if anything faults then it will retrun an response with the error message content and status of 400 for bad request and then this way we can post to the view from Javascript:
+
+        return HttpResponse(status=200)
+    except Exception as e:
+        messages.error(request, 'Sorry, your payment cannot be \
+            processed right now. Please try again later.')
+        return HttpResponse(content=e, status=400)
+
+62. I now want to create a new url to access the new view and then create some new variables in my stripe_elements.js file. In my checkouts/url file I update my paths to:
+
+    path('cache_checkout_data/', views.cache_checkout_data, name='cache_checkout_data'),
+
+63. Then in stripe_elements.js, I get the boolean value of the saved info box by looking at the checked attribute like below:
+
+    var saveInfo = Boolean($('#id-save-info').attr('checked'));
+
+64. Then I also need to get the CSRF Token which will be obtained from the input that Django generates on the form. This will have a nam,e of csrfmiddleware token:
+
+    // From using {% csrf_token %} in the form
+    var csrfToken = $('input[name="csrfmiddlewaretoken"]').val();
+
+65. I then create a small object to pass the information to the new view and pass the client secret for payment intent:
+
+    var postData = {
+        'csrfmiddlewaretoken': csrfToken,
+        'client_secret': clientSecret,
+        'save_info': saveInfo,
+    };
+
+66. I then create a variable for the new url:
+
+    var url = '/checkout/cache_checkout_data/';
+
+67. And the last thing I want to update here is to post the data to the view with the POST method built into jQuery. We tell it we are posting to the url and want to post the data above it. It then waits for a response that the payment intent was updated before calling the confirmed payment method by tacking on the .done method and executing the callback function:
+
+    $.post(url, postData).done(function ()
+
+68. I then attach a failure function at the end of the code which will be triggered if the view sends a 400 bad request response. In this case it will reloadf the page to show the error message from the view:
+
+    }).fail(function () {
+        // just reload the page, the error will be in django messages
+        location.reload();
+    })
+});
+
+69. Next I go back to my webhook_handler file and print out the payment intent coming from stripe and once the user makes a payment it should have the metadata I just set attached. The payment intent will be saved in a key called event.data.object so I will store that and then print it out:
+
+    def handle_payment_intent_succeeded(self, event):
+        """
+        Handle the payment_intent.succeeded webhook from Stripe
+        """
+        intent = event.data.object
+        print("*********************")
+        print(intent)
+
+70. I am now going to try and submit an order and make sure that everything works.
+
+71. My dev server won't start, I am receiving an error as below:
+
+File "...checkout\views.py", line 26
+    except Exception as e:
+    ^^^^^^
+SyntaxError: invalid syntax
+
+72. I query this with ChatGPT who thinks the error is due to a missing 'try' statement in my view file. I compare my code to Code Institute's Boutique Ado and can see they have a 'try' statement above the pid variable so I add this in and it lets me run the page locally again now.
+
+73. I complete an order but my webhook output isn't showing the metadata and shipping keys. The output in my terminal is:
+
+[09/Apr/2026 21:08:32] "POST /checkout/wh/ HTTP/1.1" 200 50 ********************* { "amount": 4400, "amount_capturable": 0, "amount_details": { "tip": {} }, "amount_received": 4400, "application": null, "application_fee_amount": null, "automatic_payment_methods": { "allow_redirects": "always", "enabled": true }, "canceled_at": null, "cancellation_reason": null, "capture_method": "automatic_async", "client_secret": "pi_3TKOsN1urpY1vbdf0dpWGAA8_secret_iubgqQhIddloVeiLTANCKS3YA", "confirmation_method": "automatic", "created": 1775765311, "currency": "usd", "customer": null, "customer_account": null, "description": null, "excluded_payment_method_types": null, "id": "pi_3TKOsN1urpY1vbdf0dpWGAA8", "last_payment_error": null, "latest_charge": "ch_3TKOsN1urpY1vbdf0zqyHhAa", "livemode": false, "metadata": {}, "next_action": null, "object": "payment_intent", "on_behalf_of": null, "payment_method": "pm_1TKOty1urpY1vbdfIdUJJBQc", "payment_method_configuration_details": { "id": "pmc_1THL1N1urpY1vbdfH3zC4fLc", "parent": null }, "payment_method_options": { "amazon_pay": { "express_checkout_element_session_id": null }, "card": { "installments": null, "mandate_options": null, "network": null, "request_three_d_secure": "automatic" }, "link": { "persistent_token": null } }, "payment_method_types": [ "card", "link", "amazon_pay" ], "processing": null, "receipt_email": null, "review": null, "setup_future_usage": null, "shipping": null, "source": null, "statement_descriptor": null, "statement_descriptor_suffix": null, "status": "succeeded", "transfer_data": null, "transfer_group": null
+
+74. This shows that the webhook is firing up correctly but missing the keys for the metadata and shipping info as below:
+
+"metadata": {},
+"shipping": null,
+
+- I query with ChatGPT who advises it means that Stripe never received the form data so the webhook has nothing to print. It asks me to add this at the top of the checkout/views to see if it prints in the terminal which I do and it does:
+
+print("CACHE VIEW HIT")
+
+
+- I then update my except block temporarily to:
+
+except Exception as e:
+    print("ERROR:", e)
+    return HttpResponse(content=str(e), status=400)
+
+- I paste the output to ChatGPT who advises I am not wrapping the payment in a done() wrapper so to update my stripe_elements.js to:
+
+$.post(url, postData).done(function () {
+    stripe.confirmCardPayment(clientSecret, {
+        payment_method: {
+            card: card,
+            billing_details: {
+                name: $.trim(form.full_name.value),
+                phone: $.trim(form.phone_number.value),
+                email: $.trim(form.email.value),
+                address: {
+                    line1: $.trim(form.street_address1.value),
+                    line2: $.trim(form.street_address2.value),
+                    city: $.trim(form.town_or_city.value),
+                    country: $.trim(form.country.value),
+                    state: $.trim(form.county.value),
+                }
+            }
+        },
+        shipping: {
+            name: $.trim(form.full_name.value),
+            phone: $.trim(form.phone_number.value),
+            address: {
+                line1: $.trim(form.street_address1.value),
+                line2: $.trim(form.street_address2.value),
+                city: $.trim(form.town_or_city.value),
+                country: $.trim(form.country.value),
+                postal_code: $.trim(form.postcode.value),
+                state: $.trim(form.county.value),
+            }
+        },
+    }).then(function(result) {
+        if (result.error) {
+            $('#card-errors').text(result.error.message);
+            $('#loading-overlay').fadeOut(200);
+            $('#payment-form').show();
+            card.update({ 'disabled': false});
+            $('#submit-button').attr('disabled', false);
+        }
+    });
+
+}).fail(function () {
+    location.reload();
+});
+
+- I refresh and try to complete an order now and see what the output is but its still giving empty responses for billing and shipping. ChatGPT also recommends updating username as Stripe cannot store objects:
+
+'username': request.user.username if request.user.is_authenticated else 'Anonymous',
+
+- ChatGPT advises that I am using this code in my checkout/views but not importing json at the top of the file so recommends doing this now:
+
+'bag': json.dumps(request.session.get('bag', {})),
+
+75. I consult with ChatGPT again as now when I complete a checkout there is no webhook output coming back at all. ChatGPT advises that the bug is here:
+
+var client_secret = $('#id_client_secret').text().slice(1, -1);
+
+- But then later I use the below and Javascript is case sensiitive:
+
+clientSecret
+
+- I update the variable so it matches with what I have defined:
+
+var clientSecret = $('#id_client_secret').text().slice(1, -1);
+
+- It also recommends that I update my safeinfo variable as its cleaner and more reliable, I update this to:
+
+var saveInfo = $('#id-save-info').is(':checked');
+
+- I save, hard refresh and then run my server and then my stripe listening cmd. However, now when I try to complete the order it is giving me this error after entering my information and trying to complete:
+
+![Complete order error](/static/images/Stripe/Screenshot%20payment%20form%20error.png)
+
+- I query with ChatGPT who advises this is an error in my Django forms and recommends installing Django countries and using django-countries and updating my code accordingly once its installed.
+
+76. To install django-countries I run the following cmd:
+
+pip install django-countries
+
+77. Once it's saying its successfully installed in the terminal, I add to my requirements.txt file using:
+
+pip3 freeze > requirements.txt
+
+78. Then I add it to my settings.py in INSTALLED APPS:
+
+pip3 freeze > requirements.txt
+
+79. I then need to add this to my checkout/models using:
+
+from django_countries.fields import CountryField
+
+country = CountryField(blank_label='Country *')
+
+80. After updating my models, I make migrations and migrate using:
+
+python manage.py makemigrations
+python manage.py migrate
+
+- However, running migrate gives the following error:
+
+django.db.utils.DataError: value too long for type character varying(2)
+
+- ChatGPT advises updating the country in models to the below and delete the 002 checkout/migrations file:
+
+country = models.CharField(max_length=50)
+
+- Then running: python manage.py migrate
+
+- I can then make changes in shell to fix my data by running:
+
+python manage.py shell
+
+from checkout.models import Order
+
+for order in Order.objects.all():
+    if order.country == "United Kingdom":
+        order.country = "GB"
+        order.save()
+
+- I update the country field in the model to, again:
+
+country = CountryField(blank_label='Country *')
+
+- Now I run makemigrations and migrate successfully.
+
+81. With these changes in place, I will run my dev server again and see if it now lets me checkout and see the correct output from my webhooks in the terminal. I run the dev server and stripe listening again across my 2 x terminals.
+
+82. Checkout is looking better now and has the 'Save Info' checkbox showing against delivery:
+
+![Save Info Checkbox](/static/images/Stripe/Screenshot%20save%20info%20checkbox%20now%20appears%20at%20checkout.png)
+
+83. I can now complete the checkout successfully, the bag clears down the items that were in there and I can see this response in the Python terminal:
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/6.0/howto/deployment/
+[10/Apr/2026 12:57:46] "GET / HTTP/1.1" 200 12566
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[10/Apr/2026 12:57:48] "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 3670
+[10/Apr/2026 12:57:51] "GET / HTTP/1.1" 200 12566
+Not Found: /.well-known/appspecific/com.chrome.devtools.json
+[10/Apr/2026 12:57:51] "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 3670
+[10/Apr/2026 12:57:51] "GET /static/images/favicon.png HTTP/1.1" 200 1246
+[10/Apr/2026 12:57:51] "GET /static/css/style.css HTTP/1.1" 200 6838
+[10/Apr/2026 12:57:51] "GET /static/images/Homepage/pexels-anete-lusina-4793215.jpg HTTP/1.1" 200 1539754
+Not Found: /favicon.ico
+[10/Apr/2026 12:57:51] "GET /favicon.ico HTTP/1.1" 404 3559
+[10/Apr/2026 12:57:54] "GET /shoppingbag/ HTTP/1.1" 200 21761
+[10/Apr/2026 12:57:57] "POST /checkout/wh/ HTTP/1.1" 200 50
+[10/Apr/2026 12:57:57] "GET /checkout/ HTTP/1.1" 200 33977
+[10/Apr/2026 12:57:57] "GET /static/checkout/js/stripe_elements.js HTTP/1.1" 200 3776
+[10/Apr/2026 12:57:57] "GET /static/checkout/css/checkout.css HTTP/1.1" 200 1358
+UPDATING PAYMENT INTENT: pi_3TKdhA1urpY1vbdf1oxScTmE
+METADATA: {'7': 1, '9': 1}
+[10/Apr/2026 12:58:35] "POST /checkout/cache_checkout_data/ HTTP/1.1" 200 0
+*********************
+{
+  "amount": 8000,
+  "amount_capturable": 0,
+  "amount_details": {
+    "tip": {}
+  },
+  "amount_received": 8000,
+  "application": null,
+  "application_fee_amount": null,
+  "automatic_payment_methods": {
+    "allow_redirects": "always",
+    "enabled": true
+  },
+  "canceled_at": null,
+  "cancellation_reason": null,
+  "capture_method": "automatic_async",
+  "client_secret": "pi_3TKdhA1urpY1vbdf1oxScTmE_secret_K1JLqBC1L35t023gFb6I49Tad",
+  "confirmation_method": "automatic",
+  "created": 1775822276,
+  "currency": "usd",
+  "customer": null,
+  "customer_account": null,
+  "description": null,
+  "excluded_payment_method_types": null,
+  "id": "pi_3TKdhA1urpY1vbdf1oxScTmE",
+  "last_payment_error": null,
+  "latest_charge": "ch_3TKdhA1urpY1vbdf156tMNLu",
+  "livemode": false,
+  "metadata": {
+    "bag": "{\"7\": 1, \"9\": 1}",
+    "save_info": "true",
+    "username": "fitnessguru"
+  },
+  "next_action": null,
+  "object": "payment_intent",
+  "on_behalf_of": null,
+  "payment_method": "pm_1TKdhn1urpY1vbdfoaxNIh3o",
+  "payment_method_configuration_details": {
+    "id": "pmc_1THL1N1urpY1vbdfH3zC4fLc",
+    "parent": null
+  },
+  "payment_method_options": {
+    "amazon_pay": {
+      "express_checkout_element_session_id": null
+    },
+    "card": {
+      "installments": null,
+      "mandate_options": null,
+      "network": null,
+      "request_three_d_secure": "automatic"
+    },
+    "link": {
+      "persistent_token": null
+    }
+  },
+  "payment_method_types": [
+    "card",
+    "link",
+    "amazon_pay"
+  ],
+  "processing": null,
+  "receipt_email": null,
+  "review": null,
+  "setup_future_usage": null,
+  "shipping": {
+    "address": {
+      "city": "Barrow-in-Furness",
+      "country": "GB",
+      "line1": "31 Goldsmith Street",
+      "line2": "",
+      "postal_code": "LA14 5RJ",
+      "state": ""
+    },
+    "carrier": null,
+    "name": "leilah hodgson",
+    "phone": "07857895351",
+    "tracking_number": null
+  },
+  "source": null,
+  "statement_descriptor": null,
+  "statement_descriptor_suffix": null,
+  "status": "succeeded",
+  "transfer_data": null,
+  "transfer_group": null
+}
+Internal Server Error: /checkout/wh/
+Traceback (most recent call last):
+  File "C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\.venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\.venv\Lib\site-packages\django\core\handlers\base.py", line 205, in _get_response
+    self.check_response(response, callback)
+  File "C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\.venv\Lib\site-packages\django\core\handlers\base.py", line 333, in check_response
+    raise ValueError(
+ValueError: The view checkout.webhooks.webhook didn't return an HttpResponse object. It returned None instead.
+[10/Apr/2026 12:58:36] "POST /checkout/wh/ HTTP/1.1" 500 73498
+[10/Apr/2026 12:58:36] "POST /checkout/wh/ HTTP/1.1" 200 44
+[10/Apr/2026 12:58:37] "POST /checkout/ HTTP/1.1" 302 0
+[10/Apr/2026 12:58:37] "GET /checkout/checkout_success/851FFFC838804390AC988E525E820FC9 HTTP/1.1" 200 17629
+[10/Apr/2026 12:58:39] "POST /checkout/wh/ HTTP/1.1" 200 42
+
+84. As my Stripe webhooks appear to be fully flowing now, I will turn Debug to false and commit my code.
+
 ---
 
 # 6. Credits and Acknowledgements
@@ -14589,6 +14991,8 @@ The following parts of my Project were implemented using Bootstrap docs:
 - item price calculation paragraph in checkout_success
 - loading overlay hide code in stripe_elements.js
 - loading-overlay div css rules for blurred background
+- stripe_elements.js in checkout update with done() wrapper
+- var saveinfo stripe_elements.js
 
 
 
