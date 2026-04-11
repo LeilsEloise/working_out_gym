@@ -14776,6 +14776,293 @@ ValueError: The view checkout.webhooks.webhook didn't return an HttpResponse obj
 
 84. As my Stripe webhooks appear to be fully flowing now, I will turn Debug to false and commit my code.
 
+85. I can now pass customer information through a Stripe payment intent as metadata which ensures that all orders are entered into the database, even in the event of a user error during the checkout process. In my payment intent succeeded webhook handler it contains the payment intent which has all the customers information in it. This is so if the form isn't submitted for some reason. In my webhook_handler in the handle_payment_intent_succeeded and get the payment intent id as well as the shopping bag and the users save preference from the metadata I have added:
+
+        pid = intent.id
+        bag = intent.metadata.bag
+        save_info = intent.metadata.save_info
+
+86. Then I also want to store the billing details, shipping details and grand total:
+
+        billing_details = intent.charges.data[0].billing_details
+        shipping_details = intent.shipping
+        grand_total = round(intent.data.charges[0].amount / 100, 2)
+
+87. Next I want to ensure that the data is in the same form as I want in my database so I replace any empty strings in the shipping details with 'none' and as Stripe stores these as blank strings which is not the same as the null value used in the database:
+
+        for field, value in shipping_details.address.items():
+            if value == "":
+                shipping_details.address[field] = None
+
+88. I now need to look at what should happen if an order doesn't exist which I can do by setting order_exists variable to 'False':
+
+        order_exists = False
+
+- Then under the new variable, I will create a new try statement which tries to get the order using all the information gathered from the payment intent, using the iexact lookup field to make it an exact match but case insensitive:
+
+        try:
+            order = Order.objects.get(
+                full_name__iexact=shipping_details.name,
+                    email__iexact=shipping_details.email,
+                    phone_number__iexact=shipping_details.phone,
+                    country__iexact=shipping_details.country,
+                    postcode__iexact=shipping_details.postal_code,
+                    town_or_city__iexact=shipping_details.city,
+                    street_address1__iexact=shipping_details.line1,
+                    street_address2__iexact=shipping_details.line2,
+                    county__iexact=shipping_details.state,
+                grand_total=grand_total,
+            )
+
+- Then if the order is found, I'll set order_exists to true and and return a 200 http response to Stripe with a message that the order already exists:
+
+            order_exists = True
+            return HttpResponse(
+                content=f'Webhook received: {event["type"]} | SUCCESS: Verified order already in database',
+                status=200)
+
+- And if it doesn't exist yet then it will be created as if the form was submitted:
+
+        except Order.DoesNotExist:
+            try:
+                order = Order.objects.create(
+                    full_name=shipping_details.name,
+                    email=shipping_details.email,
+                    phone_number=shipping_details.phone,
+                    country=shipping_details.country,
+                    postcode=shipping_details.postal_code,
+                    town_or_city=shipping_details.city,
+                    street_address1=shipping_details.line1,
+                    street_address2=shipping_details.line2,
+                    county=shipping_details.state,
+                    grand_total=grand_total,
+                )
+
+- I want to iterate through all the bag items next but I am going to load the bag from the json version from the payment intent rather than using the bag in my session. I will borrow the code from Code Institute for this from their Boutique Ado. Then after iterating through, as there is no form to save in this webhook then I will do this with order.objects.create. Then if anything goes wrong, there is a statement at the bottom to delete the order if it gets created and return a 500 server error response to Stripe (this will cause Stripe to automatically try the webhook again later):
+
+                for item_id, item_data in json.loads(bag).items():
+                    product = Product.objects.get(id=item_id)
+                    if isinstance(item_data, int):
+                        order_line_item = OrderLineItem(
+                            order=order,
+                            product=product,
+                            quantity=item_data,
+                        )
+                        order_line_item.save()
+                    else:
+                        for size, quantity in item_data['items_by_size'].items():
+                            order_line_item = OrderLineItem(
+                                order=order,
+                                product=product,
+                                quantity=quantity,
+                                product_size=size,
+                            )
+                            order_line_item.save()
+            except Exception as e:
+                if order:
+                    order.delete()
+                return HttpResponse(
+                    content=f'Webhook received: {event["type"]} | ERROR: {e}',
+                    status=500)
+    
+        return HttpResponse(
+            content=f'Webhook received: {event["type"]}',
+            status=200)
+
+- I also need to import Stripe at the top of my webhook_handler.py file and update my payment_intent_succeeded method within my StripeWH_Handler class to:
+
+intent = event.data.object
+pid = intent.id
+bag = intent.metadata.bag
+save_info = intent.metadata.save_info
+
+# Get the Charge object
+stripe_charge = stripe.Charge.retrieve(
+    intent.latest_charge
+)
+
+billing_details = stripe_charge.billing_details # updated
+shipping_details = intent.shipping
+grand_total = round(stripe_charge.amount / 100, 2) # updated
+
+- If the view is slow and hasn't created the order by the time that the webhook is retrieved from Stripe then everything will look okay in the view and it will create the order but be a few seconds late. This is bad as the webhook handler will not find the order when it gets the webhook from Stripe and thus not create the order, resulting in the same order being added to the database twice once the view completes. I now want to implement some more functionality which would help in this scenario. To do this, I need to introduce a delay in case of an order not being found in the database rather than the order always being instantly created. 
+
+- To start, I create a simple variable called attempt and set it to 1 underneath my variable for order_exists:
+
+        attempt = 1
+
+- I am then going to create a while loop that will execute up to 5 times:
+
+        while attempt <= 5:
+
+- I am then going to move the code in the first try block into the loop but will also update the code so that now instead of creating the order if its not found the first time then it's increment the attempt by 1 and use Python's time module to sleep for one second which will in affect cause the webhook handler to try and find the order five times over five seconds before giving up and creating the order itself:
+
+    try:
+        order = Order.objects.get(
+            full_name__iexact=shipping_details.name,
+            email__iexact=billing_details.email,
+            phone_number__iexact=shipping_details.phone,
+            country__iexact=shipping_details.address.country,
+            postcode__iexact=shipping_details.address.postal_code,
+            town_or_city__iexact=shipping_details.address.city,
+            street_address1__iexact=shipping_details.address.line1,
+            street_address2__iexact=shipping_details.address.line2,
+            county__iexact=shipping_details.address.state,
+            grand_total=grand_total,
+        )
+        order_exists = True
+        break
+
+    except Order.DoesNotExist:
+        attempt += 1
+        time.sleep(1)
+
+- I import the time module at the top of the file:
+
+import time
+
+- Then after the loop above I add an if statement if the order does exist:
+
+if order_exists:
+    return HttpResponse(
+        content=f'Webhook received: {event["type"]} | SUCCESS: Order already exists',
+        status=200
+    )
+
+- Then after this I can create the order.
+
+89. Another caveat to the payment process is that a user can purchase the same items on seperate occasions and this results in us finding the first order in the database when they place the second one and the second order never being created. To resolve this, I need to add 2 x new fields in the Order model. I go to checkout/models.
+
+- The first field I am adding, is a text field that contains the shopping bag that created it. I add this directly under the grand_total field in Order model:
+
+    original_bag = models.TextField(null=False, blank=False, default='')
+
+- The second is a character field that contains the stripe payment intent id that is guaranteed to be unique:
+
+    stripe_pid = models.CharField(max_length=254, null=False, blank=False, default='')
+
+- After making changes to my model, I now need to run makemigrations and migrate:
+
+python3 manage.py makemigrations
+python3 manage.py migrate
+
+- I then need to add the new fields to checkout/admin, I update readonly_fields with:
+
+'original_bag', 'stripe_pid',
+
+- And then in the same file, I also update the 'fields' list with:
+
+'original_bag', 'stripe_pid',
+
+- Then I need to update the view so that it adds those fields when the form is submitted. To do this I add a hidden input to the form in the checkout.html containing the client secret and then it goes to views and gets it if the order form is valid. I add this before the closing fieldset tag for payment. 
+
+<input type="hidden" value="{{ client_secret }}" name="client_secret">#
+
+- Then in checkout/views, I need to split it to get the payment intent id like I did in the cache checkout data view. I add the below lines of code below my 'order = order_form.save()'. This dumps the shoppingbag to a json string, sets it on the order and then saves the order: 
+
+pid = request.POST.get('client_secret').split('_secret')[0]
+            order.stripe_pid = pid
+            order.original_bag = json.dumps(bag)
+            order.save()
+
+- I then update the code I have for 'order = order_form.save()' and add the commit equals false method to prevent multiple save events from being executed on the database. This method prevents the first save event from happening:
+
+           order = order_form.save(commit=False)
+
+- Then to ensure that I am looking for the correct order in the webhook handler, I add the shoppingbag and the Stripe pid to the list of attributes to match on in my order.objects.get brackets:
+
+                    original_bag=bag,
+                    stripe_pid=pid,
+
+- Then if its not found, I want to create the order using those items like would appear in the view. So add the below also to my order.objects.create brackets:
+
+                    original_bag=bag,
+                    stripe_pid=pid,
+
+- Adding this code makes that when we receive a webhook from Stripe that a payment has been processed successfully then it tries to find an order with the same customer information and the same grand total which was created with the same items in the shopping bag and its associated with the same payment intent. It will also be attempted multiple times before giving up to create the order in the webhook. There may still be cases where this fails but in most cases this will guarantee that if the order isn't found in the database then its safe to then create it. 
+
+- Last thing I do here is import the Order, OrderLineItem and product models:
+
+from .models import Order, OrderLineItem
+from merchandise.models import Product
+
+- I also want to import json:
+
+import json
+
+90. I am now going to test my new changes with a test purchase and check what the stripe webhook response is. I run my dev server and make a purchase through the site. However, this purchase appears to fail as I am redirected to a Server 500 page. I turn Debug on to see what the issue is. I am getting this error:
+
+ValueError at /checkout/
+save() prohibited to prevent data loss due to unsaved related object 'order'.
+Request Method:	POST
+Request URL:	http://127.0.0.1:8000/checkout/
+Django Version:	6.0.2
+Exception Type:	ValueError
+Exception Value:	
+save() prohibited to prevent data loss due to unsaved related object 'order'.
+Exception Location:	C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\.venv\Lib\site-packages\django\db\models\base.py, line 1261, in _prepare_related_fields_for_save
+Raised during:	checkout.views.checkout
+Python Executable:	C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\.venv\Scripts\python.exe
+Python Version:	3.12.8
+Python Path:	
+['C:\\Users\\leila\\OneDrive\\Desktop\\Documents\\vscode-projects\\working_out_gym',
+ 'C:\\Program Files\\Python312\\python312.zip',
+ 'C:\\Program Files\\Python312\\DLLs',
+ 'C:\\Program Files\\Python312\\Lib',
+ 'C:\\Program Files\\Python312',
+ 'C:\\Users\\leila\\OneDrive\\Desktop\\Documents\\vscode-projects\\working_out_gym\\.venv',
+ 'C:\\Users\\leila\\OneDrive\\Desktop\\Documents\\vscode-projects\\working_out_gym\\.venv\\Lib\\site-packages']
+Server time:	Fri, 10 Apr 2026 15:33:07 +0000
+
+- I realise there is nothing to save the order before creating the line items so update my checkout/views as below:
+
+order.stripe_pid = pid
+order.original_bag = json.dumps(bag)
+
+order.save()
+
+51. I run my dev server and the Stripe listen cmd below in the 2nd terminal:
+
+ stripe listen --forward-to localhost:8000/checkout/wh/
+
+52. I then am able to make a purchase successfully through the site. I then go to Stripe.com to my dashboard and then check out the Webhooks section under Developers. I click the event for payment_intent.succeeded and can see this has failed:
+
+![Stripe webhook payment intent succeeded failed](/static/images/Stripe/Screenshot%20stripe%20payment%20intent%20succeeded%20failed.png)
+
+53. I query this with ChatGPT who advises that this line of code is crashing:
+
+for field, value in shipping_details.address.items():
+
+- It advises that 'shipping_details.address' is not a normal Python dictionary, its a Stripe object so does not support .items(). It recommends replacing the following code:
+
+
+for field, value in shipping_details.address.items():
+    if value == "":
+        shipping_details.address[field] = None
+
+To: 
+
+address = shipping_details.address.to_dict()
+
+for field, value in address.items():
+    if value == "":
+        address[field] = None
+
+- I update this in my webhook_handler file and update all my address references to use the correct code for 'address' and not 'shipping_details.address' like I was using:
+
+country__iexact=address.get('country'),
+postcode__iexact=address.get('postal_code'),
+town_or_city__iexact=address.get('city'),
+street_address1__iexact=address.get('line1'),
+street_address2__iexact=address.get('line2'),
+county__iexact=address.get('state'),
+
+- Once I have updated my code, I restart my dev server and then the Stripe listening cmd and then make another purchase. Now when I check my Stripe Dashboard webhook events, I can see that the latest purchase that I made is now showing a successful 'Payment Intent.Succeeded' event:
+
+![Stripe webhook payment intent succeeded successful](/static/images/Stripe/Screenshotstripe%20successful%20payment%20intent%20succeeded.png)
+
+54. I now run collectstatic, commit my changes to Git and Heroku before creating my Profile app.
+
 ---
 
 # 6. Credits and Acknowledgements
@@ -14923,6 +15210,7 @@ The following parts of my Project were implemented using Bootstrap docs:
 - checkout.css loading-overlay and loading-spinner styles
 - display css update for loading-cursor div
 - handle webhooks event code - webhooks.py
+- webhook_handler handle_payement_intent_succeeded updates
 
 
 
@@ -14993,6 +15281,7 @@ The following parts of my Project were implemented using Bootstrap docs:
 - loading-overlay div css rules for blurred background
 - stripe_elements.js in checkout update with done() wrapper
 - var saveinfo stripe_elements.js
+- address variable webhook handler update
 
 
 
