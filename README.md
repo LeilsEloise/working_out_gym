@@ -15063,6 +15063,214 @@ county__iexact=address.get('state'),
 
 54. I now run collectstatic, commit my changes to Git and Heroku before creating my Profile app.
 
+55. Before moving on to creating my profile app, I want to update my checkout view so that the shipping details fields appear more logically. In my checkout.html template, I update these to the order below:
+
+                        {{ order_form.phone_number | as_crispy_field }}
+                        {{ order_form.street_address1 | as_crispy_field }}
+                        {{ order_form.street_address2 | as_crispy_field }}
+                        {{ order_form.postcode | as_crispy_field }}
+                        {{ order_form.town_or_city | as_crispy_field }}
+                        {{ order_form.county | as_crispy_field }}
+                        {{ order_form.country | as_crispy_field }}
+
+- If I refresh my checkout view on my dev server then I can see this looks much better, with the country drop-down appearing at the bottom of the form:
+
+![Checkout Delivery Fields Presented in Logical Order](/static/images/Stripe/Screenshot%20checkout%20delivery%20fields%20more%20logical.png)
+
+
+# Profile App - App Creation and Wiring
+
+1. Now that I have setup and tested my payment system, I want to look at giving the user their own personalised user profile so that they can track and view past orders, save default delivery information and see what fitness/nutrition plans they are currently on. Before I start, I am going to create a new base.html in the templates/allauth folder. Then in the file itself I am going to populate it with the html from Code Institute's Boutique Ado project:
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>{% block head_title %}{% endblock %}</title>
+    {% block extra_head %}
+    {% endblock %}
+  </head>
+  <body>
+    {% block body %}
+
+    {% if messages %}
+    <div>
+      <strong>Messages:</strong>
+      <ul>
+        {% for message in messages %}
+        <li>{{message}}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    <div>
+      <strong>Menu:</strong>
+      <ul>
+        {% if user.is_authenticated %}
+        <li><a href="{% url 'account_email' %}">Change E-mail</a></li>
+        <li><a href="{% url 'account_logout' %}">Sign Out</a></li>
+        {% else %}
+        <li><a href="{% url 'account_login' %}">Sign In</a></li>
+        <li><a href="{% url 'account_signup' %}">Sign Up</a></li>
+        {% endif %}
+      </ul>
+    </div>
+    {% block content %}
+    {% endblock %}
+    {% endblock %}
+    {% block extra_body %}
+    {% endblock %}
+  </body>
+</html>
+
+2. Next I replace the current code in my templates/allauth/account/base.html with:
+
+{% extends "base.html" %}
+
+3. Then I create my new app for profiles using:
+
+python3 manage.py startapp profiles
+
+4. I add this to my INSTALLED APPS section of the settings file as below:
+
+    'profiles',
+
+5. Next, I am going to look at the profiles/models. I need a user profile model which is attached to the logged in user which also links to all of their past orders. I will import the user model at the top of the file and then create a user profile model which has a one-to-one field attached to the user (this works the same as a foreign key except it ensures that user can only have 1 x profile). 
+
+from django.contrib.auth.models import user
+
+class UserProfile(models.Model):
+     user = models.OneToOneField(User, on_delete=models.CASCADE)
+
+6. Then the rest of the fields in the model are all the delivery information fields that the user should be allowed to be provide defaults for which come from the Order model; so I copy these from the model itself and then paste these into the new UserProfile class:
+
+    phone_number = models.CharField(max_length=20, null=False, blank=False)
+    country = CountryField(blank_label='Country *')
+    postcode = models.CharField(max_length=20, null=True, blank=True)
+    town_or_city = models.CharField(max_length=40, null=False, blank=False)
+    county = models.CharField(max_length=80, null=True, blank=True)
+    street_address1 = models.CharField(max_length=80, null=False, blank=False)
+    street_address2 = models.CharField(max_length=80, null=True, blank=True)
+
+7. I then update the fields so they have 'default' at the beginning to make clear what they are and provide null equals true and blank equals true values for each of them as below:
+
+    default_phone_number = models.CharField(max_length=20, null=True, blank=True)
+    default_country = CountryField(blank_label='Country *', null=True, blank=True)
+    default_postcode = models.CharField(max_length=20, null=True, blank=True)
+    default_town_or_city = models.CharField(max_length=40, null=True, blank=True)
+    default_county = models.CharField(max_length=80, null=True, blank=True)
+    default_street_address1 = models.CharField(max_length=80, null=True, blank=True)
+    default_street_address2 = models.CharField(max_length=80, null=True, blank=True)
+
+8. As I am using Django Countries, I will need to import this at the top of the profiles/models file so do this now with:
+
+from django_countries.fields import CountryField
+
+9. Then under the fields for my UserProfile, I create a string method which will return the username:
+
+    def __str__(self):
+        return self.user.username
+
+10. Then below this, I add a quick receiver for the post save event generated by the user model so that whenever a user object is saved, it will automatically either create a profile for them if the user has only just been created. Or save the profile if the user already exists. As there is only one signal, there doesn't need to be a separate signals.py module as was done on the Order model:
+
+@receiver(post_save, sender=User)
+def create_or_update_user_profile(sender, instance, created, **kwargs):
+    """
+    Create or update the user profile
+    """
+    if created:
+        UserProfile.objects.create(user=instance)
+    # Existing users: just save the profile
+    instance.userprofile.save()
+
+11. Then the last thing I need to do in order gor the signal to work on my receiver is import the post.save and receiver:
+
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+12. I now have a UserProfile model which will create a profile for everyone who signs up for a new account. I now need to attach the user profile to my Order model before making migrations on the new model changes. In checkout/models, I first import the UserProfile model at the top of the file using:
+
+from profiles.models import UserProfile
+
+13. Then, within the Order model itself, I create a new foreign key for it using the below. I have use models.set_null so if the profile is deleted that we can still keep track of the user's order history in the Admin panel. I allow this to be either null or blank so that users without an account are still able to make purchases. Finally, there is a 'related_name' of orders so that I can access the user's orders:
+
+user_profile = models.ForeignKey(UserProfile, on_delete=models.SET_NULL, null=True, blank=True, related_name='orders')
+
+14. Once these changes are done, I can then run migrations on changes using:
+
+python3 manage.py makemigrations
+
+python3 manage.py migrate
+
+15. These run successfully so I am now going to look at setting up some basic urls, views and templates for the Profiles app. I am going to start in profiles/views and create a basic intitial view so I can see my profiles app as I am building it. In my views file, I create a simple view called 'profile' which just returns the profile.html template with an empty context (for now):
+
+def profile(request):
+    """ Display the user's profile. """
+
+    template = 'profiles/profile.html'
+    context = {}
+    
+    return render(request, template, context)
+
+16. Next, I create the url for the new view so it can be accessed, I go to profiles and create a urls.py file in the directory and update the file as below. This imports the view file from profiles directory and then looks at the profile view in the file to create the URL pattern:
+
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('', views.profile, name='profile')
+]
+
+17. Next, I need to create the url path in my project level urls path, I update the paths to include the below for profiles:
+
+    path('profile/', include('profiles.urls')),
+
+18. I then look at the template for my new app. In my profiles app directory, I create a new folder called templates with a subfolder for profiles inside this. And then I create a new file for the template called profile.html inside of the templates/profiles folder. Then I will copy my html from checkout.html and paste this into the new file, adjusting accordingly for my profiles app:
+
+- I do not need bagtools so remove this from the top of the file.
+- I update the extra css block to use a profiles.css file that I will create in future.
+- I then remove all other content, apart from the header, which I update to 'My Profile'.
+
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'profiles/css/profiles.css' %}">
+{% endblock %}
+
+{% block page_header %}
+    <div class="container header-container">
+        <div class="row">
+            <div class="col"></div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block content %}
+    <!-- Code Institute - Boutique Ado -->
+    <div class="container">
+        <div class="row">
+            <div class="col">
+                <hr>
+                <h2 class="logo-font mb-4">My Profile</h2>
+                <hr>
+            </div>
+        </div>
+
+ 
+{% endblock %}
+
+19. Next I create the css directory within the 'profiles' app and then create an empty profiles.css file within here which I can update as I make changes to the profile app:
+
+profiles/static/profiles/css/profiles.css
+
+20. I refresh my dev server and add /profiles to the end of the url to see how this looks at the moment:
+
+![Profile first view = basic template](/static/images/Profiles/Screenshot%20first%20view%20basic%20template.png)
+
+21. This is how I would expect it to look, it's very basic and ready for me to start building it with all the functionality it needs. I run collectstatic, commit to Git and Heroku and then get ready to start integrating the users profile throughout my app.
+
 ---
 
 # 6. Credits and Acknowledgements
@@ -15211,6 +15419,9 @@ The following parts of my Project were implemented using Bootstrap docs:
 - display css update for loading-cursor div
 - handle webhooks event code - webhooks.py
 - webhook_handler handle_payement_intent_succeeded updates
+- select and select option css in checkout.css
+- templates/allauth/base.html
+- templates/allauth/account/base.html
 
 
 
