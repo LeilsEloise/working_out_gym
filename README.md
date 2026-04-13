@@ -15393,6 +15393,223 @@ def profile(request):
 
 ---
 
+# Profile App - User Profile Form
+
+1. I am now going to build the user profile form. As its very similar to the Order form and the profile model is almost the same as the order model, I am just going to start by copying the checkout/forms content into a forms.py file in the profiles app. I make some tweaks to the code from checkout/forms as below:
+
+- I update the model import to UserProfile
+- I update the name of the class and the model in the metaclass
+- I remove the fields attribute and replace with the exclude attribute and render all fields except the user field as this shouldn't change. 
+- Then in the init function, I remove the full name and email placeholders as these fields don't exist on this model. 
+- I then add default in front of the remaining field names to make them match the model.
+- In the self.fields I update the autofocus to use the default_phone_number
+- I update the country field to default_country 
+- Finally I update the classes that we're adding to make the form match the rest of the app
+
+from django import forms
+from .models import UserProfile
+
+
+class UserProfileForm(forms.ModelForm):
+    class Meta:
+        model = UserProfile
+        exclude = ('user',)
+
+    def __init__(self, *args, **kwargs):
+        """
+        Add placeholders and classes, remove auto-generated
+        labels and set autofocus on first field
+        """
+        super().__init__(*args, **kwargs)
+        placeholders = {
+            'default_phone_number': 'Phone Number',
+            'default_postcode': 'Postal Code',
+            'default_town_or_city': 'Town or City',
+            'default_street_address1': 'Street Address 1',
+            'default_street_address2': 'Street Address 2',
+            'default_county': 'County, State or Locality',
+        }
+
+        self.fields['default_phone_number'].widget.attrs['autofocus'] = True
+        for field in self.fields:
+            if field != 'default_country':
+                if self.fields[field].required:
+                    placeholder = f'{placeholders[field]} *'
+                else:
+                    placeholder = placeholders[field]
+                self.fields[field].widget.attrs['placeholder'] = placeholder
+            self.fields[field].widget.attrs['class'] = 'border-black rounded-0 profile-form-input'
+            self.fields[field].label = False
+
+2. I go back to profiles/views and import the new profile form at the top of my file:
+
+from .forms import UserProfileForm
+
+3. Then in the profile function, I import the form here and populate it with the current user's profile information and then return it to the template:
+
+    form = UserProfileForm(instance=profile)
+
+4. I can then remove the profile from the context and then use the profile and the related name on the order model to get the users orders and return these to the template instead:
+
+    orders = profile.orders.all()
+
+    template = 'profiles/profile.html'
+    context = {
+        'form': form,
+        'orders': orders,
+    }
+
+5. Now I need to render this form in the profile template so I go to profile.html and create a new row above the profile tag. Half of my page will be a profile and the other half will be order history so within the row I then need 2 x columns:
+
+        <div class="row">
+            <div class="col-12 lg-6"></div>
+            <div class="col-12 lg-6"></div>
+        </div>
+        {{ profile }}
+
+- In the first column I am going to add a small paragraph heading and a form, I am going to borrow Code Institute's Boutique Ado code for this to save time. The form submits to the profile URL using the POST method, which I will write soon, it has an ID of profile-update-form to make it easily identifiable and inside it renders as a crispy-form. There is also a submit button styled in the way of the rest of the buttons, that floats on the right of the column:
+
+                <p class="text-muted">Delivery Details</p>
+                <form class="mt-3" action="{% url 'profile' %}" method="POST" id="profile-update-form">
+                    {% csrf_token %}
+                    {{ form|crispy }}
+                    <button class="btn btn-black rounded-0 text-uppercase float-right">Update Information</button>
+                </form>
+
+- Then in the second column I add a paragraph element containing the second column heading of 'Order History' and then a tag to get all user's orders if they have made any:
+
+                <p class="text-muted">Order History</p>
+                {{ orders }}
+
+6. I am now going tro run my dev server and go to the profile while logged on as the user to see how this looks:
+
+![Profile Order and Delivery Update not in 2 x columns](/static/images/Profiles/Screenshot%20profile%20updated%20but%20not%20in%202%20x%20columns.png)
+
+7. I realise that my div classes are wrong for my columns on my2 x divs:
+
+            <div class="col-12 lg-6">
+
+- It is missing the column defintion for my large 6 column class, I update to:
+
+            <div class="col-12 col-lg-6">
+
+- I refresh the page and this looks right now:
+
+![Profile Order and Delivery Update now in 2 x columns](/static/images/Profiles//Screenshot%20my%20profile%20now%20in%202%20x%20colsusmns.png)
+
+8. The order of the fields on the 'Delivery Details' form could be more logical and I am going to remove the asterisk from the country field as it's not required on this form. In my profiles/models file, I rearrange the 'Delivery Details' fields accordingly:
+
+class UserProfile(models.Model):
+    """User Profile model to allow users to track orders and plans and maintain delivery details"""
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    default_phone_number = models.CharField(max_length=20, null=True, blank=True)
+    default_street_address1 = models.CharField(max_length=80, null=True, blank=True)
+    default_street_address2 = models.CharField(max_length=80, null=True, blank=True)
+    default_postcode = models.CharField(max_length=20, null=True, blank=True)
+    default_town_or_city = models.CharField(max_length=40, null=True, blank=True)
+    default_county = models.CharField(max_length=80, null=True, blank=True)
+    default_country = CountryField(blank_label='Country', null=True, blank=True)
+
+9. Now when I refresh this looks more professional:
+
+![Profile Delivery Details Fields Logical Order](/static/images/Profiles/Screenshot%20updated%20fields%20on%20profile%20delivery%20details.png)
+
+10. I now want to make sure that the profile forms placeholders are coloured correctly so use the below css in my profiles.css file. I have borrowed this from Code Institute:
+
+
+#profile-update-form .form-control {
+    color: #000;
+}
+
+#profile-update-form input::placeholder {
+    color: #aab7c4;
+}
+
+11. I am then going to update the profiles.css further by adding a rule that makes the country field itself as well as all its options black, except the first option, by default. I then make another rule below this one which makes the first option element the colour of the placeholder:
+
+#id_default_country,
+#id_default_country option:not(:first-child) {
+    color: #000;
+}
+
+#id_default_country option:first-child {
+    color: #aab7c4;
+}
+
+12. This looks good when I restart and refresh the page. However, the first option is not showing as grey when selected so I remedy this in the profile.html template and open a new postload js block at the bottom of the file and then borrow Code Institute's Boutique Ado Javascript. The script will first get the value of the country field whem the page loads and then will store this in a variable - the value will be an empty string if the first option is selected. To determine if this has been selected it then uses a boolean - so if country is selected = false then the colour of this element should be grey:
+
+{% block postloadjs %}
+    {{ block.super }}
+    <script type="text/javascript">
+        let countrySelected = $('#id_default_country').val();
+        if(!countrySelected) {
+            $('#id_default_country').css('color', '#aab7c4');
+        }
+    </script>
+{% endblock %}
+
+13. Then, still inside the script tags, I want to capture the change event so that everytime the box changes we get the value of it:
+
+        $('#id_default_country').change(function() {
+            countrySelected = $(this).val();
+
+        })
+
+- And then I need to determine the proper colour:
+
+    if(!countrySelected) {
+        $(this).css('color', '#aab7c4');
+    } else {
+        $(this).css('color', '#000');
+    }
+        });
+
+14. I then create a 'js' folder within my profiles/static/profiles folder where I then create new file called 'countryfield.js' and I cut and paste the javascript I just wrote at the bottom of my profile.html into this new separate Javascript file. Then back in my profile template in my postload js block, I call the file using the src method, as below:
+
+<script type="text/javascript" src="{% static 'profiles/js/countryfield.js' %}"></script>
+
+15. However, when I reload the page it isn't applying the changes I wanted. If I inspect the page in devtools, go to the Network tab and then refresh the page I can see that the countryfield.js file is failing:
+
+![Devtools countryfield Javascript failing](/static/images/Profiles/Screenshot%20devtools%20countryfield%20js%20failing.png)
+
+16. I query this with ChatGPT who advises that it is most likely due to the that the code in my countryfield.js file requires jQuery which I removed from my Project earlier. I add the below line above my script src for countryfield.js:
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+17. I hard reload the site to see whether its now loading my Javascript file but I am still seeing the error. ChatGPT recommends updating the code in my countryfield.js so that it doesn't use jQuery. I update this and test now but it's still not loading the file. I then run a collectstatic and then restart the dev server and can see this is now taking affect.
+
+18. Next I am going to write the post handler for the profile view. In profile/views at the top of my profile function, i set an if statement that says, if the request method is POST then create a new instance of the user profile using the post data and tell it the instance we're updating is the profile just retrieved above. Then if the form is valid, save and add a success message
+
+    if request.method == 'POST':
+        form = UserProfileForm(request.POST, instance=profile)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Profile updated successfully')
+
+- Then at the top of the file I will need to import messages:
+
+from django.contrib import messages
+
+- The rest of the logic stays the same as all we're doing is replacing the form variable with the user's updated profile and returning the same template. I test this out on the dev server. I add an item to my cart and then update my delivery details on my Profile. When I save the details to my profile, I receive a toast message saying that the profile has updated but it also contains a preview of my bag:
+
+![Toast Profile Update Msg Cart Preview](/static/images/Profiles/Screenshot%20bag%20details%20showing%20on%20profile%20update%20message.png)
+
+- To resolve this, I need to go back into profile/views and then add another context variable called 'on_profile_page' which is set to true:
+
+'on_profile_page': True
+
+- Then I go to my toast_success.html template in templates/includes/toasts. Then in the section with my if statement for grand_total, I will also check that I am not on the profile page to make it so that the shopping bag preview only shows up in the success message if we're not on the profile page:
+
+    {% if grand_total and not on_profile_page %}
+
+- Now if I refresh and update the profile, the toast message looks much better:
+
+![Toast Profile Update Msg Cleaner](/static/images/Profiles/Screenshot%20clean%20profile%20toast%20message%20success.png)
+
+19. I now run collectstatic and commit my changes to Git and Heroku before looking at setting up user's order histories in their profiles and setting up checkout so it autofills payment and delivery forms.
+
+---
+
 # 6. Credits and Acknowledgements
 
 ### Content
@@ -15542,6 +15759,8 @@ The following parts of my Project were implemented using Bootstrap docs:
 - select and select option css in checkout.css
 - templates/allauth/base.html
 - templates/allauth/account/base.html
+- profile.html form updates 
+- profiles.css profile-update-form rules
 
 
 
@@ -15614,6 +15833,7 @@ The following parts of my Project were implemented using Bootstrap docs:
 - var saveinfo stripe_elements.js
 - address variable webhook handler update
 - toast jquery base.html script
+- countryfield.js update no jquery
 
 
 
