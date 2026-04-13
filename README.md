@@ -5442,6 +5442,7 @@ Cannot resolve keyword 'name' into field. Choices are: category, category_id, fr
 
 ---
 
+
 # Merchandise App - Product Queries by Category
 
 1. Next I want to set it up so that the users the ability to show specific categories of products. I will do this by creating some subfolder Nav menu links beneath Merchandise for the different categories of products. To start with, I will identify all the possible categories by running the following:
@@ -6823,6 +6824,7 @@ python manage.py collectstatic
 
 - I then restart my dev server and see if the button now works, which it does so I commit my code and get ready to start creating my shopping bag next.
 
+
 # Shopping Bag Application Creation and Wiring
 
 1.  To start, I create a new app for 'Shopping Bag' using the following cmd:
@@ -7512,6 +7514,7 @@ nav-link-text
 
 - I then commit my code before moving on to looking at adding functionality to the app so it tracks what items are held in the bag.
 
+
 # Shopping Bag - Contexts
 
 1. Next I am going to add some functionality to my Shopping Bag app so that it tracks the items in the bag. To start, I need to create a new file called contexts.py in the root of my shoppingbag app directory. Within the new file, I create a new function called bag_contents which takes the request as a parameter. This function will return a dictionary called context instead of a template; this is a context processor and its purpose is to make the dicitonary available to all templates across the entire application:
@@ -7590,6 +7593,8 @@ To:
 def bag_contents(request):
 
 8. My page is loading again after this last change and I am not seeing any errors in the terminal so I commit my changes and then I can start looking at the code for allowing users to add to their shopping bags.
+
+---
 
 # Shopping Bag - Adding Items to Bag
 
@@ -7704,6 +7709,8 @@ print(request.session['bag'])
 
 [19/Mar/2026 10:55:48] "GET /merchandise/13446/ HTTP/1.1" 200 32620
 {'13446': 1}
+
+---
 
 # Shopping Bag - Making Contents Available to the Entire App
 
@@ -8260,6 +8267,8 @@ total += subtotal
 
 10. I commit my changes and push them to Github and Heroku after running a collectstatic. 
 
+---
+
 # Shopping Bag - Size Options for Clothing
 
 1. I now want to give users the option to select different sizes if they are purchasing clothing from the site. I go to my merchandise.models file and add a new field to the Product model as below, this is a BooleanField which will be false by default and allowed to be blank both in the database and in forms rather than having to implement different sizes for every product in the database. As this is not an official commercial e-commerce site, I am just going to mimic the functionality, the same as Code Institute, by simply describing if the object has different sizes available and then give user the choice of some generic sizes to be added to their item details in the bag
@@ -8337,6 +8346,8 @@ exit()
 ![Shopping Bag Size Field](/static/images/shoppingbag/Screenshot%20size%20in%20shopping%20bag.png)
 
 16. I run collectstatic and then commit my code to Github and Heroku.
+
+---
 
 # Shopping Bag - Size Update for Context Processor and Add_To_Bag View
 
@@ -8949,6 +8960,8 @@ def add_to_bag(request, product_id):
 
 28. I commit my code again and move on.
 
+---
+
 # Shopping Bag - Quantity Selector Javascript
 
 1. I am now going to add some buttons to the quantity selector on the product details. In the product_details template, I am going to use the built-in input group append and input group prepend classes from Bootstrap with some buttons that use the appropriate Font Awesome icons. I consult ChatGPT on how best to do this and ask for some guidance on restyling the Size and Quantity layout on Product Details, it provides me the below code which I update:
@@ -9407,6 +9420,8 @@ To:
 - This now converts the product_id to a string in each of my views so it can be used in the session.
 
 22. Now when I test, the code for both updating and removing items from the shopping bag is working as expected so I commit my code and move on.
+
+---
 
 #  Toasts
 
@@ -10160,7 +10175,7 @@ def add_to_bag(request, product_id):
 
 16. I am going to switch debug back to False, run a collectstatic and then commit my code to Github and Heroku.
 
-----
+---
 
 # Checkout App - Creating the App and Models
 
@@ -10276,6 +10291,8 @@ git add .
 git commit -m "Created checkout app and models"
 git push origin main
 git push heroku main
+
+---
 
 # Checkout App - Admin for Orders
 
@@ -10967,6 +10984,8 @@ var card = elements.create('card', {style: style});
 
 28. I switch Debug to False and run a collectstatic before committing my changes to Github and Heroku.
 
+---
+
 # Stripe - Adding functionality to Card Element
 
 1. First I will need to add a listener on the card element for the change event and everytime it changes, I will check and see if there are any errors:
@@ -11110,6 +11129,8 @@ Uncaught SyntaxError: Unexpected token '(' (at stripe_elements.js:24:50)
 
 if not stripe_public_key:
     messages.warning(request, 'Stripe public key is missing. Did you forget to set it in your environment?')
+
+---    
 
 # Stripe - Building Checkout Flow
 
@@ -14101,6 +14122,8 @@ python manage.py collectstatic
 
 - I commit my code to Git and Heroku ready for implementing Webhooks next.
 
+---
+
 # Checkout - Webhooks for Payment Status Tracking
 
 1. So from the tests done previously, I can see that my orders are being created and stored in the database after checking my Admin panel. However, if a user closes the browser after the payment is confirmed and sent to Stripe but before form is submitted then there will be no order in the database. Things like internal email notificaitons would not be triggered because the user never fully completes their order. Which could result in charges to the user with no confirmation email or getting wrong orders. To prevent this, I will add redundancy and each time and event occurs on Stripe such as a payment intent being created, a payment being completed, etc. then Stripe will send out a Webhook to listen for. (Webhooks are the signal that Django sends each time a model is saved or deleted).
@@ -14321,18 +14344,18 @@ I am now going to moderate my webhook view to use the webhook handler. To do thi
 
 32. Next, I want to get the type of the event from Stripw and store this ina key called type. This returns something like payment intent.succeeded or payment intent.payment failed:
 
-    # Get the webhook type from Stripe
+    #Get the webhook type from Stripe
     event_type = event['type']
 
 33. Then I want to look up the key in the dictionary and assign its value to a variable called event handler which is nothing more than an alias for whatever function was just pulled from the dictionary:
 
-    # If there's a handler for it, get it from the event map
-    # Use the generic one by default
+    #If there's a handler for it, get it from the event map
+    #Use the generic one by default
     event_handler = event_map.get(event_type, handler.handle_event)
 
 34. Then finally, we can call it just like any other function, call the event handler and pass it the event and return the response to Stripe as below:
 
-    # Call the event handler with the event
+    #Call the event handler with the event
     response = event_handler(event)
     return response
 
@@ -14876,7 +14899,7 @@ pid = intent.id
 bag = intent.metadata.bag
 save_info = intent.metadata.save_info
 
-# Get the Charge object
+#Get the Charge object
 stripe_charge = stripe.Charge.retrieve(
     intent.latest_charge
 )
@@ -15077,6 +15100,7 @@ county__iexact=address.get('state'),
 
 ![Checkout Delivery Fields Presented in Logical Order](/static/images/Stripe/Screenshot%20checkout%20delivery%20fields%20more%20logical.png)
 
+---
 
 # Profile App - App Creation and Wiring
 
@@ -15270,6 +15294,102 @@ profiles/static/profiles/css/profiles.css
 ![Profile first view = basic template](/static/images/Profiles/Screenshot%20first%20view%20basic%20template.png)
 
 21. This is how I would expect it to look, it's very basic and ready for me to start building it with all the functionality it needs. I run collectstatic, commit to Git and Heroku and then get ready to start integrating the users profile throughout my app.
+
+22. I am doing some testing to see how my login/logout/signup templates look and I decide to fix the issue with my toast notification 'x' button not working. I query with ChatGPT who advises I am not running the script for it in base.html, and to add these above my toast show script:
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+
+- I do this and then reload my page and test, however, the buttons still do not work. I query further with ChatGPT who advises that it looks like I have a versioning conflict. My toast html uses 'data-dismiss="toast"' which is a Bootstrap 4 syntax but in my base.html I am loading Bootstrap 5.1.3 which uses data-bs-dismiss instead. It advises me to remove jquery completely from the bottom of my base.html. Then to update all my toast templates to use data-bs-dismiss="toast" instead of data-dismiss="toast". I update toast_error, toast_info, toast_success and toast_warning to use the corect data-dismiss class for Bootstrap 5.
+
+- I also need to update the close class on all of the templates from class="close" to class="btn-close", so I update the 4 x toast templates with this now.
+
+- It also advises me to replace my jQuery script 
+
+- I save and refresh my server to see how this looks now, I login and can now click the 'X' on my toast notifications to remove the alerts.
+
+23. I am now going to test logging in and seeing whether I can access the simple profiles page I have just created. Luckily, as I have rebuilt my database several times I now only have 1 x superuser account so don't need to adjust the signal on pre-existing user accounts, I can just create some new accounts now and they should have a profile created with the new signal in place. I sign up for an account on the site:
+
+![Account Signup - initial profile testing](/static/images/Profiles/Screenshot%20account%20signup.png)
+
+24. I am then asked to verify my e-mail address so I will go to the admin panel and login as the superuser. However, after I enter my details and hit logon I am hit with a server 500 error so will set debug to True and reload. The error I am getting is this:
+
+RelatedObjectDoesNotExist at /admin/login/
+User has no userprofile.
+Request Method:	POST
+Request URL:	http://127.0.0.1:8000/admin/login/?next=/admin/
+Django Version:	6.0.2
+Exception Type:	RelatedObjectDoesNotExist
+Exception Value:	
+User has no userprofile.
+Exception Location:	C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\.venv\Lib\site-packages\django\db\models\fields\related_descriptors.py, line 520, in __get__
+Raised during:	django.contrib.admin.sites.login
+Python Executable:	C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\.venv\Scripts\python.exe
+Python Version:	3.12.8
+Python Path:	
+['C:\\Users\\leila\\OneDrive\\Desktop\\Documents\\vscode-projects\\working_out_gym',
+ 'C:\\Program Files\\Python312\\python312.zip',
+ 'C:\\Program Files\\Python312\\DLLs',
+ 'C:\\Program Files\\Python312\\Lib',
+ 'C:\\Program Files\\Python312',
+ 'C:\\Users\\leila\\OneDrive\\Desktop\\Documents\\vscode-projects\\working_out_gym\\.venv',
+ 'C:\\Users\\leila\\OneDrive\\Desktop\\Documents\\vscode-projects\\working_out_gym\\.venv\\Lib\\site-packages']
+Server time:	Mon, 13 Apr 2026 07:13:53 +0000
+
+- So I will have to adjust my signal slightly so it'll create a user profile for my superuser account and let me logon. I go to profiles/models and comment out the code under my create_or_update_user_profile function like below:
+
+def create_or_update_user_profile(sender, instance, created, **kwargs):
+    """
+    Create or update the user profile
+    """
+    #if created:
+        #UserProfile.objects.create(user=instance)
+    # Existing users: just save the profile
+    #instance.userprofile.save()
+
+- I reload the page and try to logon again and it is now letting me logon so has created me a profile. I can uncomment the code above and then verify my other user's email address and my superusers in the admin panel:
+
+![Profile created successful login](/static/images/Profiles//Screenshot%20profile%20created%20successful%20login.png)
+
+![Verified email addresses](/static/images/Profiles/Screenshot%20verified%20email%20address.png)
+
+- I uncomment the code in profiles/models and then reload my page and login as the standard user.
+
+25. Once logged in as my standard user, I open up 'My Account' from the navbar and click the link to 'My Profile' but nothing happens. I need to update the href on 'My Profile' in the main-nav.html as below so it now directs to the new profile app I have just created:
+
+              <a href="{% url 'profile' %}" class="dropdown-item">My Profile</a>
+
+26. I test again and this now works:
+
+![My Profile My Account Link works](/static/images/Profiles/Screenshot%20my%20profile%20link%20from%20my%20account%20works.png)
+
+27. I now want to go to my profiles/views file and import the user profile model and then get the profile for the current logged in user and then return it to the template:
+
+from django.shortcuts import render, get_object_or_404
+
+from .models import UserProfile
+
+
+def profile(request):
+    """ Display the user's profile. """
+    profile = get_object_or_404(UserProfile, user=request.user)
+
+    template = 'profiles/profile.html'
+    context = {
+        'profile': profile,
+    }
+    
+    return render(request, template, context)
+
+28. Then in profile.html, I will just render the profile where we will see the username printed out:  
+
+        {{ profile }}
+
+29. Now when I reload the profile page I see the username printed out:
+
+![Profile username printed out](/static/images/Profiles/Screenshot%20profile%20initial%20username%20printed%20out.png)
+
+30. With these changes in place, I will save and commit my code to Git and Heroku after running collectstatic.
 
 ---
 
@@ -15493,6 +15613,7 @@ The following parts of my Project were implemented using Bootstrap docs:
 - stripe_elements.js in checkout update with done() wrapper
 - var saveinfo stripe_elements.js
 - address variable webhook handler update
+- toast jquery base.html script
 
 
 
