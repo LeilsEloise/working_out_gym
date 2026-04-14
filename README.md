@@ -15608,6 +15608,203 @@ from django.contrib import messages
 
 19. I now run collectstatic and commit my changes to Git and Heroku before looking at setting up user's order histories in their profiles and setting up checkout so it autofills payment and delivery forms.
 
+20. In my profile.html template, I am going to add the section below for my 'Order History' using a simple reponsive Bootstrap table so it'll expand cleanly with each new order that the user makes. 
+The table will be small and have no borders with 4 x columns in the head: Order number, date, items and the order total. 
+Then in the table body, it will iterate through the orders returned from the profile view and generate a new row for each one. 
+The order number cell will be a link to a url for the 'order history which is passed the order number. Then the link is given a title so that when hovered over it gives the whole order number. To condense this down a little, I will pipe the order number into the built-in truncate characters filter to limit it to 6 x characters. 
+Then the order date and grand_total are straight forward tags which are added below the order number code. The items in the shopping bag will be found using an unordered unstyled list and then for each item in the orders list of the line-items it will make a small text summary of it with the size, where applicable, then the product name and the quantity being purchased:
+
+                <div class="order-history table-responsive">
+                    <table class="table table-sm table-borderless">
+                        <thead>
+                            <tr>
+                                <th>Order Number</th>
+                                <th>Date</th>
+                                <th>Items</th>
+                                <th>OrderTotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in orders %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'order_history' order.order_number %}"
+                                        title="{{ order.order_number }}">
+                                            {{ order.order_number|truncatechars:6 }}
+                                        </a>
+                                    </td>
+                                    <td>{{ order.date }}</td>
+                                    <td>
+                                        <ul class="list-unstyled">
+                                            {% for item in order.lineitems.all %}
+                                                <li class="small">
+                                                    {% if item.product.has_sizes %}
+                                                        Size {{ item.product.size|upper }}
+                                                    {% endif %}{{ item.product.name }} x{{ item.quantity }}
+                                                </li>
+                                            {% endfor %}
+                                        </ul>
+                                    </td>
+                                    <td>${{ order.grand_total }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+21. I now need to set a max-height for the Order History form in case user has a lot of orders. In the profiles.css file, I add the below rules which is 416px for the height of the form and the submit button in the adjacent column so anything above the height of 416px will have a scrollbar:
+
+.order-history {
+    max-height: 416px; /* height of profile form + submit button */
+    overflow-y: auto;
+}
+
+22. The template will not open until I have created the Order History url and view. I start by creating this in profile/views file. I create a new view called 'order_history' which takes the order number as thhe parameter:
+
+def order_history(request, order_number):
+
+- I then get the order using below simple logic:
+
+    order = get_object_or_404(Order, order_number=order_number)
+
+- As I am retrieving the order, I will need to import the Order model at the top of the file:
+
+from checkout.models import Order
+
+- Then I will add a message which lets the user know they are looking at a past order confirmation:
+
+    messages.info(request, (
+        f'This is a past confirmation for order number {order_number}.'
+        'A confirmation email was sent on the order date.'
+    ))
+
+- Then the last thing I need to do is give it a template and context which includes the order number. It will use the checkout_success template as that template already has the layout for rendering order confirmation. I have added another variable to the context called from_profile so we can check in this template whether the user accessed this via the 'order history' view:
+
+
+    template = 'checkout/checkout_success.html'
+    context = {
+        'order': order,
+        'from_profile': True,
+    }
+
+    return render(request, template, context)
+
+23. With the views file now updated, I can go create my url for this view now. In profiles/urls, I create a new path for 'Order History'. The url will be order_history followed by the order_number, the view will return the order_history view and then have a matching name of order_history:
+
+    path('order_history/<order_number>', views.order_history, name='order_history'),
+
+24. Now I go to my checkout_success template and at the bottom of my template with the order confirmation, I add a check of whether user has come from the profile page and if they have I will render them a button taking them back to this page if they wish:
+
+           {% if from_profile %}
+              <a href="{% url 'profile' %}" class="btn btn-black rounded-0 my-2">
+                  <span class="icon mr-2">
+                      <i class="fas fa-angle-left"></i>
+                  </span>
+                  <span class="text-uppercase">Back to Profile</span>
+              </a>
+           {% else %}
+
+25. I now need to implement the mechanism to assign orders to specific user profiles. To start with, I am going to make the user profile field available in the admin panel. To do this I go to checkout/admin and then add the user profile field as below:
+
+        'user_profile',
+
+26. Now what I need is a way to associate the order with the user's profile when the order is created. The most appropriate place for this then would be the checkout_success view as we know the form has been submitted and the order has been successfully processed so this is a good place to add the user's profile. 
+
+In checkout/views, in my view for checkout_success, as we already have the order, I just need to add the profile by checking if the user is authenticated. 
+Then I can get the user's profile and set it on the order and save it. 
+I can also use the 'save info' box, first determining whether it was checked and if so, pull the data to go into the user's profile off the order into a dictionary of profile data. The dictionaries' keys will match the fields on the user profile model, such as the default phone number, country, postcode, etc. 
+
+    if request.user.is_authenticated:
+        profile = UserProfile.objects.get(user=request.user)
+        # Attach the user's profile to the order
+        order.user_profile = profile
+        order.save()
+
+        # Save the user's info
+        if save_info:
+            profile_data = {
+                'default_phone_number': order.phone_number,
+                'default_country': order.country,
+                'default_postcode': order.postcode,
+                'default_town_or_city': order.town_or_city,
+                'default_street_address1': order.street_address1,
+                'default_street_address2': order.street_address2,
+                'default_county': order.county,
+            }
+
+27. Then I want to create my own instance of the user profile form using the profile data and then tell it that it will update the profile just obtained and then to save it:
+
+            user_profile_form = UserProfileForm(profile_data, instance=profile)
+            if user_profile_form.is_valid():
+                user_profile_form.save()
+
+28. Then because I am using the profile model and user profile form, I need to import both of these files at the top of checkout/views:
+
+from profiles.models import UserProfile
+from profile.forms import UserProfileForm
+
+29. I now test this by removing all the details from my user profile and clicking 'Update Information' once it has been removed. I then go to checkout an order but notice that the 'Payment' stripe element is gone and it just has text saying payment. I inspect devtools on the element to see what is happening. I can see that I am getting this error in the console:
+
+stripe_elements.js:2 Uncaught ReferenceError: $ is not defined at stripe_elements.js:2:1
+
+- I query this with ChatGPT who advises that the stripe_element.js is loading jQuery but I removed this globally from my app earlier. The best fix to resolve this would be to add it back in so I will do this now and add above my Bootstrap link in base.html:
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+- After updating base.html and reloading my app and doing a hard refresh, I can see the payment link again. I tick the 'Save this delivery information to my profile' and then complete the order:
+
+![Checkout order save info](/static/images/Profiles/Screenshot%20checkout%20saving%20information%20to%20profile.png)
+
+- After I complete the order I get redirected to a server 500 page, so I turn Debug on to see what is happening. I refresh and looks like there is an invalid endblock in my checkout_success.html. I update this now but it is still erroring. It seems there is another issue with a broken if statement across two lines in my for loop on OrderLineItems so I rectify this:
+
+              {{ item.product_variant.product.title }} 
+              {% if item.product_variant.variant_title %}
+              -{{item.product_variant.variant_title|upper }} 
+              {% endif %}
+
+- Then I add an {% endblock %} tag at the bottom of the file and reload and this has been successful now but the styling is a bit off:
+
+![Checkout success view messed up](/static/images/Profiles/Screenshot%20checkout%20success%20page%20looks%20wrong.png)
+
+- I take a look at my checkout_success.html file again and realise there is open divs so close these and then make a new order but the page still doesn't look right. I query with ChatGPT who advises I am loading my Bootstrap 5 css in the wrong place in base.html, this should be loading in my corecss block instead of the extra css block. I remove from the extra css block and place in the corecss block and hard reload my page and can now see the correct view for checkout success:
+
+![Checkout success view resolved](/static/images/Profiles/Screenshot%20checkout%20success%20view%20fixed.png)
+
+30. I now go to 'My Profile' page under 'Account' and can see the 2 x new orders I have just made and that my delivery details were updated and saved to the profile when the order was made, through ticking the 'Save Delivery Info' box:
+
+![Order History and Delivery Info saving to profile](/static/images/Profiles/Screenshot%20order%20history%20and%20delivery%20details%20saving%20to%20profile.png)
+
+- Also if I hover over the 'Order Number' link, I can then see the whole order number. If I click the order number link then this redirects to the correct Order History URL:
+
+![Order History URL working](/static/images/Profiles/Screenshot%20order%20history%20click%20redirect%20working.png)
+
+- The 'Back to Profile' button works too.
+
+31. Now that I have confirmed that the delivery details are saving to user's profiles. I want to further expand on this by using the user's default delivery details saved to their profile to pre-fill the delivery details form on the checkout page.
+
+Back in checkout/views, in the checkout view above the if not stripe_public_key statement, I add the below code. This checks whether the user is authenticated and if so, then it gets the user's profile and uses the intiial parameter on the order form to pre-fill all the fields with its information from the profile. I will use the full_name with the built-in get_full_name method on their user account, their email address from their user account asnd then everything else from the default information stored in their profiles. Then if the user is not authenticatred then it will just render an empty form:
+
+        if request.user.is_authenticated:
+            try:
+                profile = UserProfile.objects.get(user=request.user)
+                order_form = OrderForm(initial={
+                    'full_name': profile.user.get_full_name(),
+                    'email': profile.user.email,
+                    'phone_number': profile.default_phone_number,
+                    'country': profile.default_country,
+                    'postcode': profile.default_postcode,
+                    'town_or_city': profile.default_town_or_city,
+                    'street_address1': profile.default_street_address1,
+                    'street_address2': profile.default_street_address2,
+                    'county': profile.default_county,
+                })
+            except UserProfile.DoesNotExist:
+                order_form = OrderForm()
+        else:
+            order_form = OrderForm()
+
+
+
 ---
 
 # 6. Credits and Acknowledgements
@@ -15761,6 +15958,7 @@ The following parts of my Project were implemented using Bootstrap docs:
 - templates/allauth/account/base.html
 - profile.html form updates 
 - profiles.css profile-update-form rules
+- order history bootstrap table profile.html
 
 
 
