@@ -15393,7 +15393,7 @@ def profile(request):
 
 ---
 
-# Profile App - User Profile Form
+# Profile App - User Profile Form and Views
 
 1. I am now going to build the user profile form. As its very similar to the Order form and the profile model is almost the same as the order model, I am just going to start by copying the checkout/forms content into a forms.py file in the profiles app. I make some tweaks to the code from checkout/forms as below:
 
@@ -15803,7 +15803,86 @@ Back in checkout/views, in the checkout view above the if not stripe_public_key 
         else:
             order_form = OrderForm()
 
+32. I now want to test this so I go back through Checkout and see whether it has automatically populated the Delivery Details on the form. I can see it has populated everything apart from full_name. I think this is because there is no full name populated for my user. I go to the admin panel logged in as my superuser and check whether full name is populated for my standard user, which they do not so I populate this now:
 
+![Populating full name for standard user in admin](/static/images/Profiles/Screenshot%20populating%20full%20name%20standard%20user%20admin%20panel.png)
+
+33. Once this is saved, I log back in as my standard user and go to Checkout and can see this has populated a full name now too:
+
+![Full name populated in checkout form](/static/images/Profiles/Screenshot%20full%20name%20now%20populated%20in%20checkout%20details%20form.png)
+
+34. Now that the profile is nearly setup and complete, I will collectstatic and commit my changes to Git and Heroku.
+
+---
+
+# Profile App - Webhooks for Card Details
+
+1. I now want to update my webhook handler to be able to handle user profiles so that if the checkout view fails then it can depend on the webhook handler to perform all the same functionality. In my checkout/views in the payment intent succeeded handle method, I added the key in the payment intent for metadata; this contains the username of the user who placed the order and whether they want to save their info. I now want to handle that in my webhook_handler above my order_exists = false statement.
+
+- I start with a comment to say this section of code is for updating profile information.
+- Then in my code itself I set the profile to none ( this is to still allow anonymouse users to checkout)
+- Then I retrieve the username from itent.metadata.username and then if the username isn't 'AnonymousUser' then we know the user isn't authenticated.
+- Then as an alternative method to checking whether the user is authenticated, I use request.user as we can get the request method from the init method above.
+- Then if they're not anonymous, it will try and get the profile using their username
+- If it finds that the user has got the 'Save Delivery Info' box checked, which also comes from the Metadata I added, then it will update their profile by adding the shipping details as their default delivery details. 
+- Finally, I save the profile.
+
+        # Update profile information if save_info was checked
+        profile = None
+        username = intent.metadata.username
+        if username != 'AnonymousUser':
+            profile = UserProfile.objects.get(user__username=username)
+            if save_info:
+                profile.default_phone_number = shipping_details.phone
+                profile.default_country = shipping_details.address.country
+                profile.default_postcode = shipping_details.address.postal_code
+                profile.default_town_or_city = shipping_details.address.city
+                profile.default_street_address1 = shipping_details.address.line1
+                profile.default_street_address2 = shipping_details.address.line2
+                profile.default_county = shipping_details.address.state
+                profile.save()
+
+2. Further down the webhook_handler file where I define my else statement for if the order DoesNotExist, I will update this, as we already have their profile and if they weren't logged in it gets defined as none so I will just add it to their order when the webhook creates it. This way the webhook handler can create orders for both authenticated users by attaching their profile and for anonymous users by setting this field to none by adding user_profile=profile to the order statement below:
+
+            except Order.DoesNotExist:
+                attempt += 1
+                time.sleep(1)
+            if order_exists:
+                return HttpResponse(
+                    content=f'Webhook received: {event["type"]} | SUCCESS: Order already exists',
+                    status=200
+                )
+            try:
+                order = Order.objects.create(
+                    full_name=shipping_details.name,
+                    user_profile=profile,
+
+3. Now I just need to import the UserProfile model at the top of the file:
+
+from profiles.models import UserProfile
+
+4. I now want to test my new webhook_handler code is working. To do this, I will need to first comment out the submission of the form in my stripe_elements.js file to ensure that the checkout view will fail and that I never reach the checkout success page. In stripe_elements.js I comment out the form.submit() code. If my code is working then this shouldn't pose an issue as the webhook handler should catch the payment intent succeeded webhook from Stripe and then handle it all for me.
+
+- I run my page on my devserver and go to Checkout and try to complete checkout. This completes the order successfully, taking me to the checkout success page and providing me with an order number showing that even with the form completely broken that my payments can still work. I can also see that Stripe has posted to my terminal to say the order was completed successfully too:
+
+UPDATING PAYMENT INTENT: pi_3TM4BG1urpY1vbdf0W2M0wXB
+METADATA: {'1': 1}
+[14/Apr/2026 12:19:27] "POST /checkout/cache_checkout_data/ HTTP/1.1" 200 0
+[14/Apr/2026 12:19:28] "POST /checkout/wh/ HTTP/1.1" 200 44
+[14/Apr/2026 12:19:28] "POST /checkout/ HTTP/1.1" 302 0
+[14/Apr/2026 12:19:29] "GET /checkout/checkout_success/6DC42D66B44546FFBCC1D353D52AFEA5 HTTP/1.1" 200 16720
+
+![Payment form broken checkout successful](/static/images/Profiles/Screenshot%20payment%20form%20broken%20successful%20order.png)
+
+- Then if I also check in the admin panel, I can see the order was created successfully and attached the user profile here too:
+
+![Payment form broken admin successful order and profile attachment](/static/images/Profiles/Screenshot%20payment%20form%20broken%20admin%20order%20success.png)
+
+- The user can also see it themselves under their Profile Order History:
+
+![Payment form broken order in user profile](/static/images/Profiles/Screenshot%20payment%20form%20broken%20order%20in%20user%20order%20history.png)
+
+5. Now that I have tested this successfully, I can uncomment the form submit on my stripe_elements.js code and then run a collectstatic before committing my code to Git and Heroku. 
 
 ---
 

@@ -101,7 +101,6 @@ $.post(url, postData).done(function () {
             $('#submit-button').attr('disabled', false);
 
         } else {
-            // ✅ THIS IS WHAT YOU WERE MISSING
             if (result.paymentIntent.status === 'succeeded') {
                 form.submit();
             }
