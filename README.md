@@ -15884,6 +15884,67 @@ METADATA: {'1': 1}
 
 5. Now that I have tested this successfully, I can uncomment the form submit on my stripe_elements.js code and then run a collectstatic before committing my code to Git and Heroku. 
 
+6. I now want to finalise my payment system so that users are sent a confirmation email when their order has completed. I need to do this in webhook_handler, as this is the best point to send the email after we know the payment has definitely been made as the only thing that can trigger it here is a webhook from Stripe. The first thing that I want to do is write a confirmation email which will be split into two text files in the checkout/templates folder: one called confirmation_email_subject and the other called confirmation_email_body. These will be in a subfolder under the templates folder called 'confirmation_emails':
+
+![Confirmation email structure](/static/images/Profiles/Screenshot%20confirmation%20email%20structure.png)
+
+7. In The confirmation_email_subject.txt file, it will say Working Out Gym and then include the order number with a django template syntax:
+
+Working Out Gym Confirmation for Order Number {{ order.order_number }}
+
+8. I then populate the confirmation_email_body.txt with what I would like the order confirmation emails to say to each user, using django template tags where the values are changeable:
+
+Hi there, {{ order.full_name }}!
+
+This is a confirmation of your order at WORKING OUT GYM. 
+
+Your order information is below:
+
+Order Number: {{ order.order_number }}
+Order Date: {{ order.date }}
+
+Order Total: ${{ order.order_total }}
+Delivery: ${{ order.delivery_cost }}
+Grand Total: ${{ order.grand_total }}
+
+Your order will be shipped to {{ order.street_address1 }} in {{ order.town_or_city }}, {{ order.country }}.
+
+We've got your phone number on file as {{ order.phone_number }}.
+
+If you have any questions, feel free to contact us at {{ contact_email }}.
+
+Thank you for your order from all of us at,
+
+WORKING OUT GYM
+
+9. Once these 2 x files are in place, I can then look at my webhook_handler file to write a new private method called _send_confirmation_email that takes in 'self' and 'order' parameters. It will take in self as part of the class. It starts with an underscore as it will only be in this class:
+
+def _send_confirmation_email(self, order):
+    """Sends user confirmation email"""
+
+10. Then to make this code functional and allow emails to be sent, I need to import the send mail function from django.core, the render_to_string from django.template.loader and the settings file from django.conf:
+
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.conf import settings
+
+11. Then back in my method for _send_confirmation_email I get the customers email from the order and then store it in a variable using:
+
+cust_email = order.email
+
+12. Then below this, I use the render_to_string method to render both the files I just created two strings for. The first parameter will be the file we want to render and the second is a context to render the various context variables in the confirmation email. Then it passes the order to 'subject':
+
+      subject = render_to_string(
+          'checkout/confirmation_emails/confirmation_email_subject.txt',
+          {'order': order})
+
+13. Then for body, I pass the order as well as a contact email which will be added to the settings file soon
+
+        subject = render_to_string(
+            'checkout/confirmation_emails/confirmation_email_subject.txt',
+            {'order': order})
+
+
 ---
 
 # 6. Credits and Acknowledgements
