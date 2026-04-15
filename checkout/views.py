@@ -60,11 +60,40 @@ def checkout(request):
 
         if order_form.is_valid():
             order = order_form.save(commit=False)
+
             pid = request.POST.get('client_secret').split('_secret')[0]
             order.stripe_pid = pid
             order.original_bag = json.dumps(bag)
 
+            plan_id = request.session.get('plan_purchase_id')
+
+            if plan_id:
+                from plans.models import Plan
+                plan = Plan.objects.get(id=plan_id)
+
+                order.order_total = plan.price
+                order.delivery_cost = 0
+                order.grand_total = plan.price
+            else:
+                current_bag = bag_contents(request)
+                order.order_total = current_bag['total']
+                order.delivery_cost = current_bag['delivery']
+                order.grand_total = current_bag['grand_total']
+
             order.save()
+            # ChatGPT Code
+            plan_id = request.session.get('plan_purchase_id')
+
+            if plan_id:
+                from plans.models import Plan, UserPlan
+
+                plan = Plan.objects.get(id=plan_id)
+
+                # Save ownership of plan
+                UserPlan.objects.create(
+                    user=request.user,
+                    plan=plan
+                )
             for variant_id, quantity in bag.items():
                 try:
                     variant = ProductVariant.objects.get(pk=variant_id)
@@ -92,15 +121,26 @@ def checkout(request):
 
     else:
         shoppingbag = request.session.get('bag', {})
+        plan_id = request.session.get('plan_purchase_id')
 
-        if not shoppingbag:
+        # Allow checkout if EITHER bag OR plan exists
+        if not shoppingbag and not plan_id:
             messages.error(request, "Your bag is currently empty.")
             return redirect(reverse('merchandise'))
 
-        current_bag = bag_contents(request)
-        total = current_bag['grand_total']
+        plan = None
+
+        if plan_id:
+            from plans.models import Plan
+            plan = Plan.objects.get(id=plan_id)
+            total = plan.price
+        else:
+            current_bag = bag_contents(request)
+            total = current_bag['grand_total']
+
         stripe_total = round(total * 100)
 
+ 
         stripe.api_key = stripe_secret_key
         intent = stripe.PaymentIntent.create(
             amount=stripe_total,
@@ -134,6 +174,7 @@ def checkout(request):
             'order_form': order_form,
             'stripe_public_key': stripe_public_key,
             'client_secret': intent.client_secret,
+            'plan': plan if plan_id else None,
         }
 
         return render(request, template, context)
@@ -174,6 +215,9 @@ def checkout_success(request, order_number):
     
     if 'bag' in request.session:
         del request.session['bag']
+
+    if 'plan_purchase_id' in request.session:
+        del request.session['plan_purchase_id']
 
     template = 'checkout/checkout_success.html'
     context = {

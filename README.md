@@ -15940,12 +15940,925 @@ cust_email = order.email
 
 13. Then for body, I pass the order as well as a contact email which will be added to the settings file soon
 
-        subject = render_to_string(
-            'checkout/confirmation_emails/confirmation_email_subject.txt',
-            {'order': order})
+    body = render_to_string(
+        'checkout/confirmation_emails/confirmation_email_body.txt',
+        {'order': order, 'contact_email': settings.DEFAULT_FROM_EMAIL})   
 
+14. Then to actually send the email, I use the send mail function, giving it the body and the email I want to send from and a list of emails we're sedning to - the customer's:
+
+        send_mail(
+            subject,
+            body,
+            settings.DEFAULT_FROM_EMAIL,
+            [cust_email]
+        )   
+
+15. Now I want to call it twice, further down the webhook_handler file, to send en email. Where I have my if statement for if the order_exists because it was already created by the form and if the order was created by the webhook_handler, I will insert the below code which will call the the send email method before returning the response to Stripe:
+
+        self._send_confirmation_email(order)
+
+16. Now I need to add the DEFAULT_FROM_EMAIL attribute to my settings file. I will set this as workingoutgym@example.com. I add this at the bottom of the file with the rest of my Stripe attributes:
+
+DEFAULT_FROM_EMAIL = 'workingoutgym@example.com'
+
+17. I run my dev server but get the following error:
+
+  File "C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\checkout\webhook_handler.py", line 22
+    """Sends user confirmation email"""
+    ^
+IndentationError: expected an indented block after function definition on line 21
+
+18. I go to my webhook_handler and resolve the indentation issue now. I reload the server and then test making a purchase. I can see this has successfully processed the email in the terminal when I make a purchase now:
+
+"POST /checkout/ HTTP/1.1" 302 0
+[14/Apr/2026 13:39:24] "GET /checkout/checkout_success/F89BC327FA0247F580360F4CFC792B3F HTTP/1.1" 200 16726
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+Subject: Working Out Gym Confirmation for Order Number
+ F89BC327FA0247F580360F4CFC792B3F
+From: workingoutgym@example.com
+To: leilahhodgson@gmail.com
+Date: Tue, 14 Apr 2026 12:39:25 +0000
+Message-ID: <177617036542.40752.9617390663972877806@Jinx>
+
+Hi there, Leilah Hodgson!
+
+This is a confirmation of your order at WORKING OUT GYM.=20
+
+Your order information is below:
+
+Order Number: F89BC327FA0247F580360F4CFC792B3F
+Order Date: April 14, 2026, 12:39 p.m.
+
+Order Total: $32.00
+Delivery: $3.20
+Grand Total: $35.20
+
+Your order will be shipped to 31 Goldsmith Street in Barrow-in-Furness, GB.
+
+We've got your phone number on file as 07857895351.
+
+If you have any questions, feel free to contact us at workingoutgym@example.c=
+om.
+
+Thank you for your order from all of us at,
+
+WORKING OUT GYM
+
+19. It will not actually send the email yet as the project does not yet have this functionality, I will add this in later down the line. I run collectstatic and then commit my changes to Git and Heroku.
 
 ---
+
+# Fitness and Nutrition Plans - App Creation and Wiring
+
+1. I create a new app for my 'Fitness and Nutritions Plans' page to be contained within called 'plans' using Python:
+
+python manage.py startapp plans
+
+2. After creating my new app, I need to then add this to INSTALLED APPS in settings:
+
+'plans',
+
+3. Once I can see my new 'plans' app directory has been created, I go to plans/models and add the below code which ChatGPT has generated for me:. This defines the two different choices of plans: fitness and nutrition and the associated fields. I want the plans to have a title for what kind of nutrition/fitness plan it is, a description to give the users a bit more detail about it, a generic image either of food or exercise and then the price. The plan_type variable has a max character length of 10 and then links to the PLAN_TYPE_CHOICES defined above@
+
+from django.db import models
+from django.contrib.auth.models import User
+
+class Plan(models.Model):
+    PLAN_TYPE_CHOICES = [
+        ('fitness', 'Fitness'),
+        ('nutrition', 'Nutrition'),
+    ]
+
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    image = models.ImageField(upload_to='plans/')
+    price = models.DecimalField(max_digits=6, decimal_places=2)
+
+    plan_type = models.CharField(max_length=10, choices=PLAN_TYPE_CHOICES)
+
+    def __str__(self):
+        return self.title        
+
+4. I want to enforce a rule on the users that they can only purchase 1 x nutrition and/or 1 x fitness plan at a time and if they want to change these they would need to contact the superuser of the page. Therefore, below my new class for Plan in the plans/models, I will define a new class for UserPlan which enforces this:
+
+class UserPlan(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    plan = models.ForeignKey(Plan, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"{self.user} - {self.plan}"
+
+5. Now that I have finished making my intial changes to the plans/models, I need to run makemigrations and migrate.
+
+6. In my plans directory I create a utils.py file and wuithin it create a view which enforces the restriction. I call this view can_purchase_plan and set some if statements to check whether user already has a pre-existing nutrition or fitness plan:
+
+def can_purchase_plan(user, plan):
+    if plan.plan_type == 'fitness':
+        return not UserPlan.objects.filter(
+            user=user,
+            plan__plan_type='fitness'
+        ).exists()
+
+    if plan.plan_type == 'nutrition':
+        return not UserPlan.objects.filter(
+            user=user,
+            plan__plan_type='nutrition'
+        ).exists()
+
+    return False
+
+- Then at the top of the file I import the UserPlan class from models so my view can function.
+
+from .models import UserPlan
+
+7. I now need to look at the purchase flow for my plans app. I have decided to keep it separate from the merchandise app as it will be complicated and messy. Plans will be treated like direct purchases, so the user would click 'Buy Plan' , go to the Checkout and then purchase the plans here and save it to UserPlan so flow will look like:
+
+- User goees to the 'Fitness and Nutritions Plans' page
+- User clicks 'Buy Plan'
+- User is then redirected to the Checkout page
+- User pays via Stripe method I already have in place
+- Upon successful purchase, UserPlan is then saved to the user's profile and shows the checkout_success page
+
+8. In plans/views I create the below view which imports the Plan model I have just created and then pulls these through on the plans_list view and returns them in the plans/html template:
+
+from .models import Plan
+
+def plans_list(request):
+    plans = Plan.objects.all()
+
+    fitness_plans = plans.filter(plan_type='fitness')
+    nutrition_plans = plans.filter(plan_type='nutrition')
+
+    has_fitness_plan = False
+    has_nutrition_plan = False
+
+    if request.user.is_authenticated:
+        user_plans = UserPlan.objects.filter(user=request.user)
+
+        has_fitness_plan = user_plans.filter(plan__plan_type='fitness').exists()
+        has_nutrition_plan = user_plans.filter(plan__plan_type='nutrition').exists()
+
+    return render(request, 'plans/plans.html', {
+        'fitness_plans': fitness_plans,
+        'nutrition_plans': nutrition_plans,
+        'has_fitness_plan': has_fitness_plan,
+        'has_nutrition_plan': has_nutrition_plan,
+    })
+
+9. Next I need to create a urls.py file in my new plans app directory and populate with the code below with the 2 x imports and the new urlpattern for plans that looks at the new plans_list view that I just created:
+
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('', views.plans_list, name='plans'),
+]
+
+10. Next I need to update my template so there is a 'Buy' button on the plans themselves. I do not have a templates directory created yet so create this now in plans/templates/plans and then create the template itself in the plans subfolder called plans.html. Then in the new template, I want a header with a paragraph element explaining what the page is about and the rule around only being allowed to purchase one of each type of plan per customer. I then want 2 x rows with 3 columns in each row that will contain the 3 x nutrition plans and then 3 x fitness plans in the row for each type. Then the content for the plans themselves will include a title, image, description with 2 x href elements: one with a 'Buy Plan' option and the other which will show if the if user is authenticated statement doesn't detect the user as logged in which asks user to login. It also disables the already owned plans:
+
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+
+      <img src="{{ plan.image.url }}" class="card-img-top" alt="{{ plan.title }}">
+
+      <div class="card-body d-flex flex-column">
+        <h5 class="card-title">{{ plan.title }}</h5>
+
+        <p class="card-text">
+          {{ plan.description }}
+        </p>
+
+        <p class="mt-auto"><strong>£{{ plan.price }}</strong></p>
+
+        {% if user.is_authenticated %}
+        {% if has_fitness_plan %}
+            <button class="btn btn-secondary w-100" disabled>
+            Already Own a Fitness Plan
+            </button>
+        {% else %}
+            <a href="{% url 'buy_plan' plan.id %}" class="btn btn-black w-100">
+            Buy Plan
+            </a>
+        {% endif %}
+        {% else %}
+        <a href="{% url 'account_login' %}" class="btn btn-outline-dark w-100">
+            Login to Purchase
+        </a>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+{% endfor %}
+      <img src="{{ plan.image.url }}" class="card-img-top" alt="{{ plan.title }}">
+
+      <div class="card-body d-flex flex-column">
+        <h5 class="card-title">{{ plan.title }}</h5>
+
+        <p class="card-text">
+          {{ plan.description }}
+        </p>
+
+        <p class="mt-auto"><strong>£{{ plan.price }}</strong></p>
+
+        {% if user.is_authenticated %}
+        {% if has_nutrition_plan %}
+            <button class="btn btn-secondary w-100" disabled>
+            Already Own a Nutrition Plan
+            </button>
+        {% else %}
+            <a href="{% url 'buy_plan' plan.id %}" class="btn btn-black w-100">
+            Buy Plan
+            </a>
+        {% endif %}
+        {% else %}
+        <a href="{% url 'account_login' %}" class="btn btn-outline-dark w-100">
+            Login to Purchase
+        </a>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+{% endfor %}
+
+11. I now need to create my buy_plan view in plans/views. ChatGPT has generated me the code for this. It checks the restrictions I have set, whether the user already owns plans and if they are authenticated as users cannot purchase plans without first being logged in. It stores the plan in their session and redirects them to the checkout page on success. I have import the get_object_or_404 method, django messages and the .utils view i created earlier for can_purchase_plan where I defined my restrictions:
+
+def buy_plan(request, plan_id):
+    plan = get_object_or_404(Plan, id=plan_id)
+
+    if not request.user.is_authenticated:
+        messages.error(request, "You must be logged in to purchase a plan.")
+        return redirect('account_login')
+
+    if not can_purchase_plan(request.user, plan):
+        messages.error(request, "You already own this type of plan.")
+        return redirect('plans')
+
+    # store plan in session
+    request.session['plan_purchase_id'] = plan.id
+
+    return redirect('checkout')
+
+12. Then I update my plans/urls file with the path for the new buy_plan I have just created:
+
+path('buy/<int:plan_id>/', views.buy_plan, name='buy_plan'),
+
+13. Then over in my project urls.py file, I add the new path to include all of my plans urls as below:
+
+path('plans/', include('plans.urls')),
+
+14. I now need to look at my current checkout view to split this so that it looks at the plans and products from merchandise as two separate checkouts. In my checkout/views in the checkout view, I replace the following code:
+
+shoppingbag = request.session.get('bag', {})
+
+if not shoppingbag:
+    messages.error(request, "Your bag is currently empty.")
+    return redirect(reverse('merchandise'))
+
+- With:
+
+shoppingbag = request.session.get('bag', {})
+plan_id = request.session.get('plan_purchase_id')
+
+#Allow checkout if EITHER bag OR plan exists
+if not shoppingbag and not plan_id:
+    messages.error(request, "Your bag is currently empty.")
+    return redirect(reverse('merchandise'))
+
+- Then still in the checkout view where I calculate the total, I replace the following code:
+
+current_bag = bag_contents(request)
+total = current_bag['grand_total']
+stripe_total = round(total * 100)
+
+- With this:
+
+plan = None
+
+if plan_id:
+    from plans.models import Plan
+    plan = Plan.objects.get(id=plan_id)
+    total = plan.price
+else:
+    current_bag = bag_contents(request)
+    total = current_bag['grand_total']
+
+stripe_total = round(total * 100)
+
+- Then still in my checkout view, I need to update the context passed to my checkout template to include the plan:
+
+'plan': plan if plan_id else None,
+
+- Then in my checkout view where it checks if the order form is valid, I add the below logic to occur before my bag loop so it looks at plans before products:
+
+    plan_id = request.session.get('plan_purchase_id')
+
+    if plan_id:
+        from plans.models import Plan, UserPlan
+
+        plan = Plan.objects.get(id=plan_id)
+
+        # Save ownership of plan
+        UserPlan.objects.create(
+            user=request.user,
+            plan=plan
+        )
+
+- Then in the same file in my checkout_success view, I want to clear the session after successs so replace this code:
+
+if 'bag' in request.session:
+    del request.session['bag']
+
+- With:
+
+if 'bag' in request.session:
+    del request.session['bag']
+
+if 'plan_purchase_id' in request.session:
+    del request.session['plan_purchase_id']
+
+15. Then in my checkout.html template, I need to update it so this shows the plans in order for my new updates to work. Above my for loop that iterates through my bag items, I will add the below if statement for my plans - this way if a user is buying a plan it will show the plan and if a user is buying products then it will show the bag items:
+
+{% if plan %}
+  <div class="mb-3 p-3 border">
+    <p><strong>{{ plan.title }}</strong></p>
+    <p>£{{ plan.price }}</p>
+  </div>
+{% endif %}
+
+16. Now that my views and templates are set-up, my restrictions in place and the plans have been hooked into checkout and checkout_success, I want to then start adding the plans and testing the new page. I will add the below code to plans/admin so that I can then login as my superuser and create some plans:
+
+from .models import Plan, UserPlan
+
+@admin.register(Plan)
+class PlanAdmin(admin.ModelAdmin):
+    list_display = ('title', 'plan_type', 'price')
+
+
+@admin.register(UserPlan)
+class UserPlanAdmin(admin.ModelAdmin):
+    list_display = ('user', 'plan')
+
+17. I update my main-nav.html ahref url with the path for my new plans page:
+
+"{% url 'plans:plans' %}"
+
+18. I now run my dev server but encounter a server 500 error as soon as I load the page so I turn debug on and reload to see what is happening:
+
+NoReverseMatch at /
+'plans' is not a registered namespace
+
+19. I realise I haven't created a namespace for 'plans' app in my plans/urls file so add this now and then reload:
+
+app_name = 'plans'
+
+20. I can now load my page back up on my dev server again. I go to test my new 'Fitness and Nutritions Plans' update in main-nav.html by seeing if it will load from clicking the option for it in the navbar menu. However, it does not, it instead gives me this error:
+
+TemplateSyntaxError at /plans/
+Invalid block tag on line 37: 'endfor', expected 'endblock'. Did you forget to register or load this tag?
+Request Method:	GET
+Request URL:	http://127.0.0.1:8000/plans/
+Django Version:	6.0.2
+Exception Type:	TemplateSyntaxError
+Exception Value:	
+Invalid block tag on line 37: 'endfor', expected 'endblock'. Did you forget to register or load this tag?
+
+- I query this with ChatGPT after troubleshooting and being unable to find the cause of the issue, ChatGPT advised the structure and no iteration had broken the template and to replace with the below:
+
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+
+<div class="container mt-5">
+
+  <!-- ✅ NEW: PAGE HEADER -->
+  <h2 class="text-center mb-3">Fitness & Nutrition Plans</h2>
+  <p class="text-center mb-5">
+    Choose from our exclusive fitness and nutrition plans. You may only purchase
+    one of each type. To switch plans, please contact admin.
+  </p>
+
+  <!-- ================= FITNESS PLANS ================= -->
+  <div class="row">
+    {% for plan in fitness_plans %}  <!-- ✅ ADDED LOOP -->
+      <div class="col-md-4 mb-4">
+        <div class="card h-100">
+
+          <img src="{{ plan.image.url }}" class="card-img-top" alt="{{ plan.title }}">
+
+          <div class="card-body d-flex flex-column">
+            <h5 class="card-title">{{ plan.title }}</h5>
+
+            <p class="card-text">
+              {{ plan.description }}
+            </p>
+
+            <p class="mt-auto"><strong>£{{ plan.price }}</strong></p>
+
+            {% if user.is_authenticated %}
+              {% if has_fitness_plan %}
+                <button class="btn btn-secondary w-100" disabled>
+                  Already Own a Fitness Plan
+                </button>
+              {% else %}
+                <!-- ✅ FIXED URL NAMESPACE -->
+                <a href="{% url 'plans:buy_plan' plan.id %}" class="btn btn-black w-100">
+                  Buy Plan
+                </a>
+              {% endif %}
+            {% else %}
+              <a href="{% url 'account_login' %}" class="btn btn-outline-dark w-100">
+                Login to Purchase
+              </a>
+            {% endif %}
+          </div>
+
+        </div>
+      </div>
+    {% endfor %} <!-- ✅ NOW VALID -->
+  </div>
+
+  <!-- ================= NUTRITION PLANS ================= -->
+  <div class="row mt-4">
+    {% for plan in nutrition_plans %} <!-- ✅ ADDED LOOP -->
+      <div class="col-md-4 mb-4">
+        <div class="card h-100">
+
+          <img src="{{ plan.image.url }}" class="card-img-top" alt="{{ plan.title }}">
+
+          <div class="card-body d-flex flex-column">
+            <h5 class="card-title">{{ plan.title }}</h5>
+
+            <p class="card-text">
+              {{ plan.description }}
+            </p>
+
+            <p class="mt-auto"><strong>£{{ plan.price }}</strong></p>
+
+            {% if user.is_authenticated %}
+              {% if has_nutrition_plan %}
+                <button class="btn btn-secondary w-100" disabled>
+                  Already Own a Nutrition Plan
+                </button>
+              {% else %}
+                <a href="{% url 'plans:buy_plan' plan.id %}" class="btn btn-black w-100">
+                  Buy Plan
+                </a>
+              {% endif %}
+            {% else %}
+              <a href="{% url 'account_login' %}" class="btn btn-outline-dark w-100">
+                Login to Purchase
+              </a>
+            {% endif %}
+          </div>
+
+        </div>
+      </div>
+    {% endfor %} <!-- ✅ NOW VALID -->
+  </div>
+
+</div>
+
+{% endblock %}
+
+21. Now when I refresh I can see my new plans page:
+
+![Plans Initital View](/static/images/FitnessPlans/Screenshot%20initial%20view%20of%20plans%20page.png)
+
+22. I am going to populate this with some basic fitness and nutrition plans manually from the admin panel. I change the url to http://127.0.0.1:8000/admin/login/?next=/admin/ and log in as the superuser. I can see in the admin panel here that I now have a section called 'PLANS':
+
+![Plans in Admin Panel](/static/images/FitnessPlans/Screenshot%20plans%20now%20showing%20in%20admin%20panel.png)
+
+23. If I click 'Add' on 'Plans' then I am taken to the page below, where I can create a new fitness or nutrition plan - this is decided through the type selector below. I can populate a title, description and then choose a file for the image of the plan here as well. I populate my first nutrition plan and then click 'Save and add another' and do this twice more for nutrition plans and then three times more for fitness plans:
+
+![Adding first nutrition plan and saving](/static/images/FitnessPlans/keto%20nutrition%20plan.jpg)
+
+24. Once I have manually added all of my fitness and nutrition plans, I go back to the 'Plans' in the Admin Panel and can now see all of these hae been created:
+
+![Admin Plans all created](/static/images/FitnessPlans/Screenshot%20admin%20plans%20all%20created.png)
+
+25. Now if i go back to the website and then go to the 'Fitness and Nutrition Plans' page I am presented with an error:
+
+NameError at /plans/
+name 'UserPlan' is not defined
+Request Method:	GET
+Request URL:	http://127.0.0.1:8000/plans/
+Django Version:	6.0.2
+Exception Type:	NameError
+Exception Value:	
+name 'UserPlan' is not defined
+Exception Location:	C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\plans\views.py, line 17, in plans_list
+Raised during:	plans.views.plans_list
+Python Executable:	C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\.venv\Scripts\python.exe
+Python Version:	3.12.8
+Python Path:	
+['C:\\Users\\leila\\OneDrive\\Desktop\\Documents\\vscode-projects\\working_out_gym',
+ 'C:\\Program Files\\Python312\\python312.zip',
+ 'C:\\Program Files\\Python312\\DLLs',
+ 'C:\\Program Files\\Python312\\Lib',
+ 'C:\\Program Files\\Python312',
+ 'C:\\Users\\leila\\OneDrive\\Desktop\\Documents\\vscode-projects\\working_out_gym\\.venv',
+ 'C:\\Users\\leila\\OneDrive\\Desktop\\Documents\\vscode-projects\\working_out_gym\\.venv\\Lib\\site-packages']
+Server time:	Wed, 15 Apr 2026 14:11:44 +0000
+
+26. I check my plans/views file and can see I am not importing the UserPlan model so update this now:
+
+from .models import Plan, UserPlan
+
+27. Now when I refresh my page, I can see the plans I have just created. However, the images could do with being set to always being the same size and the price should be centered. Also I would like for there to be a more obvious split between the two sets of plans - this can be achieved by putting a small heading at the top of each of the sets of cards with a small paragraph description:
+
+![Plans showing on page but image sizing wrong](/static/images/FitnessPlans/Screenshot%20fitness%20and%20nutrition%20plans%20image%20sizing%20issue%20price%20not%20centered.png)
+
+- I will look at this in a moment but for now I am going to test whether the 'Buy Plan' works but this does not, it throws up this error message:
+
+NameError at /plans/buy/4/
+name 'redirect' is not defined
+
+Request Method:	GET
+Request URL:	http://127.0.0.1:8000/plans/buy/4/
+Django Version:	6.0.2
+Exception Type:	NameError
+Exception Value:	
+name 'redirect' is not defined
+Exception Location:	C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\plans\views.py, line 44, in buy_plan
+Raised during:	plans.views.buy_plan
+
+- I realise I haven't imported redirect at the top of my plans/views file so do this now:
+
+from django.shortcuts import render, get_object_or_404, redirect
+
+- Now when I reload I can see that I have been taken to the 'Checkout' page where I can enter my details and then checkout the plan, however, I have noticed that the 'Order Total', 'Delivery' and 'Grand Totals' are not being worked out at all:
+
+![Plan buy now goes to checkout](/static/images/FitnessPlans/Screenshot%20plan%20goes%20to%20checkout%20page.png)
+
+- I go back to my plans page and fix the styling and appearance issues here first and then will move back to the checkout to resolve this next. I need to first create a static/css folder in my plans directory so do this now. Then within the new css folder, I create my 'plans' page specific css called plans.css:
+
+.plan-card img {
+    height: 220px;
+    object-fit: cover;
+    width: 100%;
+}
+
+- Then in the plans.html template I update with my extra css block containing the new css file:
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'plans/css/plans.css' %}">
+{% endblock %}
+
+- I now contain the page title and description in its own div
+- I also add a h3 and paragraph element above both the fitness and nutrition plans card sets as below and contain these in their own div
+- I have now contained the plan elements in their own divs
+- I have updated the class on my price django tag to use text-center so it's centered
+
+<div class="container mt-4">
+
+  <!-- PAGE TITLE -->
+  <div class="text-center mb-5">
+    <h2 class="logo-font">Fitness & Nutrition Plans</h2>
+    <p class="text-muted">
+      Choose from our expert-designed fitness and nutrition plans.  
+      You may purchase one of each type.  
+      To change your plan, please contact admin.
+    </p>
+  </div>
+
+  <!-- ================= FITNESS PLANS ================= -->
+  <div class="mb-5">
+    <h3 class="mb-2">Fitness Plans</h3>
+    <p class="text-muted mb-4">
+      Structured workout programmes designed to help you build strength,
+      improve endurance, and reach your fitness goals.
+    </p>
+
+    <div class="row">
+      {% for plan in fitness_plans %}
+      <div class="col-12 col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 plan-card">
+
+          <!-- IMAGE -->
+          <img src="{{ plan.image.url }}" alt="{{ plan.title }}">
+
+          <div class="card-body d-flex flex-column">
+            <h5 class="card-title">{{ plan.title }}</h5>
+
+            <p class="card-text">
+              {{ plan.description }}
+            </p>
+
+            <!-- PRICE -->
+            <p class="mt-auto text-center">
+              <strong>£{{ plan.price }}</strong>
+            </p>
+
+            <!-- BUTTON LOGIC -->
+            {% if user.is_authenticated %}
+              {% if has_fitness_plan %}
+                <button class="btn btn-secondary w-100" disabled>
+                  Already Own a Fitness Plan
+                </button>
+              {% else %}
+                <a href="{% url 'plans:buy_plan' plan.id %}" class="btn btn-black w-100">
+                  Buy Plan
+                </a>
+              {% endif %}
+            {% else %}
+              <a href="{% url 'account_login' %}" class="btn btn-outline-dark w-100">
+                Login to Purchase
+              </a>
+            {% endif %}
+          </div>
+
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- ================= NUTRITION PLANS ================= -->
+  <div class="mb-5">
+    <h3 class="mb-2">Nutrition Plans</h3>
+    <p class="text-muted mb-4">
+      Tailored meal plans to support your fitness journey,
+      improve health, and optimise performance.
+    </p>
+
+    <div class="row">
+      {% for plan in nutrition_plans %}
+      <div class="col-12 col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 plan-card">
+
+          <!-- IMAGE -->
+          <img src="{{ plan.image.url }}" alt="{{ plan.title }}">
+
+          <div class="card-body d-flex flex-column">
+            <h5 class="card-title">{{ plan.title }}</h5>
+
+            <p class="card-text">
+              {{ plan.description }}
+            </p>
+
+            <!-- PRICE -->
+            <p class="mt-auto text-center">
+              <strong>£{{ plan.price }}</strong>
+            </p>
+
+            <!-- BUTTON LOGIC -->
+            {% if user.is_authenticated %}
+              {% if has_nutrition_plan %}
+                <button class="btn btn-secondary w-100" disabled>
+                  Already Own a Nutrition Plan
+                </button>
+              {% else %}
+                <a href="{% url 'plans:buy_plan' plan.id %}" class="btn btn-black w-100">
+                  Buy Plan
+                </a>
+              {% endif %}
+            {% else %}
+              <a href="{% url 'account_login' %}" class="btn btn-outline-dark w-100">
+                Login to Purchase
+              </a>
+            {% endif %}
+          </div>
+
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+28. I reload the page to see the changes to my template come into play but it has only added the h3 headings and centered my price but not updated my image sizing:
+
+![Fitness and Nutrition Plans Page css not applying](/static/images/FitnessPlans/Screenshot%20css%20not%20applying.png)
+
+29. When I inspect the images in devtools, I can see that I am getting an error against my plans.css in console:
+
+Failed to load resource: the server responded with a status of 404 (Not Found)
+
+30. I try cancelling my server, reloading and then hard reloading and emptying the cache on the browser but this makes no difference. I then try deleting all static files using:
+
+Remove-Item -Recurse -Force staticfiles 
+
+31. I collect my static files again using:
+
+python manage.py collectstatic
+
+32. I refresh but the css is still not being found in the console and the images haven't updated. I take a closer look at my folder structure for my static files in my plans directory and realise that I haven't created a subfolder for 'plans' in static and then placed 'css' in the plans subfolder. I update this now as shown below:
+
+![Plans static folder structure update](/static/images/FitnessPlans/Screenshot%20plans%20static%20folder%20structure%20update.png)
+
+33. Now when I refresh it can find the css file as its now in the correct folder structure: 
+
+![Plans css now applying](/static/images/FitnessPlans/Screenshot%20fitness%20and%20nutrition%20css%20now%20applying.png)
+
+34. The last thing I want to do before I move onto the checkout view and resolving the totals not updating correctly, is just to centralise all my headings on my plans.html and any p elements as well. To do this, I will just add the text-center class to each of my divs in the plan.html page containing headers and paragraph elements. I also add this to the h5 elements classes too, so I can centralise my headings on the plan cards. I refresh the page once the changes are made and this looks much better:
+
+![Centralised headings on plans page](/static/images/FitnessPlans/Screenshot%20centralising%20text%20on%20fitness%20nutrition%20plans%20template#.png)
+
+35. Next I want to resolve the issue with the totals on the checkout page for my plans. I click 'Buy Plan' on any of the plans and inspect the total with devtools on the next page. I try to troubleshoot but not sure what could be going wrong. I query this with ChatGPT who advises that my checkout is currently only calculating totals from:
+
+bag = request.session.get('bag', {})
+
+- However, I am not storing my plan in the bag session, I am storing it here:
+
+request.session['plan_purchase_id']
+
+- ChatGPT advises that I nheed to update my checkout view with a new block of code which includes the plan_id session and overrides the totals when it is a plan purchase:
+
+plan_id = request.session.get('plan_purchase_id', None)
+
+plan = None
+if plan_id:
+    from plans.models import Plan
+    plan = Plan.objects.get(id=plan_id)
+
+    # Override totals for plan purchase
+    total = plan.price
+
+stripe_total = round(total * 100)
+
+- Then in my checkout.html template, I need to wrap my totals like below to include the logic for my plan pricing, replacing the current code I was using for my totals in the template:
+
+<div class="row text-black text-right">
+
+    {% if plan %}
+        <!-- PLAN TOTALS -->
+        <div class="col-7 offset-2">
+            <p class="my-0">Order Total:</p>
+            <p class="my-0">Delivery:</p>
+            <p class="my-0">Grand Total:</p>
+        </div>
+        <div class="col-3">
+            <p class="my-0">£{{ plan.price }}</p>
+            <p class="my-0">£0.00</p>
+            <p class="my-0"><strong>£{{ plan.price }}</strong></p>
+        </div>
+
+    {% else %}
+        <!-- EXISTING BAG TOTALS -->
+        <div class="col-7 offset-2">
+            <p class="my-0">Order Total:</p>
+            <p class="my-0">Delivery:</p>
+            <p class="my-0">Grand Total:</p>
+        </div>
+        <div class="col-3">
+            <p class="my-0">£{{ total | floatformat:2 }}</p>
+            <p class="my-0">£{{ delivery | floatformat:2 }}</p>
+            <p class="my-0"><strong>£{{ grand_total | floatformat:2 }}</strong></p>
+        </div>
+    {% endif %}
+
+</div>
+
+- Then still in my checkout.html, at the bottom of the file, I replace the following as it will still show £0 for my plans total:
+
+<strong>${{ grand_total|floatformat:2 }}</strong>
+
+With: 
+
+{% if plan %}
+    <span>Your card will be charged <strong>£{{ plan.price }}</strong></span>
+{% else %}
+    <span>Your card will be charged <strong>£{{ grand_total|floatformat:2 }}</strong></span>
+{% endif %}
+
+- I also need to update my buy_plan views so that users' bags are cleared after they have purchased a plan so that they cannot add items and a plan to the bag and have issues:
+
+request.session['bag'] = {}
+
+36. I reload my page and then try to 'Buy Plan' on any of the plans but I am presented with an error page:
+
+UnboundLocalError at /checkout/
+cannot access local variable 'stripe_total' where it is not associated with a value
+Request Method:	GET
+Request URL:	http://127.0.0.1:8000/checkout/
+Django Version:	6.0.2
+Exception Type:	UnboundLocalError
+Exception Value:	
+cannot access local variable 'stripe_total' where it is not associated with a value
+Exception Location:	C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\checkout\views.py, line 141, in checkout
+Raised during:	checkout.views.checkout
+Python Executable:	C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\.venv\Scripts\python.exe
+Python Version:	3.12.8
+Python Path:	
+['C:\\Users\\leila\\OneDrive\\Desktop\\Documents\\vscode-projects\\working_out_gym',
+ 'C:\\Program Files\\Python312\\python312.zip',
+ 'C:\\Program Files\\Python312\\DLLs',
+ 'C:\\Program Files\\Python312\\Lib',
+ 'C:\\Program Files\\Python312',
+ 'C:\\Users\\leila\\OneDrive\\Desktop\\Documents\\vscode-projects\\working_out_gym\\.venv',
+ 'C:\\Users\\leila\\OneDrive\\Desktop\\Documents\\vscode-projects\\working_out_gym\\.venv\\Lib\\site-packages']
+Server time:	Wed, 15 Apr 2026 19:42:16 +0000
+
+- I query this with ChatGPT who advises that my checkout view is trying to get the total before Stripe has been set to obtain it so I need to update my code so it sets Stripe_total for both cases of checkout, i.e. plans and items. I replace the below code from:
+
+plan = None
+
+if plan_id:
+    from plans.models import Plan
+    plan = Plan.objects.get(id=plan_id)
+    total = plan.price
+else:
+    current_bag = bag_contents(request)
+    total = current_bag['grand_total']
+
+    #ChatGPT Code
+    plan_id = request.session.get('plan_purchase_id', None)
+
+    plan = None
+    if plan_id:
+        from plans.models import Plan
+        plan = Plan.objects.get(id=plan_id)
+
+        # Override totals for plan purchase
+        total = plan.price
+
+    # Stripe expects pence
+    stripe_total = round(total * 100)
+
+- With:
+
+plan = None
+
+if plan_id:
+    from plans.models import Plan
+    plan = Plan.objects.get(id=plan_id)
+    total = plan.price
+else:
+    current_bag = bag_contents(request)
+    total = current_bag['grand_total']
+
+stripe_total = round(total * 100)
+
+37. I refresh the page and can see the checkout again with the totals being calculated correctly now too. However, it has moved the order summary details and totals above the delivery and payment form when it should be showing in the second column on the right:
+
+![Plans Checkout Page Wrong Layout](/static/images/FitnessPlans/Screenshot%20plans%20checkout%20showing%20correct%20totals%20wrong%20layout.png)
+
+38. This is caused by the order-lg-last class on my order summary column div. Removing this class still doesn't resolve the issue but this is because the order summary code actually appears before the payment and delivery details form in my checkout.html, I re-order this so that the Order Summary now appears after my 'adjust bag' and 'complete order' buttons. Now when I refresh the Plans Checkout page looks good:
+
+![Plans Checkout Page Layout Resolved](/static/images/FitnessPlans/Screenshot%20plans%20checkout%20view%20now%20resolved.png)
+
+39. I can now complete order on the plan and I am taken to the checkout_success page and receive a receipt with an order number and my details but unfortunately the totals are showing as £0 here for everything:
+
+![Plans Successful Checkout Wrong Totals](/static/images/FitnessPlans/Screenshot%20plans%20successful%20checkout.png)
+
+40. I query why this would be with ChatGPT and it advises that my Order is still being saved with no monetary values for plan purchases; the totals are calculated in the checkout view then shown in the template but not stored on the Order model. To resolve this, in checkout/views on my if statement for order_form.is_valid, I need to replace this code:
+
+if order_form.is_valid():
+    order = order_form.save(commit=False)
+    pid = request.POST.get('client_secret').split('_secret')[0]
+    order.stripe_pid = pid
+    order.original_bag = json.dumps(bag)
+
+    order.save()
+
+- With:
+
+if order_form.is_valid():
+    order = order_form.save(commit=False)
+
+    pid = request.POST.get('client_secret').split('_secret')[0]
+    order.stripe_pid = pid
+    order.original_bag = json.dumps(bag)
+
+    plan_id = request.session.get('plan_purchase_id')
+
+    if plan_id:
+        from plans.models import Plan
+        plan = Plan.objects.get(id=plan_id)
+
+        order.order_total = plan.price
+        order.delivery_cost = 0
+        order.grand_total = plan.price
+    else:
+        current_bag = bag_contents(request)
+        order.order_total = current_bag['total']
+        order.delivery_cost = current_bag['delivery']
+        order.grand_total = current_bag['grand_total']
+
+    order.save()
+
+41. After updating my view, I cancel and reload my server and purchase another plan to see if this has now resolved my issue. I notice that my restrictions against user owning more than 1 x type of plan have come into play and is working:
+
+![Disable Button preventing 2 x same plan type](/static/images/FitnessPlans/Screenshot%20disable%20button%20working%20for%20fitness%20plan%20being%20owned.png)
+
+42. Now when I complete an order, I can see that it is calculating the correct totals now:
+
+![Correct totals on checkout success for plans](/static/images/FitnessPlans/Screenshot%20plans%20checkout%20showing%20correct%20totals%20wrong%20layout.png)
+
+43. As my Fitness and Nutrition Plan app is now setup and working correctly, I will now run a collectstatic and then commit my changes to Git and Heroku. 
+
+---
+
+
 
 # 6. Credits and Acknowledgements
 
@@ -16012,6 +16925,13 @@ The following parts of my Project were implemented using Bootstrap docs:
 - Nutrition Plan Images: Photo by Abet Llacer: https://www.pexels.com/photo/assorted-fruits-3025236/, Photo by Pixabay: https://www.pexels.com/photo/grilled-meat-dish-served-on-white-plate-361184/, Photo by Vie Studio: https://www.pexels.com/photo/grains-and-seeds-in-glass-jars-and-on-bowls-7421448/ 
 
 - Pexels Default No Image found: https://www.pexels.com/photo/question-mark-on-crumpled-paper-5428826/
+
+- Pexels Keto Nutrition Plan Image: https://www.pexels.com/photo/vegetable-salad-on-white-ceramic-plate-10680710/
+
+- Pexels Strength Training Plan: https://www.pexels.com/photo/black-dumbbell-lot-260352/
+
+- 
+
 ---
 
 ### Code
@@ -16172,6 +17092,13 @@ The following parts of my Project were implemented using Bootstrap docs:
 - address variable webhook handler update
 - toast jquery base.html script
 - countryfield.js update no jquery
+- plans/models Plan class code
+- UserPlan class in plans/models
+- plans/views plans_list view code
+- plans.html code
+- checkout/views checkout view plans updates
+- checkout/views checkout_success updates for plans
+- checkout.html if plan statement update
 
 
 

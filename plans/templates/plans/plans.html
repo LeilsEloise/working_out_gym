@@ -1,0 +1,127 @@
+<!-- ChatGPT Code-->
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'plans/css/plans.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+  <!-- PAGE TITLE -->
+  <div class="text-center mb-5">
+    <h2 class="logo-font">Fitness & Nutrition Plans</h2>
+    <p class="text-muted">
+      Choose from our expert-designed fitness and nutrition plans.  
+      You may purchase one of each type.  
+      To change your plan, please contact admin.
+    </p>
+  </div>
+
+  <!-- ================= FITNESS PLANS ================= -->
+  <div class="text-center mb-5">
+    <h3 class="mb-2">Fitness Plans</h3>
+    <p class="text-muted mb-4">
+      Structured workout programmes designed to help you build strength,
+      improve endurance, and reach your fitness goals.
+    </p>
+
+    <div class="row">
+      {% for plan in fitness_plans %}
+      <div class="col-12 col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 plan-card">
+
+          <!-- IMAGE -->
+          <img src="{{ plan.image.url }}" alt="{{ plan.title }}">
+
+          <div class="card-body d-flex flex-column">
+            <h5 class="text-center card-title">{{ plan.title }}</h5>
+
+            <p class="card-text">
+              {{ plan.description }}
+            </p>
+
+            <!-- PRICE -->
+            <p class="mt-auto text-center">
+              <strong>£{{ plan.price }}</strong>
+            </p>
+
+            <!-- BUTTON LOGIC -->
+            {% if user.is_authenticated %}
+              {% if has_fitness_plan %}
+                <button class="btn btn-secondary w-100" disabled>
+                  Already Own a Fitness Plan
+                </button>
+              {% else %}
+                <a href="{% url 'plans:buy_plan' plan.id %}" class="btn btn-black w-100">
+                  Buy Plan
+                </a>
+              {% endif %}
+            {% else %}
+              <a href="{% url 'account_login' %}" class="btn btn-outline-dark w-100">
+                Login to Purchase
+              </a>
+            {% endif %}
+          </div>
+
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- ================= NUTRITION PLANS ================= -->
+  <div class="text-center mb-5">
+    <h3 class="mb-2">Nutrition Plans</h3>
+    <p class="text-muted mb-4">
+      Tailored meal plans to support your fitness journey,
+      improve health, and optimise performance.
+    </p>
+
+    <div class="row">
+      {% for plan in nutrition_plans %}
+      <div class="col-12 col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 plan-card">
+
+          <!-- IMAGE -->
+          <img src="{{ plan.image.url }}" alt="{{ plan.title }}">
+
+          <div class="card-body d-flex flex-column">
+            <h5 class="text-center card-title">{{ plan.title }}</h5>
+
+            <p class="card-text">
+              {{ plan.description }}
+            </p>
+
+            <!-- PRICE -->
+            <p class="mt-auto text-center">
+              <strong>£{{ plan.price }}</strong>
+            </p>
+
+            <!-- BUTTON LOGIC -->
+            {% if user.is_authenticated %}
+              {% if has_nutrition_plan %}
+                <button class="btn btn-secondary w-100" disabled>
+                  Already Own a Nutrition Plan
+                </button>
+              {% else %}
+                <a href="{% url 'plans:buy_plan' plan.id %}" class="btn btn-black w-100">
+                  Buy Plan
+                </a>
+              {% endif %}
+            {% else %}
+              <a href="{% url 'account_login' %}" class="btn btn-outline-dark w-100">
+                Login to Purchase
+              </a>
+            {% endif %}
+          </div>
+
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}
