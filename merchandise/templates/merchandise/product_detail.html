@@ -118,6 +118,37 @@
       </form>
     </div>
   </div>
-  {% endblock %} {% block postloadjs %} {{ block.super }} 
+  {% endblock %} 
+  
+  {% block postloadjs %} 
+  {{ block.super }}
+       <!-- ChatGPT - Quantity Selector Buttons-->
+      <!-- Increment quantity -->
+    <script>
+      $('.increment-qty').click(function(e) {
+        e.preventDefault();
+        let itemId = $(this).data('item_id');
+        let input = $('#id_qty_' + itemId);
+        let currentVal = parseInt(input.val());
+        let max = parseInt(input.attr('max'));
+
+        if (currentVal < max) {
+          input.val(currentVal + 1);
+        }
+      });
+
+      // Decrement quantity
+      $('.decrement-qty').click(function(e) {
+        e.preventDefault();
+        let itemId = $(this).data('item_id');
+        let input = $('#id_qty_' + itemId);
+        let currentVal = parseInt(input.val());
+        let min = parseInt(input.attr('min'));
+
+        if (currentVal > min) {
+          input.val(currentVal - 1);
+        }
+      });
+    </script>
   {% endblock %}
 </div>

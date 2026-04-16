@@ -16858,6 +16858,53 @@ if order_form.is_valid():
 
 ---
 
+# Heroku Checkout Broken
+
+1. When I am testing my production app, I realise it is breaking at the checkout page and giving me a server 500 error. I query with ChatGPT who advises it's likely I haven't set my Stripe Public and Secret Keys in my Heroku config. I do this now by entering the following cmds into my terminal, replacing with my key info:
+
+heroku config:set STRIPE_PUBLIC_KEY=your_public_key_here
+heroku config:set STRIPE_SECRET_KEY=your_secret_key_here
+
+2. I then restart the dynos on Heroku:
+
+heroku restart
+
+3. Now when I reload my production server, I can go to checkout and then checkout the order succesfully.
+
+4. I realise that when I go to try and increase the quantity through the quantity selector buttons on items to Add to Bag that this is no longer working. I believe this is likely due to the fact that the product_detail.html still uses jQuery which my project no longer uses as I have switched to Bootstrap 5. ChatGPT recommends updating my base.html with the below code inside my script tags at the bottom of the file in my postload js block. By adding it to base.html it should also then work on items in shoppingbag too:
+
+  // Increment quantity
+  $('.increment-qty').click(function(e) {
+    e.preventDefault();
+    let itemId = $(this).data('item_id');
+    let input = $('#id_qty_' + itemId);
+    let currentVal = parseInt(input.val());
+    let max = parseInt(input.attr('max'));
+
+    if (currentVal < max) {
+      input.val(currentVal + 1);
+    }
+  });
+
+  // Decrement quantity
+  $('.decrement-qty').click(function(e) {
+    e.preventDefault();
+    let itemId = $(this).data('item_id');
+    let input = $('#id_qty_' + itemId);
+    let currentVal = parseInt(input.val());
+    let min = parseInt(input.attr('min'));
+
+    if (currentVal > min) {
+      input.val(currentVal - 1);
+    }
+  });
+
+5. This works and I can update the quantity on my items on the product_detail view and add them to the shoppingbag, however, in the shoppingbag if I increase or decrease the quantity selector button is happening twice now. This means that there is two pieces of code doing the same thing on this page now so it might make more sense to add my script above to the product_detail.html template only. I remove the above code from base.html and then paste it into the postload js block at the bottom of my product_detail.html template. Now when I refresh the shoppingbag, I can increase and decrease by 1 again. I go back to a product_detail view and see if quantity selector is fixed here also, which it is. 
+
+6. I commit my changes here and then look at my next issue which is the checkout appears to be broken after adding the separate flow for fitness and nutrition plans.
+
+---
+
 
 
 # 6. Credits and Acknowledgements
@@ -17099,6 +17146,7 @@ The following parts of my Project were implemented using Bootstrap docs:
 - checkout/views checkout view plans updates
 - checkout/views checkout_success updates for plans
 - checkout.html if plan statement update
+- product_detail.html quantity selector script
 
 
 
