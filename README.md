@@ -406,7 +406,7 @@ As a **site user** I want **a search facility on products** so that **I can sear
 
 # 5. Development Process
 
-# Initial Setup and Commit to Github
+## Initial Setup and Commit to Github
 
 1. I create a local folder called working_out_gym for the project in my computer and open it in my IDE.
 
@@ -475,7 +475,7 @@ git push
 
 ---
 
-# Authentication and Homepage Setup
+## Authentication and Homepage Setup
 
 1. I now want to look at how I am going to achieve my user stories for account registration and logging in. I have decided to use Django-allauth as opposed to building my own authentication system. I am going to install it using:
 
@@ -635,7 +635,7 @@ urlpatterns = [
 
 ---
 
-# Templates
+## Templates
 
 1. I want to create a copy of all the allauth templates from .pip-modules/lib/python 3.12/site-packages /allauth/templates/* into my newly created folder under templates/allauth so I run the below in my terminal:
 
@@ -755,7 +755,7 @@ urlpatterns = [
 
 ---
 
-# Static Files directory - CSS
+## Static Files directory - CSS
 
 1. I want to add images into my project so create my 'static' folder in the root of my project, creating folders for css, js, images. Within my css folder I create a style.css file and create a test.js file in the js folder. I also drag and drop the folder containing all my development screenshots into the new image folder from File Explorer:
 
@@ -886,7 +886,7 @@ href="#"
 
 ---
 
-# Homepage Content
+## Homepage Content
 
 1. Now that my base.html file is more or less complete for now, I will add some content to my homepage. To start with, I search Pexels for some free images that I will be using throughout my Project. I download these, acknowledging each as I go along and then add these to my images folder in the Project.
 
@@ -928,7 +928,7 @@ git push origin main
 
 ---
 
-# Heroku Setup
+## Heroku Setup
 
 1. I login to Heroku.com and from my personal dashboard, gone to 'New' > 'Create new app':
 
@@ -961,7 +961,7 @@ git push origin main
 
 ---
 
-# Heroku App Deployment
+## Heroku App Deployment
 
 1. Back in Heroku on your app, go to the Deploy tab, in the Deployment Method choose 'Connect to Github and then search for your repository to connect to, once you can see the correct repo in the list, click 'Connect':
 
@@ -1079,7 +1079,7 @@ heroku restart -a working-out-gym
 
 ---
 
-# Creating the PostreSQL database
+## Creating the PostreSQL database
 
 1. Now that my app is setup and working on Heroku, I need to create my database to contain all of my site data: user logons, product listings, discussion board posts and comments, fitness and nutrition plan information, etc.
 
@@ -1165,7 +1165,7 @@ SECRET_KEY = os.environ.get("SECRET_KEY")
 
 ---
 
-# Creating Discussion Board App
+## Creating Discussion Board App
 
  The next thing I want to look at is creating my app for my Discussion Board - it will use a similar model to the news articles in my Project 3 as the functionality will be almost the same, except from creating new posts will be permitted to all users instead of just the site owner. Therefore, I will follow the same process that I did in Project 3 to create this and borrow code where appropriate and tweak to save time. The models for the Discussion Board are pretty much the same as they are for Project 3, there will be a model for 'Posts' and for 'Comments'.
 
@@ -1272,7 +1272,7 @@ class PostAdmin(admin.ModelAdmin):
 
 ---
 
-# Login Logout Register Templates
+## Login Logout Register Templates
 
 1. As there is no styling in place for the registration, login and logout pages, I find the location of my my Django-allauth package files on my computer using the below cmd and copy the location:
 
@@ -2101,7 +2101,7 @@ Invalid block tag on line 23: 'endfor', expected 'elif', 'else' or 'endif'. Did 
 
 ---
 
-# Additional Installs
+## Additional Installs
 
 1. Before I start looking at the Javascript and login functionality issues, I would first like to install a couple of pieces of software into the Project which I feel will be beneficial.
 
@@ -2185,7 +2185,7 @@ git push heroku main
 
 ---
 
-# Static Javascript
+## Static Javascript
 
 1. I am going to delete the test.js file I created in the static folder earlier and create a new file called script.js which contains the below code:
 
@@ -2213,7 +2213,7 @@ python manage.py collectstatic
 
 ---
 
-# User Login, Logout and Register
+## User Login, Logout and Register
 
 1. At the moment, the 'Login', 'Logout' and 'Register' buttons are non functional on the site, nothing happens when they are clicked because there is no Javascript in place for this. To start, I check that everything is in place for Django AllAuth which it is. I update the href references for the login urls to use DTL:
 
@@ -2256,7 +2256,7 @@ To: {% extends "base.html" %}
 
 ---
 
-# Testing Discussion Board app functionality
+## Testing Discussion Board app functionality
 
 1. Now that I have resolved the issues around logging in and out, I can test the functionality of the Discussion Board app and make any last changes too. 
 
@@ -2595,7 +2595,7 @@ path("comment/<int:pk>/edit/", views.CommentUpdate.as_view(), name="comment_edit
 
 ---
 
-# Feedback Form
+## Feedback Form
 
 1. On my Home app, under all my current content, I would like there to be a feedback form which users can use to provide feedback on services and the app if they wish. To start, I need to create a Feedback model in home/models.py, I am going to use some code from ChatGPT to save some time as there is still a lot to do and want to get through these bits quickly:
 
@@ -2808,7 +2808,7 @@ No URL to redirect to.  Either provide a url or define a get_absolute_url method
 
 ---
 
-# Authentication Message in Footer
+## Authentication Message in Footer
 
 1. I am going to add an authentication message into my footer on the left hand side, to avoid clashing with social media links, that tells the user they are logged in and what account this is logged in as. I go to my base.html file and replace the footer code with the below from ChatGPT:
 
@@ -2842,7 +2842,7 @@ No URL to redirect to.  Either provide a url or define a get_absolute_url method
 
 ---
 
-# Merchandise App
+## Merchandise App
 
 1. Now the functionality of my homepage, dicussionboard and login is all working acceptedly well, I am going to start building my Merchandise app which is going to contain a list of the business' products that the users can purchase and see under their profile. To start with, I go to kaggle.com to find a sample dataset that I can use for my new app. I find one at: https://www.kaggle.com/datasets/ahrnishpdahal/gymshark-products-dataset
 
@@ -3500,7 +3500,7 @@ python manage.py import_products --clear
 
 ---
 
-# Setting Local Database to Local SQLite and Resetting/Rebuilding PostgreSQL Database
+## Setting Local Database to Local SQLite and Resetting/Rebuilding PostgreSQL Database
 
 1. This has failed again with an error message but my password for my database has been compromised so I must deal with that first. I am unable to reset the database password of my Postgre SQL database as it is owned by Code Institute and I need to protect my database security. 
 
@@ -3566,7 +3566,7 @@ python manage.py migrate
 
 ---
 
-# Merchandise Importing Products
+## Merchandise Importing Products
 
 1. I run the import cmd again since changing the database:
 
@@ -3828,7 +3828,7 @@ Installed 52258 object(s) from 1 fixture(s)
 
 ---
 
-# Merchandise App Admin
+## Merchandise App Admin
 
 1. To start with, I will rectify the incorrect plural spelling of 'categorys' that currently shows in the admin panel. This is an easy fix, I just need to add the below Meta class into my Category model:
 
@@ -3883,7 +3883,7 @@ class ProductVariantAdmin(admin.ModelAdmin):
 
 ---
 
-# Merchandise App Products List Views
+## Merchandise App Products List Views
 
 1. To start, I add in the below to my Merchandise/views.py as the view will be simplistic to start with. This will return the template products.html, which I will build next. It will import the model I have for Product and use context as I need to send things back to the template:
 
@@ -4197,7 +4197,7 @@ products = (
 
 ---
 
-# Merchandise App - Products Details Views
+## Merchandise App - Products Details Views
 
 1. Now that the all_products view is working successfully on the Merchandise app, I want to add a view so that when the user clicks a product they are taken to a new page where they can view and review the products. To start with, I copy and paste the function view I created for all_products and paste this directly beneath the function. I update the name of the view to product_detail and change the name of the template to product_detail.html, I add in product ID to the parameters. I only want to return one product so update products to use get_object_or_404 taking in the product id. I then remove the 's' from 'products' in context and then import the get_object_or_404 function:
 
@@ -4335,7 +4335,7 @@ def product_detail(request, product_id):
 
 ---
 
-# Navbar Styling on Different Screen Sizes
+## Navbar Styling on Different Screen Sizes
 
 1. I have decided to quickly sort my Navbar sizing issue on my small screens, as it currently doesn't look right with the text for 'Working Out Gym' so I want to replace this with a Favicon and then also make the text smaller for 'Register' and 'Login'. To achieve this, I start by creating a new folder in my base templates folder called 'includes' that contains two htmls: mobile-top-header.html and main-nav.html:
 
@@ -5287,7 +5287,7 @@ I use:
 
 ---
 
-# Merchandise App - Product Queries by Name
+## Merchandise App - Product Queries by Name
 
 1. Now that my Merchandise page is showing all products correctly on the initial Merchandise app page, and clicking is taking us to the product detail on the next page, I can now look at giving the user the functionality to view specific categories of products. 
 
@@ -5443,7 +5443,7 @@ Cannot resolve keyword 'name' into field. Choices are: category, category_id, fr
 ---
 
 
-# Merchandise App - Product Queries by Category
+## Merchandise App - Product Queries by Category
 
 1. Next I want to set it up so that the users the ability to show specific categories of products. I will do this by creating some subfolder Nav menu links beneath Merchandise for the different categories of products. To start with, I will identify all the possible categories by running the following:
 
@@ -5882,7 +5882,7 @@ if "category" in request.GET:
 
 ---
 
-# Merchandise App - Products Sorting on Price and Category
+## Merchandise App - Products Sorting on Price and Category
 
 1. I now want to further improve sorting for users on products by providing them with the functionality to sort products by price and category in the navbar. I am going to expand upon my current all_products view and add the code to handle the 2 x new get parameters I am going to create for 'sort' and 'direction'. For price, I am going to add a parameter of 'sort' and will set it equal to the price and a direction of ascending. I am first going to make the all products link within my main-nav.html into a drop down menu which will contain the 2 x menu items for 'By Price' and 'By Category'. I will use the same code as I used for the drop down menu for Merchandise and then tweak accordingly.
 
@@ -6825,7 +6825,7 @@ python manage.py collectstatic
 - I then restart my dev server and see if the button now works, which it does so I commit my code and get ready to start creating my shopping bag next.
 
 
-# Shopping Bag Application Creation and Wiring
+## Shopping Bag Application Creation and Wiring
 
 1.  To start, I create a new app for 'Shopping Bag' using the following cmd:
 
@@ -7515,7 +7515,7 @@ nav-link-text
 - I then commit my code before moving on to looking at adding functionality to the app so it tracks what items are held in the bag.
 
 
-# Shopping Bag - Contexts
+## Shopping Bag - Contexts
 
 1. Next I am going to add some functionality to my Shopping Bag app so that it tracks the items in the bag. To start, I need to create a new file called contexts.py in the root of my shoppingbag app directory. Within the new file, I create a new function called bag_contents which takes the request as a parameter. This function will return a dictionary called context instead of a template; this is a context processor and its purpose is to make the dicitonary available to all templates across the entire application:
 
@@ -7596,7 +7596,7 @@ def bag_contents(request):
 
 ---
 
-# Shopping Bag - Adding Items to Bag
+## Shopping Bag - Adding Items to Bag
 
 1. Next I want to give the user the functionality to add to the shopping bag so i start in my product_detail.html file in the merchandise app. Underneathe my '{{ product.vendor }} tag, I add the below form, borrowing the code from Code Institute's Boutique Ado. The first column uses the POST method to send information to the server about the product being added to the bag, therefore, we need to have the csrf token at the very top so that it uses Django's cross-site request forgery protection; as a security precaution, without this token Django won't allow you to submit the form. Then the form is split into a single form row with two columns. The first column contains an input group for quality input; allowing users to select how much of the product they want. Then the second column contains the submit button for the form and  a keep shopping button which takes the user back to merchandise pages. It also has a hidden input which uses request.path attribute to submit a field named redirect_URL which contains the current URL: 
 
@@ -7712,7 +7712,7 @@ print(request.session['bag'])
 
 ---
 
-# Shopping Bag - Making Contents Available to the Entire App
+## Shopping Bag - Making Contents Available to the Entire App
 
 1. I now want to make the content of the Shopping Bag show across the whole platform, i.e. show total cost of the shopping bag in the navbar and render the products added in the shoppingbag.html template. To start, I go to my contexts.py and add the below code, following the same method as the add_to_bag view; getting it if it already exists or initialising it to an empty dictionary if it doesn't:
 
@@ -8269,7 +8269,7 @@ total += subtotal
 
 ---
 
-# Shopping Bag - Size Options for Clothing
+## Shopping Bag - Size Options for Clothing
 
 1. I now want to give users the option to select different sizes if they are purchasing clothing from the site. I go to my merchandise.models file and add a new field to the Product model as below, this is a BooleanField which will be false by default and allowed to be blank both in the database and in forms rather than having to implement different sizes for every product in the database. As this is not an official commercial e-commerce site, I am just going to mimic the functionality, the same as Code Institute, by simply describing if the object has different sizes available and then give user the choice of some generic sizes to be added to their item details in the bag
 
@@ -8349,7 +8349,7 @@ exit()
 
 ---
 
-# Shopping Bag - Size Update for Context Processor and Add_To_Bag View
+## Shopping Bag - Size Update for Context Processor and Add_To_Bag View
 
 1. I now need to update my add_to_bag view so that it can handle the new code for size. I add the below code under the redirect_url in add_to_bag view:
 
@@ -8962,7 +8962,7 @@ def add_to_bag(request, product_id):
 
 ---
 
-# Shopping Bag - Quantity Selector Javascript
+## Shopping Bag - Quantity Selector Javascript
 
 1. I am now going to add some buttons to the quantity selector on the product details. In the product_details template, I am going to use the built-in input group append and input group prepend classes from Bootstrap with some buttons that use the appropriate Font Awesome icons. I consult ChatGPT on how best to do this and ask for some guidance on restyling the Size and Quantity layout on Product Details, it provides me the below code which I update:
 
@@ -9423,7 +9423,7 @@ To:
 
 ---
 
-#  Toasts
+##  Toasts
 
 1. I now want to add messages to my webapp so that users have an informative and ineractive experience. I am going to do this using the Toasts feature from Bootstrap. To start with, I add a subfolder to the main templates folder under the 'includes' subfolder called 'toasts':
 
@@ -10177,7 +10177,7 @@ def add_to_bag(request, product_id):
 
 ---
 
-# Checkout App - Creating the App and Models
+## Checkout App - Creating the App and Models
 
 1. The next thing that I am going to do is create my Checkout app so that my users can actually make purchases. I start by running the below cmd in my terminal to create the new app for checkout:
 
@@ -10294,7 +10294,7 @@ git push heroku main
 
 ---
 
-# Checkout App - Admin for Orders
+## Checkout App - Admin for Orders
 
 1. Now that I have created my models for the Orders and OrderLineItems, I am going to add them to my admin panel. In checkout/admin.py, I import the Order and OrderLineItem models at the top of the file:
 
@@ -10433,7 +10433,7 @@ class OrderForm(forms.ModelForm):
 
 ---
 
-# Checkout App - Creating Views and Templates
+## Checkout App - Creating Views and Templates
 
 1. I now need to create the view for the checkout app. In my checkout/views.py file, I create a simple checkout view. Below code will get the bag from session and if bag is empty then give an error message. Then it will redirect back to the Merchandise page, preventing users from manually accessing the url using '/checkout':
 
@@ -10808,7 +10808,7 @@ item.product.variants.first.price | calc_subtotal:item.quantity
 
 ---
 
-# Stripe Payments Setup
+## Stripe Payments Setup
 
 1. To start with, I am going to create a checkout.css file in the newly created static/css/checkout folder I created earlier in my checkout app. I am then going to populate this with some styles for the payment form, this will set all form controls as well as the card element div to have black text and a solid black border:
 
@@ -10986,7 +10986,7 @@ var card = elements.create('card', {style: style});
 
 ---
 
-# Stripe - Adding functionality to Card Element
+## Stripe - Adding functionality to Card Element
 
 1. First I will need to add a listener on the card element for the change event and everytime it changes, I will check and see if there are any errors:
 
@@ -11132,7 +11132,7 @@ if not stripe_public_key:
 
 ---    
 
-# Stripe - Building Checkout Flow
+## Stripe - Building Checkout Flow
 
 1. Now that I have set up my view to return the correct secrets, the last step to get this working is to add an event listener to the payment forms submit event. I am going to copy the Stripe docs code for submitting a payment and paste this into my current stripe_elements.js file after making some tweaks as per Code Institute's Boutique Ado:
 
@@ -13476,7 +13476,7 @@ git push heroku main
 
 ---
 
-# Checkout Success - Order Summary
+## Checkout Success - Order Summary
 
 1. I first go to my checkout_success html template and inside the empty column below my order information paragraph, I am going to create a bordered wrapper that will go around the order confirmation. Then inside the wrapper I am going to create 4 x rows with full width columns containing small muted text for each of the sections, as below. The first row will be called 'Order Info':
 
@@ -14124,7 +14124,7 @@ python manage.py collectstatic
 
 ---
 
-# Checkout - Webhooks for Payment Status Tracking
+## Checkout - Webhooks for Payment Status Tracking
 
 1. So from the tests done previously, I can see that my orders are being created and stored in the database after checking my Admin panel. However, if a user closes the browser after the payment is confirmed and sent to Stripe but before form is submitted then there will be no order in the database. Things like internal email notificaitons would not be triggered because the user never fully completes their order. Which could result in charges to the user with no confirmation email or getting wrong orders. To prevent this, I will add redundancy and each time and event occurs on Stripe such as a payment intent being created, a payment being completed, etc. then Stripe will send out a Webhook to listen for. (Webhooks are the signal that Django sends each time a model is saved or deleted).
 
@@ -15102,7 +15102,7 @@ county__iexact=address.get('state'),
 
 ---
 
-# Profile App - App Creation and Wiring
+## Profile App - App Creation and Wiring
 
 1. Now that I have setup and tested my payment system, I want to look at giving the user their own personalised user profile so that they can track and view past orders, save default delivery information and see what fitness/nutrition plans they are currently on. Before I start, I am going to create a new base.html in the templates/allauth folder. Then in the file itself I am going to populate it with the html from Code Institute's Boutique Ado project:
 
@@ -15393,7 +15393,7 @@ def profile(request):
 
 ---
 
-# Profile App - User Profile Form and Views
+## Profile App - User Profile Form and Views
 
 1. I am now going to build the user profile form. As its very similar to the Order form and the profile model is almost the same as the order model, I am just going to start by copying the checkout/forms content into a forms.py file in the profiles app. I make some tweaks to the code from checkout/forms as below:
 
@@ -15815,7 +15815,7 @@ Back in checkout/views, in the checkout view above the if not stripe_public_key 
 
 ---
 
-# Profile App - Webhooks for Card Details
+## Profile App - Webhooks for Card Details
 
 1. I now want to update my webhook handler to be able to handle user profiles so that if the checkout view fails then it can depend on the webhook handler to perform all the same functionality. In my checkout/views in the payment intent succeeded handle method, I added the key in the payment intent for metadata; this contains the username of the user who placed the order and whether they want to save their info. I now want to handle that in my webhook_handler above my order_exists = false statement.
 
@@ -16010,7 +16010,7 @@ WORKING OUT GYM
 
 ---
 
-# Fitness and Nutrition Plans - App Creation and Wiring
+## Fitness and Nutrition Plans - App Creation and Wiring
 
 1. I create a new app for my 'Fitness and Nutritions Plans' page to be contained within called 'plans' using Python:
 
@@ -16858,7 +16858,7 @@ if order_form.is_valid():
 
 ---
 
-# Heroku Checkout Broken
+## Heroku Checkout Broken
 
 1. When I am testing my production app, I realise it is breaking at the checkout page and giving me a server 500 error. I query with ChatGPT who advises it's likely I haven't set my Stripe Public and Secret Keys in my Heroku config. I do this now by entering the following cmds into my terminal, replacing with my key info:
 
@@ -16919,7 +16919,111 @@ heroku restart
 
 10. The last issue I have spotted is that the images are no longer showing for my plans page on either Heroku or my local server. This is likely due to the fact that I haven't set up Cloudinary in my project yet so I will commit my changes again and then look at setting that up now.
 
-11. 
+---
+
+## Cloudinary Storage Setup
+
+1. First I login to my account on Cloduinary at: https://cloudinary.com/ and go to my Dashboard to get my Cloud Name, API Key and API Secret.
+
+2. Next, I install the package for Cloudinary into my project using the following cmd in my terminal:
+
+pip install cloudinary django-cloudinary-storage
+
+3. I then add it to the requirements.txt file using:
+
+pip freeze > requirements.txt
+
+4. Then I update my INSTALLED APPS section in settings to include the new Cloudinary apps:
+
+    'cloudinary',
+    'cloudinary_storage',
+
+5. In my env.py I set environment variables for my CLOUDINARY_CLOUD_NAME, API_KEY and API_SECRET. Then in my settings.py I add the below to obtain the variables and contain in my storage settings:
+
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME'),
+    'API_KEY': os.environ.get('CLOUDINARY_API_KEY'),
+    'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET'),
+}
+
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+
+6. I now need to update my plans/models so that the image field looks at the CloudinaryField attribute. I go to my plans/models and find the image field which is currently set to:
+
+    image = models.ImageField(upload_to='plans/')
+
+- And then I update this to:
+
+image = CloudinaryField('image')
+
+- And as I am using the CloudinaryField, I also need to import this at the top of the file now too:
+
+from cloudinary.models import CloudinaryField
+
+- After making changes to the model, I then need to makemigrations and migrate:
+
+python manage.py makemigrations
+python manage.py migrate
+
+7. After these have ran successfully, I then need to reupload the images in the admin panel so do this now.
+
+8. I check my plans page and can now see the images again:
+
+![Images showing on Plans page again](/static/images/Tidy-up/Screenshot%20images%20showing%20for%20plans%20again.png)
+
+9. Then finally I set my environment variables on Heroku as below:
+
+heroku config:set CLOUDINARY_CLOUD_NAME=your-cloud-name
+heroku config:set CLOUDINARY_API_KEY=your-api-key
+heroku config:set CLOUDINARY_API_SECRET=your-api-secret
+
+10. Once I have set the environment variables on Heroku, I run collectstatic and then commit my pages to Git and Heroku.
+
+11. Once it has finished deploying to Heroku, I check that the Plans Images are now showing there too which they are. I check around the rest of the site seeing if I have missed anything and notice that the OrderTotal heading in Profile doesn't have a space between the words and that it's using dollar as the currency so I inspect on devtools, find the offending td element in profile.html and then update accordingly:
+
+<td>£{{ order.grand_total }}</td>
+
+12. This looks good now so I will commit my changes again and then move on to my Product Admin next.
+
+---
+
+## Product Admin - ProductForm
+
+1. Now that the frontend of my application is now setup and functional for the users. I now want to give the superusers the functionality to be able to add, update and delete products in the store. The infrastructure is mostly already built for this but just needs a few additional tweaks. The first thing I will need is a product form so I create a new forms.py file in the merchandise app. In the file itself, I then import what we need to make the forms work, i.e. the forms from Django and the Category and Product models from the merchandise app:
+
+from django import forms
+from .models import Product, Category
+
+2. Then, I will create a new class ProductForm that extends the built-in forms.ModelForm:
+
+class ProductForm(forms.ModelForm)
+
+3. It will have an inner metaclass which defines the model and the fields I want to include. I am going to include all of the fields using a double underscore string called all:
+
+    class Meta:
+        model = Product
+        fields = '__all__'
+
+4. Next I will override the init method in order to be able to make some changes to the fields:
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+- Still in the method, I then set the below so that categories show up in the new form under their friendly names. I first get all the categories and then create a list of the tuples of the friendly names associated with their category ID's; this syntax is called list comprehension, a shorthand way of creating a loop that adds items to the list:
+
+        categories = Category.objects.all()
+        friendly_names = [(c.id, c.get_friendly_name()) for c in categories]
+
+- Now that my method is getting the friendly names, I then update the category field to use these for choices instead of using the id. This will be seen in the select box that will generate in the form; instead of seeing the category ID or the name field, it will show the friendly name for categories:
+
+        self.fields['category'].choices = friendly_names
+
+- Then I will ierate through all the field names and then set classes on them to match the theme of the rest of the store:
+
+        for field_name, field in self.fields.items():
+            field.widget.attrs['class'] = 'border-black rounded-0'
+
+5. Now that I have my ProductForm set-up, I will commit my code to Git and Heroku and then next write my view and connect this to a template to then see the form.
 
 ---
 
