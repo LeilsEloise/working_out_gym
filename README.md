@@ -16901,7 +16901,25 @@ heroku restart
 
 5. This works and I can update the quantity on my items on the product_detail view and add them to the shoppingbag, however, in the shoppingbag if I increase or decrease the quantity selector button is happening twice now. This means that there is two pieces of code doing the same thing on this page now so it might make more sense to add my script above to the product_detail.html template only. I remove the above code from base.html and then paste it into the postload js block at the bottom of my product_detail.html template. Now when I refresh the shoppingbag, I can increase and decrease by 1 again. I go back to a product_detail view and see if quantity selector is fixed here also, which it is. 
 
-6. I commit my changes here and then look at my next issue which is the checkout appears to be broken after adding the separate flow for fitness and nutrition plans.
+6. I commit my changes here and then look at my next issue which is the checkout appears to be broken after adding the separate flow for fitness and nutrition plans. 
+
+7. I test checking out an order from the merchandise app but have no issues today whereas last night in testing found it was declining the Stripe test card (42 42). I have successfully checkout Merchandise and Plans through checkout this morning and all seems to be well. 
+
+8. There are a couple more niggly issues that I would like to resolve before moving on. One of these is the fact that my Toast notifications still show $ instead of £ so I am going to have a quick look at these and update wherever I can see a $. I save and then test adding an item to the bag and can see this looks much better in the notification now:
+
+![Toast Notification Currency Update](/static/images/Tidy-up/Screenshot%20toast%20currency%20update.png)
+
+9. However, while the Toast currency now reflects the correct currency, the shopping bag total when updated still gives a $ sign. When it is empty it uses a £ sign, so I inspect the shoppingbag total to see where it is pulling the $ from. I can see this is coming from this span element in the main-nav.html template:
+
+<span class="ms-2">${{ grand_total|floatformat:2 }}</span>
+
+- I update the $ to a £ sign and then restart my dev server and reload my page and can see the total on shopping bag now shows as the correct currency:
+
+![Shoppingbag Total Correct Currency in Navbar](/static/images/Tidy-up/Screenshot%20correct%20currency%20shoppingbag%20total%20navbar.png)
+
+10. The last issue I have spotted is that the images are no longer showing for my plans page on either Heroku or my local server. This is likely due to the fact that I haven't set up Cloudinary in my project yet so I will commit my changes again and then look at setting that up now.
+
+11. 
 
 ---
 
