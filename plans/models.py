@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from cloudinary.models import CloudinaryField
 
 class Plan(models.Model):
     """ Defines the Nutrition and Fitness Plan model - ChatGPT Code """
@@ -10,7 +11,7 @@ class Plan(models.Model):
 
     title = models.CharField(max_length=255)
     description = models.TextField()
-    image = models.ImageField(upload_to='plans/')
+    image = CloudinaryField('image')
     price = models.DecimalField(max_digits=6, decimal_places=2)
 
     plan_type = models.CharField(max_length=10, choices=PLAN_TYPE_CHOICES)
