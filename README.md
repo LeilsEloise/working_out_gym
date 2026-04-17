@@ -17025,6 +17025,93 @@ class ProductForm(forms.ModelForm)
 
 5. Now that I have my ProductForm set-up, I will commit my code to Git and Heroku and then next write my view and connect this to a template to then see the form.
 
+6. After my code has successfully committed, I then look at creating a new view for the Product Form so that the superusers of the site can add new products to the store. In my merchandise/views file I create a new view and call this 'add_product'. It is going to be simple for now and just render an empty instance of the new productform so I can see how this looks initially. It will use a new template which I will create soon called 'add_product.html'. It will also include a context which includes the ProductForm
+
+def add_product(request):
+    """Add new product to Merchandise"""
+    form = ProductForm()
+    template = 'merchandise/add_product.html'
+    context = {
+        'form': form,
+    }
+
+    return render(request, template, context)
+
+- Then at the top of the views file, I need to import the ProductForm at the top:
+
+from .forms import ProductForm
+
+7. Now I need to create a new url for my new view in merchandise urls. I call the new url 'add/' and point this to the add_product view:
+
+    path("add/", views.add_product, name="add_product"),
+
+8. Now I need to actually create the template I have been referencing for add_product. I will create the new file in the merchandise/templates/merchandise directory:
+
+![add product template](/static/images/ProductAdmin/Screenshot%20add%20product%20template%20directory.png)
+
+9. As it's going to have a similar appearance to my checkout page, I will copy and paste the contents of my checkout.html into this file so I can use it as a base for the new view. I make the following tweaks:
+
+- I remove the entire postload js block at the bottom of my file.
+- I remove the entire loading-overlay div containing the loading spinner.
+- I remove all the content from the second row
+- I update the header to say 'Product Management' instead of 'Checkout'
+- I update the div classes that the header resides in to col-12 and col-md-6 so it takes up 50% width on medium and larger screens
+- I then remove the extra css block and bag tools at the top of the file
+
+10. I run my dev server and add '/products/add' to the end of my url so I can see how my Product Management is looking. However, this gives me the error page as below:
+
+AttributeError at /merchandise/add/
+'Category' object has no attribute 'get_friendly_name'
+Request Method:	GET
+Request URL:	http://127.0.0.1:8000/merchandise/add/
+Django Version:	6.0.2
+Exception Type:	AttributeError
+Exception Value:	
+'Category' object has no attribute 'get_friendly_name'
+Exception Location:	C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\merchandise\forms.py, line 13, in __init__
+Raised during:	merchandise.views.add_product
+Python Executable:	C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\.venv\Scripts\python.exe
+Python Version:	3.12.8
+Python Path:	
+['C:\\Users\\leila\\OneDrive\\Desktop\\Documents\\vscode-projects\\working_out_gym',
+ 'C:\\Program Files\\Python312\\python312.zip',
+ 'C:\\Program Files\\Python312\\DLLs',
+ 'C:\\Program Files\\Python312\\Lib',
+ 'C:\\Program Files\\Python312',
+ 'C:\\Users\\leila\\OneDrive\\Desktop\\Documents\\vscode-projects\\working_out_gym\\.venv',
+ 'C:\\Users\\leila\\OneDrive\\Desktop\\Documents\\vscode-projects\\working_out_gym\\.venv\\Lib\\site-packages']
+Server time:	Thu, 16 Apr 2026 20:46:45 +0000
+
+11. I take a look at my Category model in Merchandise and realise there is no friendly_name field set against this, if I were to add this to my Category model now then I would have to go through all my items in the admin panel and manually add a friendly name and there is a lot of products so I will stop using friendly_names and use name instead, in my merchandise/forms file replacing:
+
+friendly_names = [(c.id, c.get_friendly_name()) for c in categories]
+
+- With:
+
+friendly_names = [(c.id, c.name) for c in categories]
+
+12. I update this and then reload the dev server and add '/merchandise/add/' and now the page is loading for me:
+
+![Add Product View Now Loading](/static/images/ProductAdmin/Screenshot%20add%20product%20view%20now%20loading.png)
+
+13. I now want to render the product form as a Django Crispy form in the second row of my conten in the new template. I make another 50% width column to contain a form element which has a method of POST, action URL of add_product, a class to add a margin bottom and it also has an encoding type attribute on the form; this is as has the potential to submit images files and without this it cannot upload the images correctly. The CSRF token and django crispy form tag will be contained inside the form element and there is a cancel button to go back to the Merchandise page:
+
+            <div class="col-12 col-md-6">
+                <form method="POST" action="{% url 'merchandise:add_product' %}" class="form mb-2" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {{ form | crispy }}
+                    <div class="text-right">
+                        <a class="btn btn-outline-black rounded-0" href="{% url 'merchandise:products' %}">Cancel</a>
+                        <button class="btn btn-black rounded-0" type="submit">Add Product</button>
+                    </div>
+                </form>
+
+14. Now when I reload the page looks much more substantial:
+
+![Add Product View Basically Complete](/static/images/ProductAdmin/Screenshot%20add%20buy%20view%20more%20polished.png)
+
+15. I commit my changes here and then move on to looking at the post handler for my add products view.
+
 ---
 
 

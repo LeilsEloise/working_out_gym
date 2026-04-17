@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, reverse, get_object_or_404
 from django.contrib import messages
 from django.db.models import Q, Min
 from .models import Product, Category, Badge
+from .forms import ProductForm
 
 # Claude AI Code
 def all_products(request):
@@ -113,3 +114,13 @@ def badge_detail(request, badge_id):
         "badge": badge,
     }
     return render(request, "merchandise/badge_detail.html", context)
+
+def add_product(request):
+    """Add new product to Merchandise"""
+    form = ProductForm()
+    template = 'merchandise/add_product.html'
+    context = {
+        'form': form,
+    }
+
+    return render(request, template, context)
