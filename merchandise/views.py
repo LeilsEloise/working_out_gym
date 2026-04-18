@@ -1,8 +1,9 @@
 from django.shortcuts import render, redirect, reverse, get_object_or_404
 from django.contrib import messages
+from django.core.paginator import Paginator
 from django.db.models import Q, Min
-from .models import Product, Category, Badge
-from .forms import ProductForm
+from .models import Product, ProductVariant, Category, Badge
+from .forms import ProductForm, ProductVariantForm
 
 # Claude AI Code
 def all_products(request):
@@ -11,7 +12,7 @@ def all_products(request):
     products = (
         Product.objects.filter(is_active=True)
         .select_related("category")
-        .annotate(from_price=Min("variants__price"))
+        .prefetch_related("variants")
     )
 
     query = None
@@ -65,8 +66,13 @@ def all_products(request):
 
     current_sorting = f'{sort}_{direction}'
 
+    paginator = Paginator(products, 100)
+
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
     context = {
-        "products": products,
+        "products": page_obj,
         "search_term": query,
         "current_category": current_category,
         "current_categories": current_categories,
@@ -77,12 +83,11 @@ def all_products(request):
 
     return render(request, "merchandise/products.html", context)
 
-
 def product_detail(request, product_id):
     """A view to show individual products"""
 
     product = get_object_or_404(
-        Product.objects.annotate(from_price=Min("variants__price")),
+        Product.objects.prefetch_related("variants").annotate(from_price=Min("variants__price")),
         pk=product_id
     )
     min_price = product.variants.order_by('price').first().price if product.variants.exists() else None
@@ -115,12 +120,28 @@ def badge_detail(request, badge_id):
     }
     return render(request, "merchandise/badge_detail.html", context)
 
+# ChatGPT Code
 def add_product(request):
-    """Add new product to Merchandise"""
-    form = ProductForm()
-    template = 'merchandise/add_product.html'
-    context = {
-        'form': form,
-    }
+    if request.method == 'POST':
+        form = ProductForm(request.POST, request.FILES)
+        if form.is_valid():
+            product = form.save()
 
-    return render(request, template, context)
+            size = form.cleaned_data.get('size')
+
+            # Only use size if product has sizes
+            if not product.has_sizes:
+                size = None
+
+            ProductVariant.objects.create(
+                product=product,
+                price=form.cleaned_data['price'],
+                size=size,
+            )
+
+            messages.success(request, 'Successfully added product!')
+            return redirect('merchandise:add_product')
+    else:
+        form = ProductForm()
+
+    return render(request, 'merchandise/add_product.html', {'form': form})

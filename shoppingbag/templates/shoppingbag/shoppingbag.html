@@ -46,9 +46,11 @@
 
               <!-- Image -->
               <td class="p-3 w-25">
-                {% if item.product.image_src %}
-                  <img class="img-fluid rounded" src="{{ item.product.image_src }}">
-                {% endif %}
+                <img 
+                  src="{{ item.product.get_display_image }}" 
+                  class="img-fluid"
+                  alt="{{ item.product.title }}"
+                >
               </td>
 
               <!-- Product Info -->

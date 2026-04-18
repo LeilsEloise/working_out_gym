@@ -1,17 +1,17 @@
 from django import forms
-from .models import Product, Category
+from .models import Product, ProductVariant, Category
 
+# ChatGPT Code
 class ProductForm(forms.ModelForm):
-    
+    price = forms.DecimalField(label='Price', max_digits=6, decimal_places=2)
+    size = forms.CharField(required=False)
+
     class Meta:
         model = Product
         fields = '__all__'
-    
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        categories = Category.objects.all()
-        friendly_names = [(c.id, c.name) for c in categories]
 
-        self.fields['category'].choices = friendly_names
-        for field_name, field in self.fields.items():
-            field.widget.attrs['class'] = 'border-black rounded-0'
+# ChatGPT Code
+class ProductVariantForm(forms.ModelForm):
+    class Meta:
+        model = ProductVariant
+        fields = ['price']

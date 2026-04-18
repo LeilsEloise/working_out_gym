@@ -1,6 +1,7 @@
 # Chat GPT Code
 from django.db import models
 from django.utils.text import slugify
+from django.templatetags.static import static
 
 # ChatGPT Code
 class Category(models.Model):
@@ -35,27 +36,46 @@ class Product(models.Model):
     has_sizes = models.BooleanField(default=False, null=True, blank=True)
 
     tags = models.TextField(blank=True)
-    image_src = models.TextField(blank=True)
+    image = models.ImageField(upload_to='products/', blank=True, null=True)
+    image_src = models.URLField(blank=True, null=True)
 
     is_active = models.BooleanField(default=True)
 
     # Stripe (optional now, useful later)
     stripe_product_id = models.CharField(max_length=255, blank=True)
 
+    # ChatGPT Code
     def save(self, *args, **kwargs):
-        if not self.slug:
-            # use handle if possible (stable, already URL-friendly)
-            base = self.handle or slugify(self.title)
-            slug = base[:240]
+        # Generate handle if missing
+        if not self.handle:
+            base = slugify(self.title)[:240] or "product"
+            handle = base
             i = 1
-            while Product.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+            while Product.objects.filter(handle=handle).exclude(pk=self.pk).exists():
                 i += 1
-                slug = f"{base[:235]}-{i}"
-            self.slug = slug
+                handle = f"{base[:235]}-{i}"
+            self.handle = handle
+
+        # Generate slug if missing
+        if not self.slug:
+            self.slug = self.handle
+
         super().save(*args, **kwargs)
 
-    def __str__(self):
-        return self.title
+    # ChatGPT Code
+    def get_display_image(self):
+        variant = self.variants.first()
+
+        if variant and variant.image_src:
+            return variant.image_src
+
+        if self.image:
+            return self.image.url
+
+        if self.image_src:
+            return self.image_src
+
+        return static('images/noimage.jpg')
 
 # ChatGPT Code
 class ProductVariant(models.Model):
@@ -65,6 +85,7 @@ class ProductVariant(models.Model):
     sku = models.CharField(max_length=80, blank=True, null=True, db_index=True)
 
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    size = models.CharField(max_length=50, blank=True, null=True)
     inventory_quantity = models.IntegerField(default=0)
 
     image_src = models.TextField(blank=True)

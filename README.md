@@ -16987,7 +16987,7 @@ heroku config:set CLOUDINARY_API_SECRET=your-api-secret
 
 ---
 
-## Product Admin - ProductForm
+## Product Admin - ProductForm / add_product View
 
 1. Now that the frontend of my application is now setup and functional for the users. I now want to give the superusers the functionality to be able to add, update and delete products in the store. The infrastructure is mostly already built for this but just needs a few additional tweaks. The first thing I will need is a product form so I create a new forms.py file in the merchandise app. In the file itself, I then import what we need to make the forms work, i.e. the forms from Django and the Category and Product models from the merchandise app:
 
@@ -17114,6 +17114,799 @@ friendly_names = [(c.id, c.name) for c in categories]
 
 ---
 
+## Product Admin - add_product Post Handler
+
+1. I now write the Post Handler for the add_product view. In merchandise/views, I update the add_product view an if statement which says if the request method is POST then it will instantiate a new instance of the product form from request.POST and include request.FILES. In order to ensure that the image is captured for the product if one was submittedt then we can check if form.is_valid, and if so we'll save it. Then I add a success message and then redirect to the same view. If any errors appear on the form then I will attach a generic message telling user to check the form which will display any errors. Then I move the empty form into an else block so it doesn't wipe out the errors
+
+    if request.method == 'POST':
+        form = ProductForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Successfully added product!')
+            return redirect(reverse('add_product'))
+        else:
+            messages.error(request, 'Failed to add product. Please ensure the form is valid.')
+    else:
+        form = ProductForm()
+
+2. I also put the empty form statement on my UserProfileForm in an else statement so this doesn't cause me issues later:
+
+    else:
+        form = UserProfileForm(instance=profile)
+
+- And just above it, I add an error message so it matches the rest of my site in having notifications for everything:
+
+        else:
+            messages.error(request, 'Update failed. Please ensure the form is valid.')
+
+3. Now I want to make sure that my add_product form is working. I will first test and see if it produces an error when invalid data is used such as too long of a price number. However, when I look at my view I realise that there is no field for price. When I look at the ProductForm, I realise I am importing the Product model on the ProductForm class which I know doesn't contain the price attribute so I change this to ProductVariant, in both the class and the import at the top:
+
+from .models import ProductVariant, Category
+
+class ProductForm(forms.ModelForm):
+    
+    class Meta:
+        model = ProductVariant
+
+4. I update this and refresh the server but I am presented with a server 500 error so I switch debug on and refresh to see what is happening:
+
+KeyError at /merchandise/add/
+'category'
+Request Method:	GET
+Request URL:	http://127.0.0.1:8000/merchandise/add/
+Django Version:	6.0.2
+Exception Type:	KeyError
+Exception Value:	
+'category'
+Exception Location:	C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\merchandise\forms.py, line 15, in __init__
+Raised during:	merchandise.views.add_product
+Python Executable:	C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\.venv\Scripts\python.exe
+Python Version:	3.12.8
+Python Path:	
+['C:\\Users\\leila\\OneDrive\\Desktop\\Documents\\vscode-projects\\working_out_gym',
+ 'C:\\Program Files\\Python312\\python312.zip',
+ 'C:\\Program Files\\Python312\\DLLs',
+ 'C:\\Program Files\\Python312\\Lib',
+ 'C:\\Program Files\\Python312',
+ 'C:\\Users\\leila\\OneDrive\\Desktop\\Documents\\vscode-projects\\working_out_gym\\.venv',
+ 'C:\\Users\\leila\\OneDrive\\Desktop\\Documents\\vscode-projects\\working_out_gym\\.venv\\Lib\\site-packages']
+Server time:	Fri, 17 Apr 2026 00:54:48 +0000
+
+5. I'm not sure why I have gotten this error after updating the code like I have so I query it with ChatGPT who advises that the error is saying there is no category field in my ProductVariant model so it crashes. The product holds the title, category info etc. and ProductVariant holds my size, price, etc. I need to revert my form back to using the Product instead of ProductVariant in my ProductForm. So I do this now and the page is reloading again now.
+
+- ChatGPT advises I will need 2 x forms to handle everything, one for ProductForm that I already have in place and then a second for ProductVariantForm as below:
+
+class ProductVariantForm(forms.ModelForm):
+    class Meta:
+        model = ProductVariant
+        fields = ['price', 'size']
+
+- Then in my merchandise/views, I need to import the new form at the top of the file:
+
+from .forms import ProductForm, ProductVariantForm
+
+- Then in my add_product view, I update this from:
+
+def add_product(request):
+    """Add new product to Merchandise"""
+    if request.method == 'POST':
+        form = ProductForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Successfully added product!')
+            return redirect(reverse('add_product'))
+        else:
+            messages.error(request, 'Failed to add product. Please ensure the form is valid.')
+    else:
+        form = ProductForm()
+
+
+    template = 'merchandise/add_product.html'
+    context = {
+        'form': form,
+    }
+
+    return render(request, template, context)
+
+- To the below, so it also includes code for ProductVariantForm:
+
+def add_product(request):
+    if request.method == 'POST':
+        product_form = ProductForm(request.POST, request.FILES)
+        variant_form = ProductVariantForm(request.POST)
+
+        if product_form.is_valid() and variant_form.is_valid():
+            product = product_form.save()
+
+            variant = variant_form.save(commit=False)
+            variant.product = product
+            variant.save()
+
+            messages.success(request, 'Successfully added product!')
+            return redirect(reverse('merchandise:add_product'))
+        else:
+            messages.error(request, 'Failed to add product.')
+    else:
+        product_form = ProductForm()
+        variant_form = ProductVariantForm()
+
+    context = {
+        'product_form': product_form,
+        'variant_form': variant_form,
+    }
+
+    return render(request, 'merchandise/add_product.html', context)
+
+- Then finally, I update the Django form crispy tag in my add_product template to the below so it see's the two forms instead of just the one:
+
+{{ product_form | crispy }}
+{{ variant_form | crispy }}
+
+6. After making these changes, I refresh my local server and can see a selector for 'Has Sizes' now but this is only a 'yes' or 'no' option which will be no good for product admin. It also still isn't showing me the price field. I query this with ChatGPT. It thinks that I've mixed ProductForm and ProductVariantForm and Django is now confused because my form is still tied to Product but I am trying to handle it as if it handles sizes and prices so my forms.py likely introduced an error hence the crash during system checks, which we can see from the traceback stopping here:
+
+'self.func(instance)'
+
+- ChatGPT recommends simplifying the ProductForm to:
+
+class ProductForm(forms.ModelForm):
+    price = forms.DecimalField(label='Price', max_digits=6, decimal_places=2)
+    size = forms.CharField(label='Size', required=False)
+
+    class Meta:
+        model = Product
+        fields = '__all__'
+
+- Next I need to update my add_product view to:
+
+from .models import ProductVariant
+
+def add_product(request):
+    if request.method == 'POST':
+        form = ProductForm(request.POST, request.FILES)
+        if form.is_valid():
+            product = form.save()
+
+            # Create variant
+            ProductVariant.objects.create(
+                product=product,
+                price=form.cleaned_data['price'],
+                size=form.cleaned_data.get('size')
+            )
+
+            messages.success(request, 'Successfully added product!')
+            return redirect('merchandise:add_product')
+        else:
+            messages.error(request, 'Failed to add product. Please ensure the form is valid.')
+    else:
+        form = ProductForm()
+
+    return render(request, 'merchandise/add_product.html', {'form': form})
+
+- However, when I reload the server, I am seeing the following error in the terminal:
+
+(.venv) PS C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym> python manage.py runserver
+Watching for file changes with StatReloader
+Performing system checks...
+
+Exception in thread django-main-thread:
+Traceback (most recent call last):
+  File "C:\Program Files\Python312\Lib\threading.py", line 1075, in _bootstrap_inner
+    self.run()
+  File "C:\Program Files\Python312\Lib\threading.py", line 1012, in run
+    self._target(*self._args, **self._kwargs)
+  File "C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\.venv\Lib\site-packages\django\utils\autoreload.py", line 64, in wrapper
+    fn(*args, **kwargs)
+  File "C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\.venv\Lib\site-packages\django\core\management\commands\runserver.py", line 134, in inner_run
+    self.check(**check_kwargs)
+  File "C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\.venv\Lib\site-packages\django\core\management\base.py", line 496, in check
+    all_issues = checks.run_checks(
+                 ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\.venv\Lib\site-packages\django\core\checks\registry.py", line 89, in run_checks
+    new_errors = check(app_configs=app_configs, databases=databases)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\.venv\Lib\site-packages\django\core\checks\urls.py", line 136, in check_custom_error_handlers
+    handler = resolver.resolve_error_handler(status_code)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\.venv\Lib\site-packages\django\urls\resolvers.py", line 743, in resolve_error_handler
+    callback = getattr(self.urlconf_module, "handler%s" % view_type, None)
+                       ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\.venv\Lib\site-packages\django\utils\functional.py", line 47, in __get__
+    res = instance.__dict__[self.name] = self.func(instance)
+                                         ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\.venv\Lib\site-packages\django\urls\resolvers.py", line 722, in urlconf_module
+    return import_module(self.urlconf_name)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python312\Lib\importlib\__init__.py", line 90, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\working_out_gym\urls.py", line 27, in <module>
+    path("merchandise/", include("merchandise.urls")),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\.venv\Lib\site-packages\django\urls\conf.py", line 39, in include
+    urlconf_module = import_module(urlconf_module)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python312\Lib\importlib\__init__.py", line 90, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\merchandise\urls.py", line 2, in <module>
+    from . import views
+  File "C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\merchandise\views.py", line 5, in <module>
+    from .forms import ProductForm, ProductVariantForm
+  File "C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\merchandise\forms.py", line 14, in <module>
+    class ProductVariantForm(forms.ModelForm):
+  File "C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\.venv\Lib\site-packages\django\forms\models.py", line 336, in __new__
+    raise FieldError(message)
+django.core.exceptions.FieldError: Unknown field(s) (size) specified for ProductVariant
+
+- I query this with ChatGPT who advises that after the changes made there is no size field and that is why Django is crashing:
+
+class ProductVariant(models.Model):
+    product = models.ForeignKey(Product, related_name='variants', on_delete=models.CASCADE)
+    price = models.DecimalField(...)
+    # maybe NO size field here
+
+- It recommends updating my ProductVariant model with a size field as below:
+
+size = models.CharField(max_length=10, blank=True, null=True)
+
+- I add this to my merchandise/models ProductVariant model and then I run makemigrations and migrate:
+
+python manage.py makemigrations
+python manage.py migrate
+
+- I then add the size field back into my ProductForm class in forms:
+
+size = forms.CharField(required=False)
+
+- And then update my add_product view in merchandise/views so it uses has_sizes properly in the view:
+
+def add_product(request):
+    if request.method == 'POST':
+        form = ProductForm(request.POST, request.FILES)
+        if form.is_valid():
+            product = form.save()
+
+            size = form.cleaned_data.get('size')
+
+            # Only use size if product has sizes
+            if not product.has_sizes:
+                size = None
+
+            ProductVariant.objects.create(
+                product=product,
+                price=form.cleaned_data['price'],
+                size=size,
+            )
+
+            messages.success(request, 'Successfully added product!')
+            return redirect('merchandise:add_product')
+    else:
+        form = ProductForm()
+
+    return render(request, 'merchandise/add_product.html', {'form': form})
+
+- I also update my add_product template so that it uses just the form crispy tag instead of the t2 x forms crispy tags for ProductForm and ProductVariantForm. I also load the crispy forms tags at the top of the template file:
+
+{% load crispy_forms_tags %}
+
+<form method="POST" action="{% url 'merchandise:add_product' %}" class="form mb-2" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form | crispy }}
+    <div class="text-right">
+        <a class="btn btn-outline-black rounded-0" href="{% url 'merchandise:products' %}">Cancel</a>
+        <button class="btn btn-black rounded-0" type="submit">Add Product</button>
+    </div>
+</form>
+
+- Now with these changes in place, the size is a free-form field and price is there too:
+
+![Add Product View now showing Size and Price fields](/static/images/ProductAdmin/Screenshot%20add%20product%20view%20now%20showing%20size%20and%20price%20fields%20correctly.png)
+
+7. Now that I can see those fields, I am going to test adding a product with too many digits for the price field and see if it causes the error notification to generate:
+
+![Testing price field](/static/images/ProductAdmin/Screenshot%20too%20many%20digits.png)
+
+- This works so now I will add a valid product and then try to search for it to ensure it appears. However, after I click 'add product' I am being taken to an error page:
+
+DataError at /merchandise/add/
+value too long for type character varying(10)
+Request Method:	POST
+Request URL:	http://127.0.0.1:8000/merchandise/add/
+Django Version:	6.0.2
+Exception Type:	DataError
+Exception Value:	
+value too long for type character varying(10)
+Exception Location:	C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\.venv\Lib\site-packages\django\db\backends\utils.py, line 105, in _execute
+Raised during:	merchandise.views.add_product
+Python Executable:	C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\.venv\Scripts\python.exe
+Python Version:	3.12.8
+Python Path:	
+['C:\\Users\\leila\\OneDrive\\Desktop\\Documents\\vscode-projects\\working_out_gym',
+ 'C:\\Program Files\\Python312\\python312.zip',
+ 'C:\\Program Files\\Python312\\DLLs',
+ 'C:\\Program Files\\Python312\\Lib',
+ 'C:\\Program Files\\Python312',
+ 'C:\\Users\\leila\\OneDrive\\Desktop\\Documents\\vscode-projects\\working_out_gym\\.venv',
+ 'C:\\Users\\leila\\OneDrive\\Desktop\\Documents\\vscode-projects\\working_out_gym\\.venv\\Lib\\site-packages']
+Server time:	Fri, 17 Apr 2026 09:31:29 +0000
+
+- ChatGPT advises it's likely due to a characterfield length issue of Size on my ProductVariantModel and that I should increase the max character allowed to resolve this so I do this now to:
+
+size = models.CharField(max_length=50, blank=True, null=True)
+
+- Then I run makemigrations and migrate and reload my page:
+
+python manage.py makemigrations
+python manage.py migrate
+
+- Now when I reload the page, I can see the price and size fields for the form but it says there is already a product with the handle of 'wagyu' which I know isn't true. I check for it it admin/merchandise/product to be sure but now I am getting an error saying my django-countries module doesn't exist. 
+
+- I make sure that my virtual environment is activated using the following cmd in my terminal:
+
+.\.venv\Scripts\activate
+
+- I then install the 'missing' package:
+
+pip install django-countries
+
+- I can then run my server again so I try to find 'wagyu' in admin. Sure enough, I do see it in admin so I select it and then choose to delete it here from the 'Action' dropdown:
+
+![Wagu showing in admin/merchandise/products list](/static/images/ProductAdmin/Screenshot%20wagu%20showing%20in%20admin%20merchandise%20products.png)
+
+![Deleting product from admin](/static/images/ProductAdmin/Screenshot%20deleting%20wagu.png)
+
+- I also update my Product model's save method with the self.handle slugify method so that it will generate the handle for me using slugify, I import the slugify module at the top of the file:
+
+from django.utils.text import slugify
+
+def save(self, *args, **kwargs):
+    # Generate handle if missing
+    if not self.handle:
+        base = slugify(self.title)[:240] or "product"
+        handle = base
+        i = 1
+        while Product.objects.filter(handle=handle).exclude(pk=self.pk).exists():
+            i += 1
+            handle = f"{base[:235]}-{i}"
+        self.handle = handle
+
+    # Generate slug if missing
+    if not self.slug:
+        self.slug = self.handle
+
+    super().save(*args, **kwargs)
+
+8. I now reload my dev server and see if I can add the product now which I can:
+
+![Adding products successfully](/static/images/ProductAdmin/Screenshot%20successfully%20added%20product.png)
+
+9. I can see that showing as active now when I go to admin/merchandise/products:
+
+![New product showing in admin panel](/static/images/ProductAdmin/Screenshot%20new%20product%20showing%20as%20active%20in%20admin%20panel.png)
+
+10. Now if I search for the new product on the actual website itself and then try to add it to my bag then it adds successfully but I can see the image being used in the Toast Success notification is wrong:
+
+![No image on items shows wrong in toast success notifications](/static/images/ProductAdmin/Screenshot%20new%20product%20showing%20as%20active%20in%20admin%20panel.png)
+
+11. I take a look at the image element in my toast_success.html code and can see I have an if statement which should render my 'noimage.jpg' but it isn't working:
+
+{% if item.product.variants.first.image_src %}
+          <img
+            class="w-100"
+            src="{{ item.product.variants.first.image_src }}"
+            alt="{{ item.product.title }}"
+          />
+          {% elif item.product.image_src %}
+          <img
+            class="w-100"
+            src="{{ item.product.image_src }}"
+            alt="{{ item.product.title }}"
+          />
+          {% else %}
+          <img
+            class="w-100"
+            src="{% static 'images/noimage.jpg' %}"
+            alt="{{ item.product.title }}"
+          />
+          {% endif %}
+
+- I query this with ChatGPT who advises that my condition is passing when it shouldn't and advises that this line is at fault. The .first is not safe to use in Django templates as if there are multiple variants or cached querysets then it can behave inconsistently and even return an object when the img_src is empty or null. It recommends updating this code to:
+
+<img class="w-100" src="{{ item.product.get_display_image }}" alt="{{ item.product.title }}">
+
+- And then moving the logic into my Product model instead by adding the below method inside the model:
+
+def get_display_image(self):
+    variant = self.variants.first()
+    if variant and variant.image_src:
+        return variant.image_src
+    if self.image_src:
+        return self.image_src
+    return '/static/images/noimage.jpg'
+
+- Now when I reload and add the cap to the bag, it shows no image in the toast_success notification:
+
+![No Image Update Toast Success Working](/static/images/ProductAdmin/Screenshot%20no%20image%20on%20toast%20success%20notfications.png)
+
+12. Next I take a look at the items in my shoppingbag to ensure that the no image and product information is displaying as it shouldbe but this is also not showing the 'noimage.jpg':
+
+![ShoppingBag No Image View Okay](/static/images/ProductAdmin/Screenshot%20shoppingbag%20no%20image%20added%20product%20okay.png)
+
+13. I query with ChatGPT who advises me to add the logic into my shoppingbag.html:
+
+{% if item.product.image_src %}
+  <img class="img-fluid rounded" src="{{ item.product.image_src }}" alt="{{ item.product.title }}">
+{% else %}
+  <img class="img-fluid rounded" src="{% static 'images/noimage.jpg' %}" alt="No image available">
+{% endif %}
+
+14. And to also add the logic back into my toast_success.html template:
+
+<div class="col-3 my-1">
+  {% if item.product.image_src %}
+    <img class="img-fluid rounded" src="{{ item.product.image_src }}" alt="{{ item.product.title }}">
+  {% else %}
+    <img class="img-fluid rounded" src="{% static 'images/noimage.jpg' %}" alt="No image available">
+  {% endif %}
+</div>
+
+15. I test adding this again now and can see it shows the correct 'noimage.jpg' in my toast_success notification shopping preview:
+
+![Toast Success Notification showing noimage correctly](/static/images/ProductAdmin/Screenshot%20noimage%20working.png)
+
+16. Also if I look at the shoppingbag view now, it shows the correct image for the none imaged item:
+
+![Shoppingbag view no image](/static/images/ProductAdmin/Screenshot%20shoppingbag%20noimage%20working.png)
+
+17. Then in my main-nav.html template, I update the 'Product Management' ahref with the django url to the new app_product page as below:
+
+<a href="{% url 'merchandise:add_product' %}" class="dropdown-item">Product Management</a>
+
+18. If I test the link from the navbar this takes me to the Product Management page.
+
+19. I now want to test that adding a product with an image works too so I do this now, however, I realise I cannot do this as the image field on my 'Add Product' is a free form text field rather than an uploadable field. I need to update my Product model image field to:
+
+image = models.ImageField(upload_to='products/', blank=True, null=True)
+
+- I make this change and then run makemigrations and migrate:
+
+python3 manage.py makemigrations
+python3 manage.py migrate
+
+- I then update all of my templates which use product.image to use the below if statement around images:
+
+{% if product.image %}
+  <img src="{{ product.image.url }}">
+{% elif product.image_url %}
+  <img src="{{ product.image_url }}">
+{% else %}
+  <img src="{% static 'images/noimage.jpg' %}">
+{% endif %}
+
+- After applying these changes and refreshing my server, I can see that there is now an image upload box. However, if I go to my Merchandise page all the images are missing and in my console it says it cannot find the images:
+
+![Merchandise Listings all images gone](/static/images/ProductAdmin/Screenshot%20product%20model%20update%20has%20removed%20all%20images%20from%20merchandise.png)
+
+- I query this with ChatGPT who advises that I am getting the error because of this line in the updated code:
+
+{% if product.image.url %}
+
+- If a product has no image uploaded to it then Django throws up this error:
+
+ValueError: The 'image' attribute has no file associated with it.
+
+- I need to check my images, where product is concerned, using the below statement, so that it checks the image field itself and not the image URL:
+
+{% if product.image %}
+  <img
+    class="card-img-top img-fluid"
+    src="{{ product.image.url }}"
+    alt="{{ product.title }}"
+  />
+{% else %}
+  <img
+    class="card-img-top img-fluid"
+    src="{% static 'images/noimage.png' %}"
+    alt="{{ product.title }}"
+  />
+{% endif %}
+
+- I update products.html, product_detail.html, shoppingbag.html and checkout.html with this code instead of what I currently have on each for their images.
+
+- ChatGPT also spots that I nested the get_display_image method inside the save method inside of the Product model so I move this out. 
+
+- However, the errors in the console are the same on Merchandise when I rerun the server and I still cannot see the images. I query this with ChatGPT again who advises that I haven't updated this method in the Product model to use the correct image code:
+
+def get_display_image(self):
+    variant = self.variants.first()
+    if variant and variant.image_src:
+        return variant.image_src
+    if self.image_src:   # ❌ THIS FIELD DOES NOT EXIST
+        return self.image_src
+    return '/static/images/noimage.jpg'
+
+- I update this to:
+
+def get_display_image(self):
+    variant = self.variants.first()
+    if variant and variant.image_src:
+        return variant.image_src
+    if self.image:
+        return self.image.url
+    return '/static/images/noimage.jpg'
+
+- I have also used the wrong code in my shoppingbag and checkout templates, I have used  {% if product.image %} but inside their loops, there is no product variable so I am looping {% for item in bag_items %} and the correct object is item.product. I replace the following code in shoppingbag.html from:
+
+{% if product.image %}
+  <img src="{{ product.image.url }}">
+{% else %}
+
+- To: 
+
+{% if item.product.image %}
+  <img src="{{ item.product.image.url }}">
+{% else %}
+  <img src="{% static 'images/noimage.png' %}">
+{% endif %}
+
+- Then in checkout.html, I update the following code from:
+
+{% if product.image %}
+
+- To: 
+
+{% if item.product.image %}
+
+- This still hasn't resolved the issue with my images no longer displaying on the Merchandise page. To troubleshoot further, I login to the admin panel and go to Products and see whether the image field is empty.
+
+- ChatGPT recommends having both an image and img_src field on the Product model as below:
+
+image = models.ImageField(upload_to='products/', blank=True, null=True)
+image_src = models.URLField(blank=True, null=True)
+
+- I then run makemigrations and migrate as I have made changes to the model.
+
+- Then to fix my helper method to the below so it works with both image fields:
+
+def get_display_image(self):
+    variant = self.variants.first()
+    if variant and variant.image_src:
+        return variant.image_src
+    if self.image:
+        return self.image.url
+    if self.image_src:
+        return self.image_src
+    return '/static/images/noimage.jpg'
+
+- Then finally, I need to go back through all my templates, the ones I updated earlier that use product, and delete the image logic and replace with, in product list:
+
+<img src="{{ product.get_display_image }}">
+
+- Still no difference. I ask ChatGPT again and it says this is what my model should be....
+
+from django.templatetags.static import static
+
+def get_display_image(self):
+    variant = self.variants.first()
+
+    if variant and variant.image_src:
+        return variant.image_src
+
+    if self.image:
+        return self.image.url
+
+    if self.image_src:
+        return self.image_src
+
+    return static('images/noimage.jpg')
+
+- Next it advises me to update my products.html image logic from:
+
+<img src="{{ product.get_display_image }}" alt="{{ product.title }}">
+
+- To:
+
+<img 
+  src="{{ product.get_display_image }}" 
+  class="card-img-top img-fluid"
+  alt="{{ product.title }}"
+>
+
+- Then in my product_detail.html, I need to update from:
+
+<img src="{{ product.get_display_image }}" alt="{{ product.title }}">
+
+- Next I update my shoppingbag.html from:
+
+<img src="{{ item.product.get_display_image }}" alt="{{ product.title }}">
+
+- To: 
+
+<img 
+  src="{{ item.product.get_display_image }}" 
+  class="img-fluid"
+  alt="{{ item.product.title }}"
+>
+
+- Then finally in the checkout.html, I update from:
+
+<img src="{{ item.product.get_display_image }}" alt="{{ product.title }}">>
+
+- To:
+
+<img 
+  src="{{ item.product.get_display_image }}" 
+  class="img-fluid"
+  alt="{{ item.product.title }}"
+>
+
+- Then it recommends that I go to my merchandise/views and find the following line in my products view:
+
+products = (
+    Product.objects.filter(is_active=True)
+    .select_related("category")
+    .annotate(from_price=Min("variants__price"))
+)
+
+- And update it with:
+
+.prefetch_related("variants")
+
+- Then still in my views file, I need to go down to my product_details view and update my product variable with the new prefetch related code:
+
+product = get_object_or_404(
+    Product.objects.prefetch_related("variants").annotate(from_price=Min("variants__price")),
+    pk=product_id
+)
+
+- However, the Merchandise page still will not load. After doing some troubleshooting and limiting the amount of items it could return it is now letting Merchandise load with the 20 items. I updated my all_products view in merchandise using this temporarily:
+
+products = Product.objects.all()[:20]
+
+- ChatGPT recommends that I replace my products queryset in my all_products view with the below code, removing the .annotate attribute as it can be dangerous with large datasets:
+
+products = (
+    Product.objects.filter(is_active=True)
+    .select_related("category")
+    .prefetch_related("variants")
+)
+
+- It also recommends fixing my price from the below code in products.html:
+
+{{ product.from_price }}
+
+- To:
+
+{% with variant=product.variants.first %}
+  {% if variant %}
+    £{{ variant.price }}
+  {% else %}
+    <small class="text-muted">Price unavailable</small>
+  {% endif %}
+{% endwith %}
+
+- Then in product_detail.html, I update:
+
+{% if product.variants.all %}
+
+- To:
+
+{% if product.variants.exists %}
+
+- However, the page will not load again. I decide to add pagination into my Merchandise app so import the Paginator at the top of my merchandise/views file:
+
+from django.core.paginator import Paginator
+
+- Then just before my context in all_products view I add the logic for pagination as below:
+
+paginator = Paginator(products, 100) 
+
+page_number = request.GET.get('page')
+page_obj = paginator.get_page(page_number)
+
+- Then I update my context changing the products key to:
+
+"products": page_obj,
+
+- And also add the following key to the contexts:
+
+"page_obj": page_obj,
+
+- Then I need to add the pagination controls so add the below code under my product grid: 
+
+    <div class="row mt-4">
+      <div class="col text-center">
+
+        {% if page_obj.has_previous %}
+          <a href="?{% if request.GET.q %}q={{ request.GET.q }}&{% endif %}
+          {% if request.GET.category %}category={{ request.GET.category }}&{% endif %}
+          {% if request.GET.sort %}sort={{ request.GET.sort }}&direction={{ request.GET.direction }}&{% endif %}
+          page={{ page_obj.previous_page_number }}">
+        {% endif %}
+
+        <span class="mx-3">
+          Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+        </span>
+
+        {% if page_obj.has_next %}
+          <a href="?{% if request.GET.q %}q={{ request.GET.q }}&{% endif %}
+          {% if request.GET.category %}category={{ request.GET.category }}&{% endif %}
+          {% if request.GET.sort %}sort={{ request.GET.sort }}&direction={{ request.GET.direction }}&{% endif %}
+          page={{ page_obj.previous_page_number }}">
+        {% endif %}
+
+      </div>
+    </div>
+
+- I reload but the page is still hanging and I can see this Paginator warning in my terminal:
+
+UnorderedObjectListWarning: Pagination may yield inconsistent results with an unordered object_list: <class 'merchandise.models.Product'> QuerySet. paginator = Paginator(products, 100)
+
+- So I need to add ordering before pagination, I update:
+
+products = Product.objects.all()
+
+- To:
+
+products = Product.objects.all().order_by('title')
+
+- Now when I refresh the server and go to Merchandise I can see a list of 100 items showing their correct images again: 
+
+![Merchandise Page Loading and Showing Images again](/static/images/ProductAdmin/Screenshot%20merchandise%20images%20now%20showing%20again.png)
+
+- However, if I scroll to the bottom of the page the page numbers are missing and the footer is not fitting the whole width of the screen as it should be. I query this with ChatGPT who advises that the code for my pagination controls in products.html template is wrong as it was missing the ahref elements and advises me to update it to:
+
+<div class="row mt-4">
+  <div class="col text-center">
+
+    {% if products.has_previous %}
+      <a class="btn btn-outline-black rounded-0 mx-1"
+         href="?page={{ products.previous_page_number }}">
+        Previous
+      </a>
+    {% endif %}
+
+    <span class="mx-3">
+      Page {{ products.number }} of {{ products.paginator.num_pages }}
+    </span>
+
+    {% if products.has_next %}
+      <a class="btn btn-black rounded-0 mx-1"
+         href="?page={{ products.next_page_number }}">
+        Next
+      </a>
+    {% endif %}
+
+  </div>
+</div>
+
+20. Now when I reload I can see the page numbers and can click through these to see the next set of clothes. The only other issue now is that the footer is too small for the width of the screen so I need to resolve this:
+
+![Merchandise Page Showing Pagination Footer Sizing Wrong](/static/images/ProductAdmin/Screenshot%20buttons%20now%20showing%20but%20fotter%20sizing%20wrong.png)
+
+- There is a missing enddiv at the end of my endfor statement for my products. I update this and also tidy up the template so there is now descriptions for the differenct sections of code.
+
+- Now when I reload my footer looks correct on my Merchandise page:
+
+![Merchandise Footer Sizing Resolved](/static/images/ProductAdmin/Screenshot%20merchandise%20footer%20now%20correct.png)
+
+21. I now go back to my testing of the add_product view and see if I can still upload an image to the image field.
+
+
+---
+
 
 
 # 6. Credits and Acknowledgements
@@ -17186,7 +17979,7 @@ The following parts of my Project were implemented using Bootstrap docs:
 
 - Pexels Strength Training Plan: https://www.pexels.com/photo/black-dumbbell-lot-260352/
 
-- 
+- Pexels Freedom Cap: https://www.pexels.com/photo/a-yellow-and-blue-fitted-cap-on-a-black-granite-in-dark-background-11463614/
 
 ---
 
@@ -17356,6 +18149,13 @@ The following parts of my Project were implemented using Bootstrap docs:
 - checkout/views checkout_success updates for plans
 - checkout.html if plan statement update
 - product_detail.html quantity selector script
+- merchandise/forms ProductVariantForm code
+- merchandise/views add_product ProductVariantForm updates
+- ProductForm updates after ProductVariantForm created
+- merchandise/views add_product ProductForm updates
+- updated save method to generate handle with slugify on Product model in merchandise/models
+- toast_success image if statement
+- pagination controls products.html template
 
 
 

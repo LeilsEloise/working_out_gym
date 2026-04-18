@@ -5,221 +5,173 @@
 <div class="container mt-5 pt-5">
   <h2 class="text-center">Merchandise</h2>
   <p class="leading-p mx-auto d-block">
-    Welcome to the <strong>Working Out Gym's</strong> merchandise page, where
-    you will find all products being sold by our business!
+    Welcome to the <strong>Working Out Gym's</strong> merchandise page.
   </p>
-  <!-- Code Institute Acknowledgement-->
 
   {% for category in current_categories %}
-  <a
-    class="category-badge text-decoration-none"
-    href="{% url 'merchandise:products' %}?category={{ category.name }}"
-  >
-    <span
-      class="p-2 mt-2 badge badge-white text-black rounded-0 border border-dark"
-      >{{ category.name }}</span
-    >
-  </a>
+    <a class="category-badge text-decoration-none"
+       href="{% url 'merchandise:products' %}?category={{ category.name }}">
+      <span class="p-2 mt-2 badge badge-white text-black border border-dark">
+        {{ category.name }}
+      </span>
+    </a>
   {% empty %}
-  <p>No categories found.</p>
+    <p>No categories found.</p>
   {% endfor %}
+</div>
 {% endblock %}
+
 
 {% block content %}
-{% if search_term or current_category %}
-<div class="row mb-4">
-  <div class="col">
-    {% if search_term %}
-    <p>Showing {{ product_count }} results for '{{ search_term }}'</p>
-    {% elif current_category %}
-    <p>
-      Showing {{ product_count }} results in the '{{ current_category }}'
-      category
-    </p>
-    {% endif %}
+<div class="container">
+
+  {% if search_term or current_category %}
+  <div class="row mb-4">
+    <div class="col">
+      {% if search_term %}
+        <p>Showing {{ product_count }} results for '{{ search_term }}'</p>
+      {% elif current_category %}
+        <p>Showing {{ product_count }} results in '{{ current_category }}'</p>
+      {% endif %}
+    </div>
   </div>
-</div>
-{% endif %}
+  {% endif %}
 
-<!-- Code Institute Code-->
-<div class="row">
-  <div class="product-container col-10 offset-1">
-    <div class="row mt-1 mb-2">
-      <div
-        class="col-12 col-md-6 my-auto order-md-last d-flex justify-content-center justify-content-md-end"
-      >
-        <div class="sort-select-wrapper w-50">
-          <select
-            id="sort-selector"
-            class="custom-select custom-select-sm rounded-0 border border-{% if current_sorting != 'None_None' %}info{% else %}black{% endif %}"
-          >
-            <option
-              value="reset"
-              {% if current_sorting == 'None_None' %}selected{% endif %}
-            >
-              Sort by...
-            </option>
-            <option
-              value="price_asc"
-              {% if current_sorting == 'price_asc' %}selected{% endif %}
-            >
-              Price (low to high)
-            </option>
-            <option
-              value="price_desc"
-              {% if current_sorting == 'price_desc' %}selected{% endif %}
-            >
-              Price (high to low)
-            </option>
-            <option
-              value="name_asc"
-              {% if current_sorting == 'name_asc' %}selected{% endif %}
-            >
-              Name (A-Z)
-            </option>
-            <option
-              value="name_desc"
-              {% if current_sorting == 'name_desc' %}selected{% endif %}
-            >
-              Name (Z-A)
-            </option>
-            <option
-              value="category_asc"
-              {% if current_sorting == 'category_asc' %}selected{% endif %}
-            >
-              Category (A-Z)
-            </option>
-            <option
-              value="category_desc"
-              {% if current_sorting == 'category_desc' %}selected{% endif %}
-            >
-              Category (Z-A)
-            </option>
-          </select>
-        </div>
-      </div>
-      <div class="col-12 col-md-6 order-md-first">
-        <p class="text-muted mt-3 text-center text-md-left">
-          {% if search_term or current_categories or current_sorting != 'None_None' %}
-          <span class="small"
-            ><a href="{% url 'merchandise:products' %}">Merchandise Home</a> |
-          </span>
-          {% endif %} {{ products|length }} Products{% if search_term %} found
-          for <strong>"{{ search_term }}"</strong>{% endif %}
-        </p>
-      </div>
+
+  <!-- SORT + COUNT -->
+  <div class="row mb-3">
+
+    <div class="col-12 col-md-6">
+      <p class="text-muted">
+        {{ products.paginator.count }} Products
+      </p>
     </div>
 
-    <div class="container-fluid">
-      <div class="product-container col-10 offset-1">
-        <div class="row mt-1 mb-2"></div>
-        <!-- ChatGPT Code-->
-        <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-4">
-          {% for product in products %}
-          <div class="col">
-            <div class="card h-100 border-0">
-              <a href="{% url 'merchandise:product_detail' product.id %}">
-                {% if product.image_src %}
-                <img
-                  class="card-img-top img-fluid"
-                  src="{{ product.image_src }}"
-                  alt="{{ product.title }}"
-                />
-                {% else %}
-                <img
-                  class="card-img-top img-fluid"
-                  src="{% static 'images/noimage.png' %}"
-                  alt="{{ product.title }}"
-                />
-                {% endif %}
-              </a>
-
-              <div class="card-body pb-0">
-                <p class="mb-0">{{ product.title }}</p>
-
-                {% if product.category %}
-                <small class="text-muted">
-                  <a
-                    class="text-muted"
-                    href="{% url 'merchandise:products' %}?category={{ product.category.name }}"
-                  >
-                    <i class="fas fa-tag mr-1"></i>{{ product.category.name }}
-                  </a>
-                </small>
-                {% endif %}
-              </div>
-
-              <div class="card-footer bg-white pt-0 border-0 text-left">
-                {% if product.from_price %}
-                <p class="lead mb-0 fw-bold">£{{ product.from_price }}</p>
-                {% else %}
-                <small class="text-muted">Price unavailable</small>
-                {% endif %}
-              </div>
-            </div>
-          </div>
-          {% empty %}
-          <div class="col-12">
-            <p class="text-center mt-4">No products matched your search.</p>
-          </div>
-          {% endfor %}
-        </div>
-      </div>
+    <div class="col-12 col-md-6 text-md-end">
+      <select id="sort-selector"
+        class="custom-select custom-select-sm border border-black">
+        <option value="reset">Sort by...</option>
+        <option value="price_asc">Price (low to high)</option>
+        <option value="price_desc">Price (high to low)</option>
+        <option value="name_asc">Name (A-Z)</option>
+        <option value="name_desc">Name (Z-A)</option>
+      </select>
     </div>
 
-    {# Badge section #} {% if badges %}
-    <div class="badges-container">
-      <h2>Badges</h2>
-      <ul>
-        {% for badge in badges %}
-        <li>
-          {% if badge.image %}
-          <img src="{{ badge.image.url }}" alt="{{ badge.name }}" />
+  </div>
+
+
+  <!-- PRODUCTS GRID -->
+  <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-4">
+
+    {% for product in products %}
+    <div class="col">
+      <div class="card h-100 border-0">
+
+        <a href="{% url 'merchandise:product_detail' product.id %}">
+          <img src="{{ product.get_display_image }}"
+               class="card-img-top img-fluid"
+               alt="{{ product.title }}">
+        </a>
+
+        <div class="card-body pb-0">
+          <p class="mb-0">{{ product.title }}</p>
+
+          {% if product.category %}
+          <small class="text-muted">
+            {{ product.category.name }}
+          </small>
           {% endif %}
-          <h3>{{ badge.name }}</h3>
-          <p>{{ badge.description }}</p>
-        </li>
-        {% endfor %}
-      </ul>
+        </div>
+
+        <div class="card-footer bg-white border-0">
+          {% with variant=product.variants.first %}
+            {% if variant %}
+              £{{ variant.price }}
+            {% else %}
+              <small class="text-muted">Price unavailable</small>
+            {% endif %}
+          {% endwith %}
+        </div>
+
+      </div>
     </div>
-    {% endif %}
+    {% empty %}
+      <div class="col-12 text-center">
+        <p>No products found.</p>
+      </div>
+    {% endfor %}
+
   </div>
-</div>
-<!-- Code Institute-->
-<div class="btt-button shadow-sm rounded-0 border border-black">
-  <a class="btt-link d-flex h-100">
-    <i class="fas fa-arrow-up text-black mx-auto my-auto"></i>
-  </a>
+
+
+  <!-- PAGINATION -->
+  <div class="row mt-4">
+    <div class="col text-center">
+
+      {% if products.has_previous %}
+        <a class="btn btn-outline-black mx-1"
+           href="?page={{ products.previous_page_number }}">
+          Previous
+        </a>
+      {% endif %}
+
+      <span class="mx-3">
+        Page {{ products.number }} of {{ products.paginator.num_pages }}
+      </span>
+
+      {% if products.has_next %}
+        <a class="btn btn-black mx-1"
+           href="?page={{ products.next_page_number }}">
+          Next
+        </a>
+      {% endif %}
+
+    </div>
+  </div>
+
+
+  <!-- BADGES -->
+  {% if badges %}
+  <div class="mt-5">
+    <h2>Badges</h2>
+    <div class="row">
+      {% for badge in badges %}
+      <div class="col-md-3 text-center">
+        {% if badge.image %}
+          <img src="{{ badge.image.url }}" class="img-fluid mb-2">
+        {% endif %}
+        <h5>{{ badge.name }}</h5>
+        <p>{{ badge.description }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
 </div>
 {% endblock %}
+
 
 {% block postloadjs %}
 {{ block.super }}
-<script type="text/javascript" src="{% static 'js/script.js' %}"></script>
 
-<!-- Claude AI -->
-<script type="text/javascript">
+<script>
   $("#sort-selector").change(function () {
-    var selector = $(this);
-    var currentUrl = new URL(window.location);
-    var selectedVal = selector.val();
-    if (selectedVal != "reset") {
-      var sort = selectedVal.split("_")[0];
-      var direction = selectedVal.split("_")[1];
-      currentUrl.searchParams.set("sort", sort);
-      currentUrl.searchParams.set("direction", direction);
-      var newUrl = currentUrl.toString();
-      history.pushState({}, null, newUrl);
-      // Trigger a page reload or update the products list
-      location.reload();
+    var url = new URL(window.location);
+    var val = $(this).val();
+
+    if (val !== "reset") {
+      let [sort, direction] = val.split("_");
+      url.searchParams.set("sort", sort);
+      url.searchParams.set("direction", direction);
     } else {
-      currentUrl.searchParams.delete("sort");
-      currentUrl.searchParams.delete("direction");
-      var newUrl = currentUrl.toString();
-      history.pushState({}, null, newUrl);
-      // Trigger a page reload or update the products list
-      location.reload();
+      url.searchParams.delete("sort");
+      url.searchParams.delete("direction");
     }
+
+    window.location.href = url;
   });
 </script>
+
 {% endblock %}

@@ -2,21 +2,11 @@
 <div class="container my-5">
   <div class="row g-4">
     <div class="col-12 col-md-6">
-      {% if product.image_src %}
-      <a href="{{ product.image_src }}" target="_blank" rel="noopener">
-        <img
-          class="img-fluid"
-          src="{{ product.image_src }}"
-          alt="{{ product.title }}"
-        />
-      </a>
-      {% else %}
-      <img
+      <img 
+        src="{{ product.get_display_image }}" 
         class="img-fluid"
-        src="{% static 'images/noimage.png' %}"
         alt="{{ product.title }}"
-      />
-      {% endif %}
+      >
     </div>
 
     <div class="col-12 col-md-6">
@@ -50,7 +40,7 @@
         <!-- Size + Quantity row -->
         <div class="d-flex align-items-end flex-wrap mb-3">
           <!-- Size selector -->
-          {% if product.variants.all %}
+          {% if product.variants.exists %}
           <div class="me-2 mb-2" style="min-width: 150px">
             <label for="id_variant" class="form-label"
               ><strong>Size:</strong></label

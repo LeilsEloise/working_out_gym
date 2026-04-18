@@ -18,13 +18,13 @@
 
 {% block content %}
     <!-- Code Institute - Boutique Ado -->
-    <div id="loading-overlay">
+    <!--<div id="loading-overlay">
         <h1 class="text-light logo-font loading-spinner">
             <span class="icon">
                 <i class="fas fa-3x fa-sync-alt fa-spin"></i>
             </span>
         </h1>
-    </div>
+    </div>-->
 
     <div class="container">
         <div class="row">
@@ -112,13 +112,11 @@
                     <div class="row">
                         <div class="col-2 mb-1">
                             <a href="{% url 'merchandise:product_detail' item.product.id %}">
-                                {% if item.product.variants.first.image_src %}
-                                    <img class="w-100" src="{{ item.product.variants.first.image_src }}" alt="{{ item.product.title }}">
-                                {% elif item.product.image_src %}
-                                    <img class="w-100" src="{{ item.product.image_src }}" alt="{{ item.product.title }}">
-                                {% else %}
-                                    <img class="w-100" src="{% static 'images/noimage.jpg' %}" alt="{{ item.product.title }}">
-                                {% endif %}
+                                <img 
+                                  src="{{ item.product.get_display_image }}" 
+                                  class="img-fluid"
+                                  alt="{{ item.product.title }}"
+                                >
                             </a>
                         </div>
                         <div class="col-7">

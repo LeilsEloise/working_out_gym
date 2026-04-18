@@ -30,25 +30,11 @@
       {% for item in bag_items %}
       <div class="row">
         <div class="col-3 my-1">
-          {% if item.product.variants.first.image_src %}
-          <img
-            class="w-100"
-            src="{{ item.product.variants.first.image_src }}"
+          <img 
+            class="img-fluid rounded" 
+            src="{{ item.product.get_display_image }}" 
             alt="{{ item.product.title }}"
-          />
-          {% elif item.product.image_src %}
-          <img
-            class="w-100"
-            src="{{ item.product.image_src }}"
-            alt="{{ item.product.title }}"
-          />
-          {% else %}
-          <img
-            class="w-100"
-            src="{% static 'images/noimage.jpg' %}"
-            alt="{{ item.product.title }}"
-          />
-          {% endif %}
+          >
         </div>
 
         <div class="col-9">
