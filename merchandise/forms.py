@@ -1,14 +1,28 @@
 from django import forms
-from .models import Product, ProductVariant, Category
+from .models import Product, ProductVariant
 
 # ChatGPT Code
 class ProductForm(forms.ModelForm):
-    price = forms.DecimalField(label='Price', max_digits=6, decimal_places=2)
+    price = forms.DecimalField(
+        label='Price',
+        max_digits=10,
+        decimal_places=2,
+        required=False  # 🔴 important
+    )
     size = forms.CharField(required=False)
 
     class Meta:
         model = Product
-        fields = '__all__'
+        fields = [
+            'title',
+            'category',
+            'vendor',
+            'has_sizes',
+            'tags',
+            'image',
+            'image_src',
+            'is_active',
+        ]
 
 # ChatGPT Code
 class ProductVariantForm(forms.ModelForm):

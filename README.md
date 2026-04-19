@@ -17902,7 +17902,283 @@ products = Product.objects.all().order_by('title')
 
 ![Merchandise Footer Sizing Resolved](/static/images/ProductAdmin/Screenshot%20merchandise%20footer%20now%20correct.png)
 
-21. I now go back to my testing of the add_product view and see if I can still upload an image to the image field.
+21. I now go back to my testing of the add_product view and see if I can still upload an image to the image field. I find that I can now add a product with an image successfully. If I search for that product then it comes back in the search results as seen below:
+
+![Added new product with image](/static/images/ProductAdmin/Screenshot%20freedom%20cap%20search.png)
+
+22. However, if I click the hat to open the product detail view for it and add it to my bag it throws up this error:
+
+TypeError at /merchandise/7430/
+'bool' object is not iterable
+Request Method:	GET
+Request URL:	http://127.0.0.1:8000/merchandise/7430/
+Django Version:	6.0.2
+Exception Type:	TypeError
+Exception Value:	
+'bool' object is not iterable
+Exception Location:	C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\.venv\Lib\site-packages\django\template\defaulttags.py, line 201, in render
+Raised during:	merchandise.views.product_detail
+Python Executable:	C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\.venv\Scripts\python.exe
+Python Version:	3.12.10
+Python Path:	
+['C:\\Users\\leila\\OneDrive\\Desktop\\Documents\\vscode-projects\\working_out_gym',
+ 'C:\\Program Files\\Python312\\python312.zip',
+ 'C:\\Program Files\\Python312\\DLLs',
+ 'C:\\Program Files\\Python312\\Lib',
+ 'C:\\Program Files\\Python312',
+ 'C:\\Users\\leila\\OneDrive\\Desktop\\Documents\\vscode-projects\\working_out_gym\\.venv',
+ 'C:\\Users\\leila\\OneDrive\\Desktop\\Documents\\vscode-projects\\working_out_gym\\.venv\\Lib\\site-packages']
+Server time:	Sat, 18 Apr 2026 13:29:50 +0000
+Error during template rendering
+In template C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\merchandise\templates\merchandise\product_detail.html, error at line 53
+
+'bool' object is not iterable
+43	          {% if product.variants.exists %}
+44	          <div class="me-2 mb-2" style="min-width: 150px">
+45	            <label for="id_variant" class="form-label"
+46	              ><strong>Size:</strong></label
+47	            >
+48	            <select
+49	              class="form-control form-control-sm rounded-0"
+50	              name="variant_id"
+51	              id="id_variant"
+52	            >
+53	              {% for variant in product.variants.exists %}
+
+- I query this with ChatGPT who advises that {% for variant in product.variants.exists %} should be {% for variant in product.variants.all %} instead so I update this now in product_detail.html. Now when I refresh I can see the view for my new product detail and add to my bag:
+
+[!Freedom Cap Product Detail Toast Success Wrong Image ](/static/images/ProductAdmin/Screenshot%20merchandise%20footer%20now%20correct.png)
+
+23. However, the wrong image is being generated in toast_success message, it shows the noimage.jpg that I generate when the image cannot be found. I query this with ChatGPT who advises that I update this block in my toast_success.html template:
+
+{% if item.product.image_src %}
+  <img class="img-fluid rounded" src="{{ item.product.image_src }}" alt="{{ item.product.title }}">
+{% else %}
+  <img class="img-fluid rounded" src="{% static 'images/noimage.jpg' %}" alt="No image available">
+{% endif %}
+
+- To this, so it matches the rest of my site's image logic:
+
+<img 
+  class="img-fluid rounded" 
+  src="{{ item.product.get_display_image }}" 
+  alt="{{ item.product.title }}"
+>
+
+24. Now that I have tested that I can add a product successfully with an image, I will run collectstatic and then commit my code to Git and Heroku.
+
+---
+
+## Product Admin - Edit Product Functionality
+
+1. The first thing that I do to set up functionality so that the superusers can edit these products is duplicate the add_product.html template and then rename it to edit_product.html. In the content of the file, I update the header from 'Add a Product' to 'Edit a Product'. I update the button text to say 'update product'. Finally I update the form to send to a new url I am going to create called edit_product which includes product ID:
+
+{% block content %}
+    <div class="overlay"></div>
+    <div class="container">
+        <div class="row">
+            <div class="col-12 col-md-6">
+                <hr>
+                <h2 class="logo-font mb-4">Product Management</h2>
+                <h5 class="text-muted">Edit a Product</h5>
+                <hr>
+            </div>
+        </div>
+
+       <div class="row">
+            <div class="col-12 col-md-6">
+                <form method="POST" action="{% url 'merchandise:edit_product' product.id %}" class="form mb-2" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {{ form | crispy }}
+                    <div class="text-right">
+                        <a class="btn btn-outline-black rounded-0" href="{% url 'merchandise:products' %}">Cancel</a>
+                        <button class="btn btn-black rounded-0" type="submit">Update Product</button>
+                    </div>
+                </form>      
+            </div>
+        </div>
+    </div>
+
+2. Now I need a new view to render the template so in my merchandise/views file I create a new view called edit_product which takes the request and product id that the user is going to edit. The form is pre-filled by getting the product using the get_object_or_404 method and then instantiating a product form using the product. Next I will write the Post Handler, which will be an if request.method = POST method with a form.is_valid statement which checks if the form is submitting any data and if they are, then it will iterate through and check if the form they are submitting is valid and respond accordingly. There is an else statement if no post request detected to return message advising user they are editing the product and its name. Finally, I tell it which template to use and then add a context with the relevant keys for the method's code and return render this all back:
+
+
+def edit_product(request, product_id):
+    """ Edit a product in the Merchandise app """
+    product = get_object_or_404(Product, pk=product_id)
+    if request.method == 'POST':
+        form = ProductForm(request.POST, request.FILES, instance=product)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Successfully updated product!')
+            return redirect(reverse('product_detail', args=[product.id]))
+        else:
+            messages.error(request, 'Failed to update product. Please ensure the form is valid.')
+    else:
+        form = ProductForm(instance=product)
+        messages.info(request, f'You are editing {product.title}')
+
+    template = 'merchandise/edit_product.html'
+    context = {
+        'form': form,
+        'product': product,
+    }
+
+    return render(request, template, context)
+
+3. Next, I go to my merchandise/urls file and create the url for the edit_products view:
+
+    path('edit/<int:product_id>/', views.edit_product, name='edit_product'),
+
+4. I test this on my server by going to my dev server and then /merchandise/edit/1 I am taken to the edit page for a product as shown below and given an alert that I am editing the product:
+
+[!Edit Product First Look](/static/images/ProductAdmin/Screenshot%20edit%20product%20first%20view.png)
+
+5. I am now going to update the price with too many digits to make sure that my code works whereby it picks up if the form data is invalid. This works as it fails to update the product with a warning below the field saying there are too many digits and also shows a Toast warning saying the data is invalid:
+
+[!Edit Product Price Too Many Digits Toast Warning](/static/images/ProductAdmin/Screenshot%20price%20too%20many%20digits%20edit%20product%20warning.png)
+
+[!Price Field Too Many Digits Warning](/static/images/ProductAdmin/Screenshot%20edit%20product%20price%20field%20too%20many%20digits%20warning.png)
+
+6. I now try to submit the form after setting a valid price but the page takes me to a server 500 error so I turn debug on to see what is happening. The error I am receiving is below:
+
+NoReverseMatch at /merchandise/edit/1/
+Reverse for 'product_detail' not found. 'product_detail' is not a valid view function or pattern name.
+Request Method:	POST
+Request URL:	http://127.0.0.1:8000/merchandise/edit/1/
+Django Version:	6.0.2
+Exception Type:	NoReverseMatch
+Exception Value:	
+Reverse for 'product_detail' not found. 'product_detail' is not a valid view function or pattern name.
+Exception Location:	C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\.venv\Lib\site-packages\django\urls\resolvers.py, line 842, in _reverse_with_prefix
+Raised during:	merchandise.views.edit_product
+Python Executable:	C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\.venv\Scripts\python.exe
+Python Version:	3.12.10
+Python Path:	
+['C:\\Users\\leila\\OneDrive\\Desktop\\Documents\\vscode-projects\\working_out_gym',
+ 'C:\\Program Files\\Python312\\python312.zip',
+ 'C:\\Program Files\\Python312\\DLLs',
+ 'C:\\Program Files\\Python312\\Lib',
+ 'C:\\Program Files\\Python312',
+ 'C:\\Users\\leila\\OneDrive\\Desktop\\Documents\\vscode-projects\\working_out_gym\\.venv',
+ 'C:\\Users\\leila\\OneDrive\\Desktop\\Documents\\vscode-projects\\working_out_gym\\.venv\\Lib\\site-packages']
+Server time:	Sat, 18 Apr 2026 20:32:39 +0000 
+
+- I know that I need to update the code I have set for edit_product views as product_detail is probably not the same naming convention used for my views. I update the following:
+
+return redirect(reverse('product_detail', args=[product.id]))
+
+- To:
+
+return redirect(reverse('merchandise:product_detail', args=[product.id]))
+
+- After updating and refreshing the page after resubmitting the form, it has now loaded the product detail view:
+
+[!Product Detail View Now Loading After Saving on Edit_Product](/static/images/ProductAdmin/Screenshot%20resolves%20to%20product%20detail%20view%20after%20saving%20edit%20product.png)
+
+7. I notice however, that the price hasn't updated from what I set it to on edit_product and also the price is empty when viewing it on the edit_product view whereas it should be populated if there is a product set. I query this with ChatGPT who advises that my form in edit_product is using:
+
+form = ProductForm(instance=product)
+
+- However, my price is held here:
+
+class ProductVariant(models.Model):
+    price = models.DecimalField(...)
+
+- It recommends updating the edit_product view and add the below block of code into my else block:
+
+variant = product.variants.first()
+initial_data = {}
+
+if variant:
+    initial_data['price'] = variant.price
+
+form = ProductForm(instance=product, initial=initial_data)
+
+- Still in the view, I also update my form.save() method to:
+
+if form.is_valid():
+    product = form.save()
+
+    variant = product.variants.first()
+    if variant:
+        variant.price = form.cleaned_data['price']
+        variant.save()
+
+    messages.success(request, 'Successfully updated product!')
+    return redirect(reverse('merchandise:product_detail', args=[product.id]))
+
+8. Now when I refresh the page with the updated code, I can see that it shows the price:
+
+[!Edit_product view now reflecting price](/static/images/ProductAdmin/Screenshot%20edit_product%20price%20now%20reflected.png) 
+
+9. If I edit the price to a valid price and save then the new price is not being reflected in the product_detail page. I query this with ChatGPT who advises the issue is likely the merchandise/forms logic being too loose as price is required by default which can break edits silently, price is not a part of the ProductModel but the ProductVariant model does and the fieldsm = __all__ includes items that don't want editing. It recommends updating my ProductForm as below:
+
+from django import forms
+from .models import Product, ProductVariant
+
+
+class ProductForm(forms.ModelForm):
+    price = forms.DecimalField(
+        label='Price',
+        max_digits=10,
+        decimal_places=2,
+        required=False  # 🔴 important
+    )
+    size = forms.CharField(required=False)
+
+    class Meta:
+        model = Product
+        fields = [
+            'title',
+            'category',
+            'vendor',
+            'has_sizes',
+            'tags',
+            'image',
+            'image_src',
+            'is_active',
+        ]
+
+10. I reload my page and test to see if I can edit the price in my edit_product view and save it with the updated changes in place. I notice that when I go into the merchandise/edit/1 view for the product that the price I set it at has remained, so it's saving in the edit view but then that change isn't being reflected in the product_detail template. I query this with ChatGPT who advises that the issue is with the data flow. My setup now is: 
+
+- Price is stored on ProductVariant
+- My edit view only saves Product
+- Your product)detail reads the price from variants
+
+So when I 'update price' I am not updating the actual thing which displays the price on the product in the product_detail view. In prodcut_detail, I show price using the below code; this comes from the ProductVariant.price:
+
+min_price = product.variants.order_by('price').first().price
+
+Then in edit_product I do 'form.save()' but this only saves Product fiels and NOT the variant. The result of this is that the form updates, the Variant price stays the same and the page still shows the old price. To fix this, I need to replace my POST section in my edit_product with:
+
+if request.method == 'POST':
+    form = ProductForm(request.POST, request.FILES, instance=product)
+
+    if form.is_valid():
+        product = form.save()
+
+        variant = product.variants.first()
+        if variant:
+            variant.price = form.cleaned_data['price']
+            variant.save()
+
+        messages.success(request, 'Successfully updated product!')
+        return redirect(reverse('merchandise:product_detail', args=[product.id]))
+    else:
+        messages.error(request, 'Failed to update product. Please ensure the form is valid.')
+
+11. I reload the page and then save the price again to see if it is now reflecting this in the product_detail view but it still isn't. I query with ChatGPT who provides me with some options based on the fact there are multiple variants of the price for each item so my current code is only saving one version and the other variant is the one being presented back in the template still. I have decided that I will force update all variants when I make changes so there is only one variant per product. To do this, I need to update my merchandise/views edit_product view and add the below code under my product = form.save():
+
+for variant in product.variants.all():
+    variant.price = form.cleaned_data['price']
+    variant.save()
+
+12. After I save the file, I restart the server and then edit a product price to see if I can then see it reflected in the final template. This is great, I can now see the price update reflected on the final template:
+
+[!Edit_product view now reflecting price update](/static/images/ProductAdmin/Screenshot%20successfully%20updated%20product%20price.png)
+
+13. I change the price back to it's original price and then commit my changes before moving on to setting up my delete_view.
+
 
 
 ---
@@ -18068,6 +18344,9 @@ The following parts of my Project were implemented using Bootstrap docs:
 - profile.html form updates 
 - profiles.css profile-update-form rules
 - order history bootstrap table profile.html
+- add_product views
+- edit_product views
+- merchandise/forms ProductForm
 
 
 
@@ -18156,6 +18435,8 @@ The following parts of my Project were implemented using Bootstrap docs:
 - updated save method to generate handle with slugify on Product model in merchandise/models
 - toast_success image if statement
 - pagination controls products.html template
+- edit_product views update to include correct model of ProductVariant which holds price
+- edit_product views update with correct coding for ProductVariant price in POST method
 
 
 

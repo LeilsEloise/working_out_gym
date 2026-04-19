@@ -145,3 +145,40 @@ def add_product(request):
         form = ProductForm()
 
     return render(request, 'merchandise/add_product.html', {'form': form})
+
+# Code Institute Code
+def edit_product(request, product_id):
+    """ Edit a product in the Merchandise app """
+    product = get_object_or_404(Product, pk=product_id)
+    # ChatGPT Code
+    if request.method == 'POST':
+        form = ProductForm(request.POST, request.FILES, instance=product)
+
+        if form.is_valid():
+            product = form.save()
+
+            for variant in product.variants.all():
+                variant.price = form.cleaned_data['price']
+                variant.save()
+
+            messages.success(request, 'Successfully updated product!')
+            return redirect(reverse('merchandise:product_detail', args=[product.id]))
+        else:
+            messages.error(request, 'Failed to update product. Please ensure the form is valid.')
+    else:
+        variant = product.variants.first()
+        initial_data = {}
+
+        if variant:
+            initial_data['price'] = variant.price
+
+        form = ProductForm(instance=product, initial=initial_data)
+        messages.info(request, f'You are editing {product.title}')
+
+    template = 'merchandise/edit_product.html'
+    context = {
+        'form': form,
+        'product': product,
+    }
+
+    return render(request, template, context)

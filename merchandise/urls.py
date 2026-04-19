@@ -9,4 +9,5 @@ urlpatterns = [
     path("badges/", views.all_badges, name="all_badges"),
     path("badge/<int:badge_id>/", views.badge_detail, name="badge_detail"),
     path("add/", views.add_product, name="add_product"),
+    path('edit/<int:product_id>/', views.edit_product, name='edit_product'),
 ]
