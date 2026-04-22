@@ -18327,6 +18327,27 @@ def delete_product(request, product_id):
 
 [!Standard users cannot see edit delete buttons on product details template](/static/images/ProductAdmin/Screenshot%20standard%20users%20unable%20to%20see%20edit%20delete%20buttons%20on%20product%20details.png)
 
+12. Now that I have tested my delete_product functionality fully, I will commit my changes before moving on. 
+
+---
+
+## Product Admin - Securing my Views
+
+1. Even though the 'edit and 'delete' buttons are hidden from anyone who is not a superuser, it is still possible for someone, if they knew the correct urls, to fabricate a POST request to add or update products on the page or to issue a get request to the delete view and then be able to delete products from the site. So I now need to tweak my views that I have just created so that this cannot happen. To start with, I am going to import the below decoarator for login_required which makes Django first check if a user is logged in before executing my view, and if they are not then they will be redirected to the login page:
+
+from django.contrib.auth.decorators import login_required
+
+- Then, still in my merchandise/views file, I will enforce the new import function against all my new product_admin views by adding the below line of code above each view for aa_product, edit_product and delete_product:
+
+@login_required
+
+2. I am also going to add this to the profile view as this view should only be available to logged in users as well. I import the below to my profiles/views file and add the decorator above my profile view:
+
+from django.contrib.auth.decorators import login_required
+
+@login_required
+
+
 
 
 ---

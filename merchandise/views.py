@@ -120,6 +120,7 @@ def badge_detail(request, badge_id):
     }
     return render(request, "merchandise/badge_detail.html", context)
 
+@login_required
 # ChatGPT Code
 def add_product(request):
     if request.method == 'POST':
@@ -146,6 +147,7 @@ def add_product(request):
 
     return render(request, 'merchandise/add_product.html', {'form': form})
 
+@login_required
 # Code Institute Code
 def edit_product(request, product_id):
     """ Edit a product in the Merchandise app """
@@ -183,6 +185,7 @@ def edit_product(request, product_id):
 
     return render(request, template, context)
 
+@login_required
 # ChatGPT Code
 def delete_product(request, product_id):
     """Delete a product from the Merchandise app"""
