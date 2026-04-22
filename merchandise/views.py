@@ -140,7 +140,7 @@ def add_product(request):
             )
 
             messages.success(request, 'Successfully added product!')
-            return redirect('merchandise:add_product')
+            return redirect('merchandise:product_detail', product_id=product.id)
     else:
         form = ProductForm()
 
@@ -182,3 +182,21 @@ def edit_product(request, product_id):
     }
 
     return render(request, template, context)
+
+# ChatGPT Code
+def delete_product(request, product_id):
+    """Delete a product from the Merchandise app"""
+
+    if not request.user.is_superuser:
+        messages.error(request, "Sorry, only admins can do that.")
+        return redirect(reverse('home'))
+
+    product = get_object_or_404(Product, pk=product_id)
+
+    if request.method == 'POST':
+        product.delete()
+        messages.success(request, 'Product deleted successfully!')
+        return redirect(reverse('merchandise:products'))
+
+    messages.error(request, 'Invalid request')
+    return redirect(reverse('merchandise:product_detail', args=[product.id]))

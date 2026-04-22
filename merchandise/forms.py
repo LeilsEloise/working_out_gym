@@ -7,7 +7,7 @@ class ProductForm(forms.ModelForm):
         label='Price',
         max_digits=10,
         decimal_places=2,
-        required=False  # 🔴 important
+        required=False 
     )
     size = forms.CharField(required=False)
 

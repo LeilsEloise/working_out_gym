@@ -18179,6 +18179,154 @@ for variant in product.variants.all():
 
 13. I change the price back to it's original price and then commit my changes before moving on to setting up my delete_view.
 
+---
+
+## Product Admin - Delete Product Functionality
+
+1. For the final stage of my Product Admin, I will give user's the ability to delete products. I don't need a template for this, just the view and url. To start with, I create the delete url, copying the content of my edit url and tweaking for delete:
+
+path('delete/<int:product_id>/', views.delete_product, name='delete_product'),
+
+2. Then I go to my merchandise/views and add a new view for  delete_product, using edit_product view's code as a baseline and tweaking accordingly:
+
+def delete_product(request, product_id):
+    """Delete a product from the Merchandise app"""
+    
+    product = get_object_or_404(Product, pk=product_id)
+
+    if request.method == 'POST':
+        product.delete()
+        messages.success(request, 'Product deleted successfully!')
+        return redirect(reverse('merchandise:products'))
+
+    messages.error(request, 'Invalid request')
+    return redirect(reverse('merchandise:product_detail', args=[product.id]))
+
+3. I update my add_product view so that I no longer have ton search for the newly added products after it's been added. I update my return redirect to:
+
+return redirect('merchandise:product_detail', product_id=product.id)
+
+4. I am now going to test by adding a new product and then calling the new delete view I have just created. I go to: http://127.0.0.1:8000/merchandise/add/ and then add a new product with a price and description:
+
+[!Testing add_product](/static/images/ProductAdmin/Screenshot%20testing%20add%20product.png)
+
+5. Once I hit save, I am redirected to the new products product_detail page. However, there is no image being displayed and I added an image to this. There is, however, a new ID created for it in the url:
+
+[!Newly added product not showing image](/static/images/ProductAdmin/Screenshot%20add%20product%20successfully%20redirects%20to%20the%20product%20detail%20page.png)
+
+6. I inspect devtools and can see that I have this error in the console regarding the image:
+
+Failed to load resource: 404 (Not Found)
+
+- ChatGPT recommends updating my project level urls file so it has an if statement with the static media settings:
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+- I update this and restart the server but the image is still not displaying. I query with ChatGPT who advises that I shouldn't be uploading the images on my site from the static directory and I should be uploading the image direct from my computer so that Django then saves it to /media/products in the project. I go to add a new product and upload the image from my PC instead this time to see if this changes things. But the new product is much the same as the last product I added as the image is still not being displayed. I check in my project after uploading the image to ensure that it has been uploaded to the /media/products directory as per my code which it has. I then test the following url for the file: http://127.0.0.1:8000/media/products/pexels-muhamad-guruh-budi-hartono-430167744-30202432.jpg which gives me a 404 not found error message.
+
+- I troubleshoot this with ChatGPT again who advises that I change Debug to True and then try to upload my image when creating a new product, so I do this and now when the product is added I can see the image that I uploaded to it. ChatGPT advises that this happens because Django see's the app as being in production when Debug is set to False:
+
+[!Newly added product showing image with debug on](/static/images/ProductAdmin/Screenshot%20image%20showing%20with%20added%20product.png)
+
+7. I now want to check the delete functionality, I copy the product ID from the URL and enter /merchandise/delete/7433 to go to the delete view for the product but the page remains on the product's detail page and gives a toast notification that this is an invalid request. I query this with ChatGPT who advises that the delete should be triggered by a POST event and not a url visit and that better practise for a Production app would be to add a delete button via form so recommends that I update my delete_products views and my product_detail.html template to show this. I want the delete functionality to also show on my full product page listings from Merchandise app too but only when the user logged in is detected as a superuser. 
+
+8. ChatGPT recommends updating my delete_product view to:
+
+def delete_product(request, product_id):
+    """Delete a product from the Merchandise app"""
+
+    if not request.user.is_superuser:
+        messages.error(request, "Sorry, only admins can do that.")
+        return redirect(reverse('home'))
+
+    product = get_object_or_404(Product, pk=product_id)
+
+    if request.method == 'POST':
+        product.delete()
+        messages.success(request, 'Product deleted successfully!')
+        return redirect(reverse('merchandise:products'))
+
+    messages.error(request, 'Invalid request')
+    return redirect(reverse('merchandise:product_detail', args=[product.id]))
+    
+
+- I then need to add the buttons to my product_detail.html template so I do this with the following code, using the Django if tag statement to restrict this to superusers only. I will add this under the code for my 'Add to Bag' button so it displays there:
+
+{% if request.user.is_superuser %}
+<hr>
+
+<div class="d-flex gap-2">
+
+  <a href="{% url 'merchandise:edit_product' product.id %}"
+     class="btn btn-outline-black rounded-0">
+    Edit
+  </a>
+
+  <form action="{% url 'merchandise:delete_product' product.id %}" method="POST">
+    {% csrf_token %}
+    <button type="submit"
+            class="btn btn-danger rounded-0"
+            onclick="return confirm('Are you sure you want to delete this product?');">
+      Delete
+    </button>
+  </form>
+
+</div>
+{% endif %}
+
+- Then in my products.html template, I add the below code inside the product cards before the closing div of .card-footer:
+
+{% if request.user.is_superuser %}
+<div class="mt-2 d-flex justify-content-between">
+
+  <a href="{% url 'merchandise:edit_product' product.id %}"
+     class="btn btn-sm btn-outline-black">
+    Edit
+  </a>
+
+  <form action="{% url 'merchandise:delete_product' product.id %}"
+        method="POST"
+        style="display:inline;">
+    {% csrf_token %}
+    <button type="submit"
+            class="btn btn-sm btn-danger"
+            onclick="return confirm('Delete this product?');">
+      Delete
+    </button>
+  </form>
+
+</div>
+{% endif %}
+
+9. Now when I reload the Merchandise prducts listings page, I can see that the cards have 'edit' and 'delete' buttons on the product cards when I am logged in as a superuser:
+
+[!Products listing cards showing edit and delete buttons](/static/images/ProductAdmin/Screenshot%20products%20template%20cards%20edit%20delete%20buttons.png)
+
+- If I click the edit button from here, then it takes me to the edit_product view for the product:
+
+[!Products listing card edit button works](/static/images/ProductAdmin/Screenshot%20products%20template%20edit%20button%20works.png)
+
+- The case is the same with the delete button:
+
+[!Products listing card delete button prompt](/static/images/ProductAdmin/Screenshot%20delete%20product%20button%20works%20from%20the%20full%20products%20page.png)
+
+[!Products listing card delete toast notification](/static/images/ProductAdmin/Screenshot%20delete%20product%20successful%20toast%20notification%20product%20removed.png)
+
+10. Also the products_details page shows the edit and delete buttons now and these work correctly:
+
+[!Products details edit and delete buttons](/static/images/ProductAdmin/Screenshot%20product%20details%20edit%20and%20delete%20buttons.png)
+
+[!Products details edit buttons](/static/images/ProductAdmin/Screenshot%20product%20details%20edit%20button.png)
+
+[!Products details delete buttons](/static/images/ProductAdmin/Screenshot%20product%20delete%20from%20product%20details.png)
+
+11. If I then logon as a normal user, I cannot see the edit or delete buttons on either the full products.html or product_details.html templates:
+
+[!Standard users cannot see edit delete buttons on full products template](/static/images/ProductAdmin/Screenshot%20standard%20user%20unable%20to%20see%20edit%20and%20delete%20buttons%20on%20products%20template.png)
+
+[!Standard users cannot see edit delete buttons on product details template](/static/images/ProductAdmin/Screenshot%20standard%20users%20unable%20to%20see%20edit%20delete%20buttons%20on%20product%20details.png)
+
 
 
 ---
@@ -18256,6 +18404,8 @@ The following parts of my Project were implemented using Bootstrap docs:
 - Pexels Strength Training Plan: https://www.pexels.com/photo/black-dumbbell-lot-260352/
 
 - Pexels Freedom Cap: https://www.pexels.com/photo/a-yellow-and-blue-fitted-cap-on-a-black-granite-in-dark-background-11463614/
+
+- Pexels Clothing Rack: https://www.pexels.com/photo/vibrant-vintage-clothes-hanging-at-flea-market-30202432/
 
 ---
 
@@ -18437,6 +18587,9 @@ The following parts of my Project were implemented using Bootstrap docs:
 - pagination controls products.html template
 - edit_product views update to include correct model of ProductVariant which holds price
 - edit_product views update with correct coding for ProductVariant price in POST method
+- delete_product view in merchandise/views
+- merchandise app template product_detail.html code for edit delete button views
+- merchandise app template product.html code for edit delete buttons on product cards
 
 
 

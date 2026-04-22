@@ -92,6 +92,28 @@
               <small class="text-muted">Price unavailable</small>
             {% endif %}
           {% endwith %}
+          <!-- ChatGPT Code-->
+          {% if request.user.is_superuser %}
+          <div class="mt-2 d-flex justify-content-between">
+
+            <a href="{% url 'merchandise:edit_product' product.id %}"
+              class="btn btn-sm btn-outline-black">
+              Edit
+            </a>
+
+            <form action="{% url 'merchandise:delete_product' product.id %}"
+                  method="POST"
+                  style="display:inline;">
+              {% csrf_token %}
+              <button type="submit"
+                      class="btn btn-sm btn-danger"
+                      onclick="return confirm('Delete this product?');">
+                Delete
+              </button>
+            </form>
+
+          </div>
+          {% endif %}
         </div>
 
       </div>
