@@ -1,9 +1,18 @@
 from django.shortcuts import render, redirect, reverse, get_object_or_404
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.db.models import Q, Min
+
 from .models import Product, ProductVariant, Category, Badge
 from .forms import ProductForm, ProductVariantForm
+
+# ChatGPT Code
+def is_superuser(user):
+    if not user.is_superuser:
+        raise PermissionDenied
+    return True
 
 # Claude AI Code
 def all_products(request):
@@ -121,6 +130,7 @@ def badge_detail(request, badge_id):
     return render(request, "merchandise/badge_detail.html", context)
 
 @login_required
+@user_passes_test(is_superuser)
 # ChatGPT Code
 def add_product(request):
     if request.method == 'POST':
@@ -128,16 +138,25 @@ def add_product(request):
         if form.is_valid():
             product = form.save()
 
-            size = form.cleaned_data.get('size')
+        sizes = form.cleaned_data.get('size')
 
-            # Only use size if product has sizes
-            if not product.has_sizes:
-                size = None
+        if product.has_sizes and sizes:
+            size_list = [s.strip() for s in sizes.split(',') if s.strip()]
 
+            for size in size_list:
+                ProductVariant.objects.create(
+                    product=product,
+                    price=form.cleaned_data['price'],
+                    size=size,
+                    variant_title=size,
+                )
+        else:
+            # No sizes → single variant
             ProductVariant.objects.create(
                 product=product,
                 price=form.cleaned_data['price'],
-                size=size,
+                size=None,
+                variant_title="Default",
             )
 
             messages.success(request, 'Successfully added product!')
@@ -148,6 +167,7 @@ def add_product(request):
     return render(request, 'merchandise/add_product.html', {'form': form})
 
 @login_required
+@user_passes_test(is_superuser)
 # Code Institute Code
 def edit_product(request, product_id):
     """ Edit a product in the Merchandise app """
@@ -186,13 +206,10 @@ def edit_product(request, product_id):
     return render(request, template, context)
 
 @login_required
+@user_passes_test(is_superuser)
 # ChatGPT Code
 def delete_product(request, product_id):
     """Delete a product from the Merchandise app"""
-
-    if not request.user.is_superuser:
-        messages.error(request, "Sorry, only admins can do that.")
-        return redirect(reverse('home'))
 
     product = get_object_or_404(Product, pk=product_id)
 

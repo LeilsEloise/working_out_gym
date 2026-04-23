@@ -18347,8 +18347,128 @@ from django.contrib.auth.decorators import login_required
 
 @login_required
 
+3. I want to test that the code I have used in my merchandise/views to restrict and notify standard users from accessing the productadmin view urls as a standard or non logged in user works. I first login as a standard user and attempt to access the url: http://127.0.0.1:8000/merchandise/edit/23/ and this allows me to access. The same is true of add_product url and delete_product url. I query this with ChatGPT who advises that I need to create a reusable check as @login_required only checks if the user is logged in but does not prevent normal users accessing admin views via URL so they will be able to access items through:
 
+/merchandise/add/
+/merchandise/edit/23/
+/merchandise/delete/23/
 
+- I update my merchandise/views with the below import for 'user_passes_test' and new helper called 'is_superuser':
+
+from django.contrib.auth.decorators import login_required, user_passes_test
+
+def is_superuser(user):
+    return user.is_superuser
+
+- I then need to apply this to all admin views, a.k.a. my add_product and edit_product view:
+
+@user_passes_test(is_superuser)
+
+- i remove this code from delete_product view as well:
+
+if not request.user.is_superuser:
+
+4. I reload the server and hard reload the page and empty the cache and then test as a non-logged in user and standard logged in user to access the following pages with the new code applied. This correctly redirects to the signin page for the non-logged in user on each of the add, edit and delete pages:
+
+[!Merchandise add item non logged in user](/static/images/ProductAdmin/Screenshot%20non%20logged%20in%20user%20merchandise%20add.png)
+
+[!Merchandise edit item non logged in user](/static/images/ProductAdmin/Screenshot%20merchandise%20edit%20item%20non%20logged%20in%20user.png)
+
+[!Merchandise delete item non logged in user](/static/images/ProductAdmin/Screenshot%20merchandise%20delete%20item%20non%20logged%20in%20usere.png)
+
+- However, when I try to access the add item url as a standard logged in user I get an error page and the terminal seems to be stuck in a loop:
+
+[!Merchandise add item std logged in user](/static/images/ProductAdmin/Screenshot%20standard%20logged%20in%20user%20add%20item%20error.png)
+
+5. I query this with ChatGPT who advises that I need to update my code so that Django tells it to block the users if they fail login as superuser and to update my views file with the below import so it no longer redirects silently but returns a 403 forbidden error:
+
+from django.core.exceptions import PermissionDenied
+
+- I also need to update my is_superuser helper to:
+
+def is_superuser(user):
+    if not user.is_superuser:
+        raise PermissionDenied
+    return True
+
+- Now when I reload my page and try to go to any of the add, edit or delete views as a standard user that I am correctly blocked with a 403 forbidden error now:
+
+[!Merchandise add item standard logged in user blocked](/static/images/ProductAdmin/Screenshot%20standard%20user%20add%20items%20blocked.png)
+
+[!Merchandise edit item standard logged in user blocked](/static/images/ProductAdmin/Screenshot%20standard%20user%20edit%20items%20blocked.png)
+
+[!Merchandise delete item standard logged in user blocked](/static/images/ProductAdmin/Screenshot%20standard%20user%20delete%20items%20blocked.png)
+
+- I also want to make sure that the views still render and execute correctly when I am logged in as a superuser so do this now:
+
+[!Superuser merchandise add view opens](/static/images/ProductAdmin/Screenshot%20superuser%20merchandise%20add%20view%20opens.png)
+
+[!Superuser merchandise add view saves](/static/images/ProductAdmin/Screenshot%20superuser%20merchandise%20add%20view%20saves.png)
+
+- The edit views open and save too:
+
+[!Superuser merchandise edit view opens](/static/images/ProductAdmin/Screenshot%20superuser%20edit%20view%20opens.png)
+
+[!Superuser merchandise edit view saves](/static/images/ProductAdmin/Screenshot%20superuser%20edit%20view%20saves.png)
+
+- I finally test that the delete view works, however, this gives me the following notification when I go to the url http://127.0.0.1:8000/merchandise/delete/7434/:
+
+[!Superuser merchandise delete url invalid request](/static/images/ProductAdmin/Screenshot%20superuser%20delete%20invalid%20request.png)
+
+- However, I did decide not to use the delete URL and then test that the buttons still work as superuser for delete on the product which it does:
+
+[!Superuser merchandise delete button notification](/static/images/ProductAdmin/Screenshot%20superuser%20delete%20button%20works.png)
+
+[!Superuser merchandise deleted item successfully](/static/images/ProductAdmin/Screenshot%20superuser%20deleted%20item%20successfully.png)
+
+6. There is one issue that I notice and that's that I'm not sure how I would set multiple sizes in the current set-up so query this with ChatGPT who advises that my data model for Product > ProductVariant is correct but that my form and view only creates one variant so no place for multiple sizes or different prices per size or proper variant system. I need to update my form input to allow multiple sizes as below:
+
+size = forms.CharField(
+    required=False,
+    help_text="Enter sizes separated by commas (e.g. S,M,L,XL)"
+)
+
+- Then in my merchandise/views in my add_product view I need to update the below code from:
+
+size = form.cleaned_data.get('size')
+
+if not product.has_sizes:
+    size = None
+
+ProductVariant.objects.create(
+    product=product,
+    price=form.cleaned_data['price'],
+    size=size,
+)
+
+To:
+
+sizes = form.cleaned_data.get('size')
+
+if product.has_sizes and sizes:
+    size_list = [s.strip() for s in sizes.split(',') if s.strip()]
+
+    for size in size_list:
+        ProductVariant.objects.create(
+            product=product,
+            price=form.cleaned_data['price'],
+            size=size,
+            variant_title=size,
+        )
+else:
+    # No sizes → single variant
+    ProductVariant.objects.create(
+        product=product,
+        price=form.cleaned_data['price'],
+        size=None,
+        variant_title="Default",
+    )
+
+- I update this and then test adding a product with sizes on the new code and I now have a size selector with all the sizes I set using 'S,XS,M,L,XL' in the size field:
+
+[!Superuser add item with sizes](/static/images/ProductAdmin/Screenshot%20superuser%20add%20product%20sizes%20works.png)
+
+7. I am now going to run a collectstatic and then commit my code to Git and Heroku.
 
 ---
 
@@ -18611,6 +18731,8 @@ The following parts of my Project were implemented using Bootstrap docs:
 - delete_product view in merchandise/views
 - merchandise app template product_detail.html code for edit delete button views
 - merchandise app template product.html code for edit delete buttons on product cards
+- merchandise/views is_superuser helper
+- merchandise/views add_product size update
 
 
 

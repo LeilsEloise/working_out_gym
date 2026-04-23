@@ -9,7 +9,10 @@ class ProductForm(forms.ModelForm):
         decimal_places=2,
         required=False 
     )
-    size = forms.CharField(required=False)
+    size = forms.CharField(
+    required=False,
+    help_text="Enter sizes separated by commas (e.g. S,M,L,XL)"
+    )
 
     class Meta:
         model = Product
