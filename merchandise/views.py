@@ -138,6 +138,7 @@ def add_product(request):
         if form.is_valid():
             product = form.save()
 
+        # ChatGPT Code
         sizes = form.cleaned_data.get('size')
 
         if product.has_sizes and sizes:

@@ -364,6 +364,8 @@ As a **site user** I want **a search facility on products** so that **I can sear
 - PostgreSQL (Code Institute Database)
 - Visual Studio Code
 - SQLite (local database)
+- Cloudinary
+- AWS
 
 ---
 
@@ -18470,6 +18472,241 @@ else:
 
 7. I am now going to run a collectstatic and then commit my code to Git and Heroku.
 
+## AWS (Amazon Web Services) - Initial Set-up 
+
+1. I am going to introduce Amazon Web Services into my Project now. To start with, I will create an account at aws.amazon.com. On the URL I click create an AWS account and then in the next window populate with my credentials:
+
+![AWS Create Account](/static/images/AWS/Screenshot%20aws%20create%20account.png)
+
+2. I then choose the free plan on the next screen, once I have proivided my verification code and then created a password for my new account:
+
+![AWS Free Plan](/static/images/AWS/Screenshot%20free%20plan%20aws.png)
+
+3. Then on the next screen, I populate the below form with all my contact details:
+
+![AWS Details](/static/images/AWS/Screenshot%20account%20information%20aws.png)
+
+4. Then I populate my billing details and approve in my banking app, although I will not be going above the agreed limit on my free account so shouldn't have to pay for anything. Once I have confirmed my billing details, I confirm my identity with an SMS to my mobile:
+
+![AWS Confirm Identity](/static/images/AWS/Screenshot%20aws%20confirm%20identity.png)
+
+5. On the next screen, I enter the verification code send to me from AWS via SMS:
+
+![AWS Verification Code](/static/images/AWS/Screenshot%20AWS%20verification%20code.png)
+
+6. Then once the SMS verification code has been entered correctly I will be able to access my AWS account and use the services. I go back to login on my new account and can now see everything AWS:
+
+![AWS Dashboard Home](/static/images/AWS/Screenshot%20aws%20home.png)
+
+7. I now want to create my AWS S3 bucket. To start, I need to do a search for S3 in 'Services':
+
+![AWS S3 Search](/static/images/AWS/Screenshot%20aws%20s3%20service%20search.png)
+
+8. I click on S3 from the list and then click the button to 'Create bucket' at the top of the screen on the next page:
+
+![AWS S3 Create Bucket](/static/images/AWS/Screenshot%20AWS%20S3%20create%20bucket.png)
+
+9. On the next page, I need to enter a bucket name so use the same name as I used for the Heroku version of the app, 'working-out=gym'. I set the bucket type to 'General Purpose' to allow me to store a mix of storage classes across multiple Availability Zones. In Object Ownership I set this to ACL's enabled:
+
+![AWS S3 Bucket Creation Name](/static/images/AWS/Screenshot%20s3%20bucket%20creation%20name.png)
+
+- Then still in the S3 creation, I scroll down and set the Object Ownership to 'Bucket Owner Preferred' and untick 'Block all public access settings for this bucket'. I disable Bucket Versioning to help prevent huge issues with unintended user actions as I can easily rollback to previous versions. I set the 'Default Encryption' to 'Server-side encryption with Amazon S3 managed keys' and leave Bucket Key as enabled. Once these options are populated, I click 'create bucket':
+
+![AWS S3 Bucket Creation Populated Details](/static/images/AWS/Screenshot%20aws%20bucket%20creation%20populated%20details.png)
+
+10. Once the bucket is created, on the next screen I click the bucket name to see the details and then click the 'Properties' tab:
+
+![AWS S3 Bucket Properties Tab](/static/images/AWS/Screenshot%20new%20bucket%20properties%20tab.png)
+
+11. On the next page, I scroll down to the very bottom to find the 'Static website hosting' section and click the 'Edit' button:
+
+![AWS S3 Static website hosting](/static/images/AWS/Screenshot%20s3%20bucket%20static%20website%20hosting.png)
+
+- On the next screen, I select 'enable' and then enter index.html into the index documment input, error.html into the error document input and then 'Save changes':
+
+![AWS S3 Static website hosting enabled](/static/images/AWS/Screenshot%20s3%20bucket%20enable%20static%20website%20hosting.png)
+
+12. Back on the S3 bucket homescreen, I need to then go into the 'Permissions' tab:
+
+![AWS S3 Permissions Tab](/static/images/AWS/Screenshot%20S3%20Bucket%20Permissions%20Tab.png)
+
+- Then once there, I scroll down to the bottom where the section for 'Cross-origin resource sharing (CORS)' and then click 'Edit' on this section:
+
+![AWS S3 Permissions Tab CORS](/static/images/AWS/Screenshot%20permissions%20CORS%20.png)
+
+- I then add the code as shown below in screenshot and then click 'Save changes':
+
+![AWS S3 CORS code](/static/images/AWS/Screenshot%20code%20in%20CORS.png)
+
+13. Next I add the bucket policy, still in the Permissions tab of my bucket, I go to the 'Bucket Policy' section and click 'Edit':
+
+![AWS S3 Permissions Bucket Policy edit](/static/images/AWS/Screenshot%20S3%20Bucket%20Policy%20edit.png)
+
+- Then in a separate window, I open the AWS Policy Generator using https://awspolicygen.s3.amazonaws.com/policygen.html. Once there, I choose ' S3 Bucket Policy' for the 'Type of Policy', I enter an asterisk into the 'Principal field' and for the action I select 'GetObject'. I copy the ARN number from the Bucket Policy tab that I opened first, and then paste this into the ARN input and then click 'Add Statement' and then scroll down and click 'Generate Policy':
+
+![AWS S3 Policy Generator](/static/images/AWS/Screenshot%20policy%20generator.png)
+
+- I then copy all of the text in the pop-up that appears and go back to my Policy Editor on the bcuket itself and paste the JSON code into the Policy window like below:
+
+![AWS S3 Policy Added](/static/images/AWS/Screenshot%20new%20policy%20added.png)
+
+- I then add '/*' to the end of the 'Resource' field in the policy to allow access to all objects within the bucket, then click 'Save changes':
+
+![AWS S3 Policy Resource Field Updated](/static/images/AWS/Screenshot%20edit%20policy%20resource%20field%20updated.png)
+
+14. Next I need to edit the ACL's (Access Control Lists). Still in the Permissions tab, I scroll and find the Access Control List section and click 'Edit':
+
+![AWS S3 Permissions ACL edit](/static/images/AWS/Screenshot%20ACLs%20edit.png)
+
+- I check the box for 'List' in 'Everyone (public access) and then the checkbox to say I understand the effects of the changes I am making and then I click 'Save changes':
+
+![AWS S3 Permissions ACL list everyone](/static/images/AWS/Screenshot%20list%20everyone%20changes%20understood%20.png)
+
+15. The next thing I am going to do is create a user group. To do this, in AWS< I search for 'iam' in the searchbar at the top and click on the icon that appears, as shown below:
+
+![AWS IAM search](/static/images/AWS/Screenshot%20AWS%20iam%20search.png)
+
+- Then on the page for Identity and Access Management (IAM), down the left hand side I click the option for 'User groups' under 'Access Management':
+
+![AWS IAM user groups](/static/images/AWS/Screenshot%20iam%20user%20groups.png)
+
+- Then on the next screen, I click 'Create group' and then on the next screen where it asks me for group name, I enter 'manage-working-out-gym' and then scroll to the bottom of the page and click 'Create user group':
+
+![AWS IAM name and create user group](/static/images/AWS/Screenshot%20name%20and%20create%20user%20group.png)
+
+16. Next, I create a policy. Still in the IAM screen, I then select 'Policies' from the 'Access Management' menu and then click 'Create policy' in the top right:
+
+![AWS IAM create policy](/static/images/AWS/Screenshot%20iam%20create%20policy.png)
+
+- On the next page, I select the JSON tab at the top, then click actions and then click 'Import Policy':
+
+![AWS IAM import policy](/static/images/AWS/Screenshot%20import%20policy.png)
+
+- Then in the new window that appears, I search for S3, select the option for 'AmazonS3FullAccess' and then click 'Import policy':
+
+![AWS S3FullAccess Import Policy](/static/images/AWS/Screenshot%20s3fullacess%20import%20policy.png)
+
+- Then I do a search for S3 in the bar at the top, then right-click S3 and open it in a new tab. Then once it opens, I select the bucket for working-out-gym and then copy the ARN number from the 'Properties' tab. Then back on the IAM policy editor, in my 'Resource' dictionary, I paste the ARN number twice and on the second iteration I add /* to the end so it looks like below:
+
+![AWS Policy ARN Number Resource Update](/static/images/AWS/Screenshot%20arn%20policy%20resource%20update.png)
+
+- I then scroll to the bottom and click 'Next' and on the next screen, enter a name and description:
+
+![AWS Policy Name and Dsecription](/static/images/AWS/Screenshot%20policy%20name%20and%20description.png)
+
+17. I get my success message on the next page and then move on to attaching my new policy to the user group. I click 'User Groups' from the left menu again:
+
+![AWS Policy Successful Creation Message](/static/images/AWS/Screenshot%20policy%20successfully%20created.png)
+
+- Then on the 'User Groups' screen, I select the new user group that I created earlier:
+
+![AWS Selecting User Group](/static/images/AWS/Screenshot%20select%20created%20user%20group.png)
+
+- Then in my group, I click the 'Permissions' tab and then click the 'Add Permissions' dropdown and then choose 'Attach policies':
+
+![AWS Attach Policies User Group](/static/images/AWS/Screenshot%20user%20group%20permissions%20attach%20policies.png)
+
+- Then on the next screen, I search for my new policy I have created and then select the checkbox next to it and then click 'Attach policies' at the bottom of the page:
+
+![AWS Search and Attach policy](/static/images/AWS/Screenshot%20search%20and%20attach%20new%20policy.png)
+
+18. I am redirected where I am presented with a success message re. the policies attaching to the user group. Therefore, I now create a new user. I select the 'Users' menu from the Access Management menu on the left:
+
+![AWS Polciies Attached Successfully Users menu](/static/images/AWS/Screenshot%20policies%20attached%20users%20menu.png)
+
+- On the next screen, I click 'Create User':
+
+![AWS Create user](/static/images/AWS/Screenshot%20create%20user.png)
+
+- I set a username and then click 'Next':
+
+![AWS Set username on new user](/static/images/AWS/Screenshot%20set%20username.png)
+
+- On the next screen, I select the user group that I created previously and then click 'Next':
+
+![AWS Set user group](/static/images/AWS/Screenshot%20new%20user%20select%20user%20group.png)
+
+- Then finally, I scroll to the bottom of the page and click 'Create User':
+
+![AWS Create User Final](/static/images/AWS/Screenshot%20create%20user%20final.png)
+
+19. Once I receive a message confirming the user was successfully created, I want to create an Access Key. To do this, I click on the newly created user:
+
+![AWS Create Access Key Click User](/static/images/AWS/Screenshot%20create%20access%20key%20click%20user.png)
+
+- On the next screen, I click 'Security Credentials', then in the tab, I scroll down to the 'Access Keys' section and then click 'Create Access Key':
+
+![AWS New User Security Credentials Tab Create Access Key](/static/images/AWS/Screenshot%20security%20credentials%20create%20access%20key.png)
+
+- On the next screen, I click the option for 'Application running outside AWS' and then click 'Next':
+
+![AWS Application Running Outside of Best Practises](/static/images/AWS/Screenshot%20application%20running%20outside%20AWS.png)
+
+- I leave description blank and then click 'Create Access key' on the new screen:
+
+![AWS Create access key](/static/images/AWS/Screenshot%20create%20acess%20key%20no%20description.png)
+
+- I receive a success message letting me know Access Key was created, I scroll down and click 'Download .csv file' and choose to open the .csv file in my notepad:
+
+![AWS download csv file](/static/images/AWS/Screenshot%20download%20csv%20file.png)
+
+- I then login to Heroku and go to my working-out-gym dashboard > Settings > Config Vars and set up the AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY using the values I have just been given.
+
+---
+
+## AWS - Connecting to Django
+
+1. Now that I have created an S3 bucket in AWS with the appropriate user's groups and security policies for it, I can now connect Django to it. I first need to install 2 x new packages:
+
+pip3 install boto3
+pip3 install django-storages
+
+2. Once I can see in my terminal that the two packages have both successfully installed, I then add these to the requirements file using:
+
+pip3 freeze local > requirements.txt
+
+3. I now need to update my INSTALLED APPS section in settings to include 'django-storages':
+
+'storages',
+
+4. Before moving on, I need to set my AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY as environment variables in env.py so do this now. I then borrow Code Institute's code for the if statement which will tell my project which S3 bucket to communicate with when on Heroku. I paste this into my code for MEDIA in settings:
+
+if 'USE_AWS' in os.environ:
+    # Bucket Config
+    AWS_STORAGE_BUCKET_NAME = 'working-out-gym-126309364526-eu-north-1-an'
+    AWS_S3_REGION_NAME = 'eu-north-1'
+    AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
+    AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
+    AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
+
+    # Static and media files
+    STATICFILES_STORAGE = 'custom_storages.StaticStorage'
+    STATICFILES_LOCATION = 'static'
+    DEFAULT_FILE_STORAGE = 'custom_storages.MediaStorage'
+    MEDIAFILES_LOCATION = 'media'
+
+    # Override static and media URLs in production
+    STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{STATICFILES_LOCATION}/'
+    MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{MEDIAFILES_LOCATION}/'
+
+
+5. Once this is set, I then go back to my Heroku dashboard for working-out-gym, go to Settings > Config Vars and add the key for USE_AWS and set the value to True so that the settings file knows to use the AWS config when I deploy to Heroku. 
+
+6. I now want to tell the project to use S3 to store the static files whenever collectstatic is ran and that any uploaded product images should be held in AWS also. To do this, I create a file called custom_storages.py in the root of the project folder and then borrow Code Institute's content for this again:
+
+from django.conf import settings
+from storages.backends.s3boto3 import S3Boto3Storage
+
+
+class StaticStorage(S3Boto3Storage):
+    location = settings.STATICFILES_LOCATION
+
+
+class MediaStorage(S3Boto3Storage):
+    location = settings.MEDIAFILES_LOCATION
+
+7. Now that these changes are in place, I am going to commit the changes and push to Git and Heroku so I can test them. 
+
 ---
 
 
@@ -18638,6 +18875,8 @@ The following parts of my Project were implemented using Bootstrap docs:
 - add_product views
 - edit_product views
 - merchandise/forms ProductForm
+- if statement in settings.py for AWS
+- custom_storages.py file from Boutique Ado
 
 
 
