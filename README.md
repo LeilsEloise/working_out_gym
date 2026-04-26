@@ -18705,7 +18705,133 @@ class StaticStorage(S3Boto3Storage):
 class MediaStorage(S3Boto3Storage):
     location = settings.MEDIAFILES_LOCATION
 
-7. Now that these changes are in place, I am going to commit the changes and push to Git and Heroku so I can test them. 
+7. Now that these changes are in place, I am going to commit the changes and push to Git and Heroku so I can test them. I check the build logs in Heroku and confirm it has collected the static files successfully. However, when I launch my app from Heroku it is not serving my static files anymore:
+
+![Production App not serving static files](/static/images/AWS/Screenshot%20production%20not%20serving%20static%20files.png)
+
+8. I query this with ChatGPT who recommends updating settings if 'USE_AWS' statement to the below:
+
+if 'USE_AWS' in os.environ:
+    AWS_STORAGE_BUCKET_NAME = 'working-out-gym-126309364526-eu-north-1-an'
+    AWS_S3_REGION_NAME = 'eu-north-1'
+    AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
+    AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
+
+    AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
+
+    AWS_DEFAULT_ACL = 'public-read'
+    AWS_QUERYSTRING_AUTH = False
+
+    AWS_S3_OBJECT_PARAMETERS = {
+        'CacheControl': 'max-age=86400',
+    }
+
+    STATICFILES_STORAGE = 'custom_storages.StaticStorage'
+    STATICFILES_LOCATION = 'static'
+
+    DEFAULT_FILE_STORAGE = 'custom_storages.MediaStorage'
+    MEDIAFILES_LOCATION = 'media'
+
+    STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{STATICFILES_LOCATION}/'
+    MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{MEDIAFILES_LOCATION}/'
+
+- I then run a recurse staticfiles cmd and then collectstatic after this:
+
+Remove-Item -Recurse -Force staticfiles
+
+python manage.py collectstatic
+
+- I redeploy the app to Heroku:
+
+git push heroku main
+
+- I then check my S3 bucket to make sure it has created a static folder but it has not:
+
+![S3 Bucket not collecting static](/static/images/AWS/Screenshot%20S3%20bucket%20not%20collecting%20static.png)
+
+- I confirm that my Heroku config vars are set correctly for USE_AWS and the 2 x AWS Keys. 
+
+- I then force a rebuild of the Heroku app to force Heroku to re-run collectstatic with AWS enabled and notice this message for staticfile collection in the build logs:
+
+894 static files copied to '/tmp/build_a18196d3/staticfiles'.
+
+- This shows that Django is still using local file storage and not S3. When I query the logs with ChatGPT it advises that my AWS block is not being activated during build on Heroku which means this condition is failing:
+
+if 'USE_AWS' in os.environ:
+
+- It recommends I set the config vars from the terminal using:
+
+heroku config:set USE_AWS=1
+
+- It then recommends that I update:
+
+if 'USE_AWS' in os.environ:
+
+To:
+
+if os.environ.get('USE_AWS') == '1':
+
+- Then I push the build again:
+
+git add .
+git commit -m "Fix AWS env detection"
+git push heroku main
+
+- I check the build logs again but I am still seeing the following line:
+
+895 static files copied to '/tmp/build_c74229be/staticfiles'.
+
+- ChatGPT diagnoses again and advises that even though the logs shows that AWS os active the following line is being ignored:
+
+STATICFILES_STORAGE = 'custom_storages.StaticStorage'
+
+- It says that this is happening because in Django 4.2 it's deprecated so right now its ignoring my S3 storage class and failing back to local filesystem so thats why i see /tmp/. It advises me to update my AWS storage config with:
+
+if os.environ.get('USE_AWS') == '1':
+    AWS_STORAGE_BUCKET_NAME = 'working-out-gym-126309364526-eu-north-1-an'
+    AWS_S3_REGION_NAME = 'eu-north-1'
+    AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
+    AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
+
+    AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
+
+    AWS_DEFAULT_ACL = 'public-read'
+    AWS_QUERYSTRING_AUTH = False
+
+    AWS_S3_OBJECT_PARAMETERS = {
+        'CacheControl': 'max-age=86400',
+    }
+
+    STATICFILES_LOCATION = 'static'
+    MEDIAFILES_LOCATION = 'media'
+
+    STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{STATICFILES_LOCATION}/'
+    MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{MEDIAFILES_LOCATION}/'
+
+    STORAGES = {
+        "default": {
+            "BACKEND": "custom_storages.MediaStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "custom_storages.StaticStorage",
+        },
+    }
+
+- I also have a conflict with Cloudinary and it is overriding my storage, the below line of code in my settings is causing the conflict so I delete this line of code:
+
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+
+- I also need to update my custom_storages.py to the below as in its current form it relies on settings variables:
+
+from storages.backends.s3boto3 import S3Boto3Storage
+
+
+class StaticStorage(S3Boto3Storage):
+    location = 'static'
+
+
+class MediaStorage(S3Boto3Storage):
+    location = 'media'
 
 ---
 
@@ -18972,6 +19098,7 @@ The following parts of my Project were implemented using Bootstrap docs:
 - merchandise app template product.html code for edit delete buttons on product cards
 - merchandise/views is_superuser helper
 - merchandise/views add_product size update
+- custom_storages.py updates to remove local setting reliance
 
 
 
