@@ -22,6 +22,7 @@ def all_products(request):
         Product.objects.filter(is_active=True)
         .select_related("category")
         .prefetch_related("variants")
+        .annotate(min_price=Min("variants__price"))
     )
 
     query = None
@@ -39,9 +40,9 @@ def all_products(request):
         direction = request.GET['direction']
         if sort == 'price':
             if direction == 'desc':
-                sort = '-from_price'
+                sort = '-min_price'
             else:
-                sort = 'from_price'
+                sort = 'min_price'
         elif sort == 'name':
             if direction == 'desc':
                 sort = '-title'

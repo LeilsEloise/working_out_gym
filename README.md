@@ -18908,8 +18908,8 @@ else:
     EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASS')
     DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL')
 
-# Default primary key field type
-# https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
+Default primary key field type
+https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -18921,11 +18921,150 @@ git commit -m "Added email send functionality from gmail"
 git push origin main
 git push heroku main
 
+10. Once my app has finished deploying, I then test if the e-mail verification is correct by registering for an account with another personal e-mail I have. I have been directed to this page but do not receive the e-mail:
+
+![Personal gmail app passwords search](/static/images/email/Screenshot%20app%20passwords%20menu%20search.png)
+
+11. I notice that on my dev version of my app now that static files are no longer being served, it looks like it is trying to use S3 to serve my static files. ChatGPT recommends updating my condition for AWS in my settings to the below, as DYNO only exists on Heroku so it will ignore this in my local app now:
+
+if os.environ.get('USE_AWS') == '1' and 'DYNO' in os.environ:
+
+- I save the file and then run my dev server and then hard refresh the page and the static files are serving on my dev server again. I test the Home page, merchandise pages, and profile/account pages and these all appear to be okay. I do notice that the sort by price option in my Merchandise menu no longer works and gives this error:
+
+FieldError at /merchandise/
+Cannot resolve keyword 'from_price' into field. Choices are: category, category_id, handle, has_sizes, id, image, image_src, is_active, slug, stripe_product_id, tags, title, variants, vendor
+Request Method:	GET
+Request URL:	http://127.0.0.1:8000/merchandise/?sort=from_price&direction=asc
+Django Version:	6.0.2
+Exception Type:	FieldError
+Exception Value:	
+Cannot resolve keyword 'from_price' into field. Choices are: category, category_id, handle, has_sizes, id, image, image_src, is_active, slug, stripe_product_id, tags, title, variants, vendor
+Exception Location:	C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\.venv\Lib\site-packages\django\db\models\sql\query.py, line 1842, in names_to_path
+Raised during:	merchandise.views.all_products
+Python Executable:	C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym\.venv\Scripts\python.exe
+Python Version:	3.12.10
+Python Path:	
+['C:\\Users\\leila\\OneDrive\\Desktop\\Documents\\vscode-projects\\working_out_gym',
+ 'C:\\Program Files\\Python312\\python312.zip',
+ 'C:\\Program Files\\Python312\\DLLs',
+ 'C:\\Program Files\\Python312\\Lib',
+ 'C:\\Program Files\\Python312',
+ 'C:\\Users\\leila\\OneDrive\\Desktop\\Documents\\vscode-projects\\working_out_gym\\.venv',
+ 'C:\\Users\\leila\\OneDrive\\Desktop\\Documents\\vscode-projects\\working_out_gym\\.venv\\Lib\\site-packages']
+Server time:	Mon, 27 Apr 2026 07:33:12 +0000
+
+- I take a look at my merchandise/views file and find my view for all_products and update my sorting for price so it uses 'min_price' and not 'from_price' as below - as this is how I have labelled my price in the model and views:
+
+    if 'sort' in request.GET:
+        sort = request.GET['sort']
+        direction = request.GET['direction']
+        if sort == 'price':
+            if direction == 'desc':
+                sort = '-min_price'
+            else:
+                sort = 'min_price'
+        elif sort == 'name':
+            if direction == 'desc':
+                sort = '-title'
+            else:
+                sort = 'title'
+        elif direction == 'desc':
+            sort = f'-{sort}'
+        products = products.order_by(sort)
+
+
+- In the same file, I also add the below to my products context:
+
+.annotate(min_price=Min("variants__price"))
+
+- Then in my main-nav.html I update the url where it has the ?from_price to price.
+
+- Now when I save I can open the menu option for sorting Merchandise on price:
+
+![Merchandise Price Sorting Resolved](/static/images/email/Screenshot%20merchandise%20sort%20by%20price%20fixed.png)
+
+12. Now that I have fixed this issue, I will go back to why e-mails are not being sent. I have queried this with ChatGPT who advises that from my dev notes it looks like I never set DEFAULT_FROM_EMAIL in Heroku so Django is currently trying to send with no email address. It recommends that I run the following to set this key:
+
+heroku config:set DEFAULT_FROM_EMAIL=leilahhodgson@gmail.com
+
+13. With this now set, I create a new account from another personal address and have now received the verification email. I confirm this is correct and can see that my new user is now verified upon login:
+
+![Account verified by email](/static/images/email/Screenshot%20verified%20email%20address%20user.png)
+
 ---
 
 ## Stripe - Testing Webhooks on Ecommerce Site
 
-1. I now need to set up a new endpoint on Stripe for my production application on Heroku. To start, I login to Stripe: 
+1. I now need to set up a new endpoint on Stripe for my production application on Heroku. To start, I login to Stripe:
+
+![Testing Webhooks Login to Stripe](/static/images/stripe/Screenshot%20testing%20webhooks%20login.png)
+
+2. Once logged in, I go to the settings menu and then access the Developers option from there:
+
+![Testing Webhooks Developers Stripe](/static/images/stripe/Screenshot%20testing%20webhooks%20developers%20stripe.png)
+
+3. Actually its the Developers menu at the bottom of the screen and from there it has the option for Webhooks so I open this now and then click the 'add destination' button:
+
+![Testing Webhooks Developers Webhooks](/static/images/stripe/Screenshot%20testing%20webhooks%20developers%20stripe%20webhooks.png)
+
+4. I am then directed to the following screen which asks me what events I want to listen to. I choose for the events to come from My Account, leave the API version as default and then select the following events:
+
+- checkout.session.completed
+- payment_intent.succeeded
+- payment_intent.payment_failed
+
+![Testing Webhooks Setting Up Event Listeners](/static/images/stripe/Screenshot%20testing%20webhooks%20developers%20stripe%20webhooks.png)
+
+5. After clicking continue, I am then redirected to the next screen to ask for the destination type, I select Webhook endpoint and then click continue:
+
+![Testing Webhooks Event Destination](/static/images/stripe/Screenshot%20testing%20webhooks%20event%20destination.png)
+
+6. On the next page, I configure my endpoint. I copy my Heroku URL and add /checkout/wh/ to the end of the URL so that my webhooks do not fail:
+
+![Testing Webhooks Event Configuration](/static/images/stripe/Screenshot%20testing%20webhooks%20event%20configuration.png)
+
+7. I check that my checkout/urls has the url for my webhook which it does and this matches what I have set in Stripe for the endpoint URL.
+
+8. On the next page showing my newly created webhook, I reveal the signing secret as shown below and then run the below cmd to set this:
+
+heroku config:set STRIPE_WH_SECRET=whsec_******
+
+![Testing Webhooks Signing Secret](/static/images/stripe/Screenshot%20testing%20webhooks%20signing%20secret.png)
+
+9. Now that I have everything in place for Stripe webhook for the deployed app, I am going to test checking out a purchase and see what the webhook shows. The order says it has been successfuil, so I will go back to my Stripe Webhook and see how it looks there. However, nothing has come through for the event. So I troubleshoot, I confirm that I have all 3 x Stripe keys in my Heroku config using:
+
+heroku config
+
+- This shows that I have all the correct keys set. So I then check the logs from Heroku by running:
+
+heroku logs --tail
+
+- This line in the logs proves that Stripe is being hit:
+
+UPDATING PAYMENT INTENT: pi_3TQl2v1urpY1vbdf0PZ4KxxX
+
+- In Stripe, I search for the PaymentIntent ID but no transaction is found. Also in the logs there is nothing to show a request such as 'POST /checkout/wh/' which shows the webhook is not being called yet. I check that the Stripe webhook url is correct which it is: https://working-out-gym-aaf119c10db9.herokuapp.com/checkout/wh/
+
+- ChatGPT recommends setting both the Public and Secret keys for Stripe in Heroku again using:
+
+heroku config:set STRIPE_PUBLIC_KEY=pk_test_xxx
+heroku config:set STRIPE_SECRET_KEY=sk_test_xxx
+
+10. I do this and then re-open the app and do a hard refresh and empty cache. Now when I make a purchase, I can see this reflected on my Stripe webhook:
+
+![Testing Webhooks Sucessful Purchase Reflected on Webhook](/static/images/stripe/Screenshot%20testing%20webhooks%20successful%20purchase.png)
+
+11. I now want to make sure that the payment_intent.payment_failed event works so I go back through checkout on my Heroku app but this time use the following card number to trigger the event:
+
+4000 0000 0000 0002
+
+![Testing Webhooks payment failed card declined](/static/images/stripe/Screenshot%20testing%20webhooks%20card%20declined.png)
+
+12. When I go to Events on my Stripe Webhook, I can see it has picked up the event correctly for the payment_intent.payment_failed:
+
+![Testing Webhooks payment failed events](/static/images/stripe/Screenshot%20testing%20webhooks%20payment%20intent%20failed.png)
+
+
 
 ---
 
