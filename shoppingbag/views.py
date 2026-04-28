@@ -36,7 +36,8 @@ def add_to_bag(request, product_id):
         bag[variant_id] = quantity
         messages.success(
             request,
-            f'Added {variant.product.title} ({variant.variant_title}) to your bag'
+            f'Added {variant.product.title} ({variant.variant_title}) to your bag',
+            extra_tags='bag-preview'
         )
 
     request.session['bag'] = bag
@@ -56,13 +57,15 @@ def adjust_bag(request, product_id):
         bag[variant_id] = quantity
         messages.success(
             request,
-            f'Updated {variant.product.title} ({variant.variant_title}) quantity to {quantity}'
+            f'Updated {variant.product.title} ({variant.variant_title}) quantity to {quantity}',
+            extra_tags='bag-preview'
         )
     else:
         bag.pop(variant_id)
         messages.success(
             request,
-            f'Removed {variant.product.title} ({variant.variant_title}) from your bag'
+            f'Removed {variant.product.title} ({variant.variant_title}) from your bag',
+            extra_tags='bag-preview'
         )
 
     request.session['bag'] = bag
@@ -82,7 +85,8 @@ def remove_from_bag(request, product_id):
 
         messages.success(
             request,
-            f'Removed {variant.product.title} ({variant.variant_title}) from your bag'
+            f'Removed {variant.product.title} ({variant.variant_title}) from your bag',
+            extra_tags='bag-preview'
         )
 
         request.session['bag'] = bag
