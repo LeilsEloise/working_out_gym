@@ -21,3 +21,9 @@
 #id_default_country option:first-child {
     color: #aab7c4;
 }
+
+.profile-plan-img {
+    height: 260px;
+    width: 100%;
+    object-fit: cover;
+}

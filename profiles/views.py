@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required
 from .models import UserProfile
 from .forms import UserProfileForm
 from checkout.models import Order
+from plans.models import UserPlan
 
 @login_required
 def profile(request):
@@ -21,11 +22,16 @@ def profile(request):
     else:
         form = UserProfileForm(instance=profile)
     orders = profile.orders.all()
+    #ChatGPT Code
+    user_plans = UserPlan.objects.filter(
+        user=request.user
+    ).select_related('plan')
 
     template = 'profiles/profile.html'
     context = {
         'form': form,
         'orders': orders,
+        'user_plans': user_plans,
         'on_profile_page': True
     }
     

@@ -23,6 +23,7 @@ class UserPlan(models.Model):
     """ ChatGPT - Enforces the rule that users may only have 1 x purchased fitness and/or nutrition plan at any one time"""
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     plan = models.ForeignKey(Plan, on_delete=models.CASCADE)
+    purchased_on = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.user} - {self.plan}"

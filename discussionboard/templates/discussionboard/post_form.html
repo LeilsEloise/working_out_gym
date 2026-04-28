@@ -1,14 +1,47 @@
 <!-- ChatGPT Code-->
-
 {% extends "base.html" %}
 {% block content %}
-<div class="container my-4" style="max-width: 720px;">
-  <h2 class="mb-3">{{ view.object|default:"New Post" }}</h2>
-  <form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button class="btn btn-success" type="submit">Save</button>
-    <a class="btn btn-outline-secondary" href="{% url 'discussionboard:post_list' %}">Cancel</a>
-  </form>
+
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+
+            <h2 class="text-center mb-4">
+                {{ view.object|default:"New Post" }}
+            </h2>
+
+            <form method="post">
+                {% csrf_token %}
+
+                {% for field in form %}
+                    <div class="mb-3 text-center">
+                        <label class="form-label d-block" for="{{ field.id_for_label }}">
+                            {{ field.label }}
+                        </label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <div class="text-danger small mt-1">
+                                {{ field.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+
+                <div class="text-center mt-4">
+                    <button class="btn btn-success px-4" type="submit">
+                        Save
+                    </button>
+
+                    <a class="btn btn-outline-secondary px-4"
+                       href="{% url 'discussionboard:post_list' %}">
+                        Cancel
+                    </a>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
 </div>
+
 {% endblock %}

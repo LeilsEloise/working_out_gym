@@ -19064,7 +19064,921 @@ heroku config:set STRIPE_SECRET_KEY=sk_test_xxx
 
 ![Testing Webhooks payment failed events](/static/images/stripe/Screenshot%20testing%20webhooks%20payment%20intent%20failed.png)
 
+---
 
+# Code Refactoring
+
+I now want to navigate through both my production and development versions of my app, page by page, and ensure that everything looks good on all screen sizes and is functional in every aspect.
+
+## Code Refactoring - Development Homepage
+
+1. To start with, I open my development app using:
+
+python3 manage.py runserver
+
+- I open the Homepage using my link in the terminal:
+
+http://127.0.0.1:8000/
+
+2. I can see straight away that something is wrong as its no longer serving the static files again:
+
+![Homepage no static on dev](/static/images/stripe/Screenshot%20dev%20home%20static%20files.png)
+
+- I consult ChatGPT who recommends updating Debug in my settings to:
+
+DEBUG = os.environ.get("DEVELOPMENT") == "1"
+
+- I then update my local env.py file to:
+
+os.environ["DEVELOPMENT"] = "1"
+
+- I restart my dev server to see if it is serving static files now, which it is:
+
+![Homepage styled correctly](/static/images/Code%20Refactor/Screenshot%20home%20dev%20styled%20corretly.png)
+
+3. I will commit my changes to Git and Heroku to make sure changes made to fix dev haven't broken Heroku:
+
+git add .
+git commit -m "Updated settings to use local environ for Development on debug"
+git push origin main
+git push heroku main
+
+4. While the app builds on Heroku again, I will run through the rest of my testing on Dev. I am happy with how the Homepage looks on development for the large, medium and small screens:
+
+Large Screen:
+![Homepage dev large screen](/static/images/Code%20Refactor/Screenshot%20homepage%20dev%20large%20screen.png)
+
+Medium Screen:
+![Homepage dev medium screen](/static/images/Code%20Refactor/Screenshot%20dev%20medium%20screen%20home.png)
+
+Small Screen:
+![Homepage dev small screen](/static/images/Code%20Refactor/Screenshot%20dev%20home%20screen%20small.png)
+
+5. Also if I test the feedback form, then this allows the user to submit their data:
+
+![Homepage dev home feedback form success notification](/static/images/Code%20Refactor/Screenshot%20dev%20home%20feedback%20form%20success%20notification.png)
+
+6. I then check my Admin panel to ensure that the form is received, which it is:
+
+![Homepage dev home feedback form in admin panel](/static/images/Code%20Refactor/Screenshot%20feedback%20form%20functional.png)
+
+---
+
+## Code Refactoring - Development Discussion Board
+
+1. I am happy with how the dev Homepage looks and works so will move on to the Discussion Board app next. I check out how this looks on each of the different screen sizes:
+
+Large screen:
+![Discussion Board Large Screen](/static/images/Code%20Refactor/Screenshot%20Discussion%20Board%20Large%20screen.png)
+
+Medium Screen:
+![Discussion Board Medium Screen Dev](/static/images/Code%20Refactor/Screenshot%20Discussion%20Board%20Medium%20Screen%20dev.png)
+
+Small Screen:
+![Discussion Board Small Screen Dev](/static/images/Code%20Refactor/Screenshot%20Discussion%20Board%20Small%20Screen.png)
+
+2. I am generally happy with how this is presented on all screen sizes. I test that I can create a new post from the action panel, which I can, however, the content on this page isn't aligned very well:
+
+![Discussion Board New Post Alignment Off](/static/images/Code%20Refactor/Screenshot%20dev%20testing%20discussion%20board%20new%20post.png)
+
+![Discussion Board New Post Alignment Off Medium Screen](/static/images/Code%20Refactor/Screenshot%202new%20post%20discussion%20board%20medium%20screens.png)
+
+![Discussion Board New Post Alignment Off Small Screen](/static/images/Code%20Refactor/Screenshot%20discussion%20board%20new%20post%20small%20screen.png)
+
+3. I go to my discussionboard/templates/post_form.html template and tweak this as below:
+
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+
+            <h2 class="text-center mb-4">
+                {{ view.object|default:"New Post" }}
+            </h2>
+
+            <form method="post">
+                {% csrf_token %}
+
+                {% for field in form %}
+                    <div class="mb-3 text-center">
+                        <label class="form-label d-block" for="{{ field.id_for_label }}">
+                            {{ field.label }}
+                        </label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <div class="text-danger small mt-1">
+                                {{ field.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+
+                <div class="text-center mt-4">
+                    <button class="btn btn-success px-4" type="submit">
+                        Save
+                    </button>
+
+                    <a class="btn btn-outline-secondary px-4"
+                       href="{% url 'discussionboard:post_list' %}">
+                        Cancel
+                    </a>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+4. Now when I refresh the page on the post_form.html this looks much tidier across all screen sizes:
+
+Large screen:
+![Discussion Board post_form dev update large](/static/images/Code%20Refactor/Screenshot%20post_form%20html%20updated%20large%20screen.png)
+
+Medium screen:
+![Discussion Board post_form dev update medium](/static/images/Code%20Refactor/Screenshot%20post_form%20html%20updated%20medium%20screen.png)
+
+Small screen:
+![Discussion Board post_form dev update small](/static/images/Code%20Refactor/Screenshot%20post_form%20html%20updated%20small%20screen.png)
+
+5. I add some content to the post and then hit 'save', this then shows me the post in the post_list view on main Discussion Board page and gives me a success notification:
+
+![Discussion Board new post success notification](/static/images/Code%20Refactor/Screenshot%20adding%20post%20successful.png)
+
+6. Finally, I test that I can open the individual posts and that these display okay and that I can leave comments on the posts, which I can once I click submit:
+
+![Discussion Board individual post writing comment](/static/images/Code%20Refactor/Screenshot%20discussion%20board%20dev%20individual%20posts.png)
+
+![Discussion Board comment awaiting approval](/static/images/Code%20Refactor/Screenshot%20discussion%20board%20comments.png)
+
+6. This looks great apart from when there is a comment I think the individual comments themselves need an outline and the 'submit' button needs better styling to appear as a button. I ask ChatGPT for help generating the html for this as I want to finish this project now. ChatGPT recommends updating the comment display section in my post_detail.html:
+
+<!-- Displaying Comments -->
+<div class="row">
+  <div class="col-md-8 mb-4 mt-3">
+    <div class="card h-100">
+      <div class="card-body">
+        <h3 class="mb-4">Comments:</h3>
+
+        {% for comment in comments %}
+          <div class="border rounded p-3 mb-3 shadow-sm bg-light comments {% if not comment.approved and comment.author == user %} faded{% elif not comment.approved %} d-none{% endif %}">
+            <p class="fw-bold mb-2">
+              {{ comment.author }}
+              <span class="fw-normal text-muted">
+                {{ comment.created_on }}
+              </span>
+              wrote:
+            </p>
+
+            <div id="comment{{ comment.id }}" class="mb-2">
+              {{ comment.body | linebreaks }}
+            </div>
+
+            {% if not comment.approved and comment.author == user %}
+              <p class="text-warning mb-2">
+                This comment is awaiting approval
+              </p>
+            {% endif %}
+
+            {% if user == comment.author or user.is_superuser %}
+              <div class="mt-2">
+                <a class="btn btn-sm btn-outline-primary"
+                   href="{% url 'discussionboard:comment_edit' comment.pk %}">
+                  Edit
+                </a>
+
+                <a class="btn btn-sm btn-danger"
+                   href="{% url 'discussionboard:comment_delete' comment.pk %}">
+                  Delete
+                </a>
+              </div>
+            {% endif %}
+          </div>
+        {% empty %}
+          <p class="text-muted">No comments yet. Be the first to comment!</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Creating New Comments -->
+  <div class="col-md-4 mb-4 mt-3">
+    <div class="card h-100">
+      <div class="card-body">
+        {% if user.is_authenticated %}
+          <h3>Leave a comment:</h3>
+          <p class="text-muted">Posting as: {{ user.username }}</p>
+
+          <form id="commentForm" method="post" class="mt-3">
+            {{ comment_form | crispy }}
+            {% csrf_token %}
+
+            <button id="submitButton"
+                    type="submit"
+                    class="btn btn-success btn-lg w-100 mt-3">
+              Submit Comment
+            </button>
+          </form>
+        {% else %}
+          <p>Log in to leave a comment</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+7. I update the code to this and now when I refresh the button and comments themselves are much more distinguished and user friendly:
+
+Large screen:
+![Discussion Board comment updated large screen](/static/images/Code%20Refactor/Screenshot%20comments%20presentation%20updated.png)
+
+Medium Screen:
+![Discussion Board comment updated medium screen](/static/images/Code%20Refactor/Screenshot%20comments%20updated%20medium%20screens.png)
+
+Small Screen:
+![Discussion Board comment updated small screen](/static/images/Code%20Refactor/Screenshot%20small%20screen%20comments%20updated.png)
+
+8. I would like to change the edit comment view as it's currently aligned left and doesn't feel right. ChatGPT provides me with the following update to my comment_form.html template which I apply:
+
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container mt-4" style="max-width: 700px;">
+  <h3 class="text-center mb-4">Edit comment</h3>
+
+  <form method="post">
+    {% csrf_token %}
+    {{ form|crispy }}
+
+    <div class="text-center mt-4">
+      <button class="btn btn-primary px-4 me-2" type="submit">
+        Save
+      </button>
+
+      <a class="btn btn-secondary px-4"
+         href="{% url 'discussionboard:post_detail' object.Post.slug %}">
+        Cancel
+      </a>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+This looks much better now across all screens:
+
+Large screen:
+![Discussion Board edit comment large](/static/images/Code%20Refactor/Screenshot%20edit%20comment%20large.png)
+
+Medium screen:
+![Discussion Board edit comment medium](/static/images/Code%20Refactor/Screenshot%20edit%20comment%20medium.png)
+
+Small screen:
+![Discussion Board edit comment small](/static/images/Code%20Refactor/Screenshot%20edit%20comment%20small.png)
+
+9. If I save the changes made to the comment then it saves successfully and redirects me back to the post_detail screen where I can see the updated comment. If I delete the comment then this is off center so I would like to change this:
+
+![Discussion Board delete comment badly aligned](/static/images/Code%20Refactor/Screenshot%20delete%20comment%20large%20.png)
+
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4" style="max-width: 700px;">
+  <h3 class="text-center mb-4">Delete comment?</h3>
+
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-body text-center">
+      <p class="mb-0">{{ object.body }}</p>
+    </div>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+
+    <div class="text-center">
+      <button class="btn btn-danger px-4 me-2" type="submit">
+        Yes, delete
+      </button>
+
+      <a class="btn btn-secondary px-4"
+         href="{% url 'discussionboard:post_detail' object.Post.slug %}">
+        Cancel
+      </a>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+10. I update my comment_confirm_delete.html template with this code and then look at the new code in action on all screen sizes and I am happy:
+
+Large screen:
+![Discussion Board delete comment large](/static/images/Code%20Refactor/Screenshot%20delete%20comment%20large%20updated.png)
+
+Medium screen:
+![Discussion Board delete comment medium](/static/images/Code%20Refactor/Screenshot%20delete%20comment%20medium.png)
+
+Small screen:
+![Discussion Board delete comment small](/static/images/Code%20Refactor/Screenshot%20delete%20comment%20small.png)
+
+11. If I click 'cancel' then this redirects me to the previous page, if I click 'Yes, delete' then this successfully deletes the comment.
+
+---
+
+## Code Refactoring - Development Merchandise
+
+1. The first thing I want to check is that the main Merchandise menu that brings up all products, displays nicely across the board. At the moment, there is a rather large margin between the heading and the navbar so this could do with being removed:
+
+![Merchandise heading margin top](/static/images/Code%20Refactor/Screenshot%20merchandise%20heading%20margin.png)
+
+- To resolve this, I go to my products.html template in my merchandise app, locate the content for my header and then update the div class it is contained in from mt-5 to mt-0 to reduce the margin top. I refresh the page and this looks much better. I decide to also center the leading paragraph some more so I add the 'text-center' class to my p element in the header block:
+
+<div class="container mt-0 pt-5">
+  <h2 class="text-center">Merchandise</h2>
+  <p class="leading-p mx-auto text-center d-block">
+    Welcome to the <strong>Working Out Gym's</strong> merchandise page.
+  </p>
+
+- Now when I refresh the page looks much better:
+
+![Merchandise heading margin fixed](/static/images/Code%20Refactor/Screenshot%20merchandise%20header%20and%20paragraph%20styled%20better.png)
+
+2. Scrolling down the page, I am mostly happy with how this looks, however, the product management buttons could be centralised under the product cards, with the edit button appearing as a button. The same is true of the 'Previous' button at the bottom of the page:
+
+![Merchandise button styling wrong](/static/images/Code%20Refactor/Screenshot%20product%20management%20and%20page%20buttons%20not%20styled%20correctly.png)
+
+- I am not using the btn-outline-black and btn-black classes, which are applied to the 'Edit' and 'Previous' buttons, in my style.css file. So I update the html code for my Product Management buttons to:
+
+<div class="mt-3 d-flex justify-content-center gap-2">
+
+  <a href="{% url 'merchandise:edit_product' product.id %}"
+     class="btn btn-sm btn-outline-primary px-3">
+    Edit
+  </a>
+
+  <form action="{% url 'merchandise:delete_product' product.id %}"
+        method="POST"
+        class="d-inline">
+    {% csrf_token %}
+    <button type="submit"
+            class="btn btn-sm btn-danger px-3"
+            onclick="return confirm('Delete this product?');">
+      Delete
+    </button>
+  </form>
+
+</div>
+
+- Also in products.html, I update the pagination block with the below recommendation from ChatGPT:
+
+<div class="row mt-5 mb-4">
+  <div class="col text-center d-flex justify-content-center align-items-center gap-2 flex-wrap">
+
+    {% if products.has_previous %}
+      <a class="btn btn-outline-secondary px-3"
+         href="?page={{ products.previous_page_number }}">
+        Previous
+      </a>
+    {% endif %}
+
+    <span class="mx-2">
+      Page {{ products.number }} of {{ products.paginator.num_pages }}
+    </span>
+
+    {% if products.has_next %}
+      <a class="btn btn-dark px-3"
+         href="?page={{ products.next_page_number }}">
+        Next
+      </a>
+    {% endif %}
+
+  </div>
+</div>
+
+- I update the code and then refresh the page and this looks good:
+
+![Merchandise products list buttons styled correctly](/static/images/Code%20Refactor/Screenshot%20merchandise%20products%20buttons%20resolved.png)
+
+3. I can navigate between the pages of products with no issues, if I click 'Edit' or 'Delete' on any of the products, then I am redirected to the correct Product Management page:
+
+![Merchandise edit product large](/static/images/Code%20Refactor/Screenshot%20merchandise%20products%20buttons%20resolved.png)
+
+- The content for this view could do with being centralised like the rest of the site on all screen sizes, so I update my edit_product.html to:
+
+{% extends "base.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block page_header %}
+<div class="container header-container">
+    <div class="row">
+        <div class="col"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="overlay"></div>
+
+<div class="container my-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-8 col-xl-7">
+
+            <hr>
+            <h2 class="logo-font mb-3 text-center">Product Management</h2>
+            <h5 class="text-muted text-center mb-4">Edit a Product</h5>
+            <hr>
+
+            <form method="POST"
+                  action="{% url 'merchandise:edit_product' product.id %}"
+                  class="form mb-2"
+                  enctype="multipart/form-data">
+
+                {% csrf_token %}
+                {{ form|crispy }}
+
+                <div class="text-center mt-4">
+                    <a class="btn btn-outline-secondary px-4 me-2"
+                       href="{% url 'merchandise:products' %}">
+                        Cancel
+                    </a>
+
+                    <button class="btn btn-dark px-4"
+                            type="submit">
+                        Update Product
+                    </button>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+- This looks good on all screen sizes:
+
+Large screen:
+![Merchandise edit product large centralised](/static/images/Code%20Refactor/Screenshot%20edit%20product%20large%20centralised.png)
+
+Medium screen:
+![Merchandise edit product medium centralised](/static/images/Code%20Refactor/Screenshot%20edit%20product%20medium.png)
+
+Small screen:
+![Merchandise edit product small centralised](/static/images/Code%20Refactor/Screenshot%20edit%20product%20small%20screen.png)
+
+4. If I make changes to the price and title then these are reflected back on the product_detail page:
+
+![Merchandise edit product title and price](/static/images/Code%20Refactor/Screenshot%20edit%20product%201.png)
+
+![Merchandise product detail updated details](/static/images/Code%20Refactor/Screenshot%20product%20detail%20updated%20details.png)
+
+5. If I select to delete an item then a prompt appears and if I select 'OK' then this successfully deletes the product and gives a toast notification advising of this:
+
+![Merchandise product delete prompt](/static/images/Code%20Refactor/Screenshot%20delete%20product%20prompt.png)
+
+![Merchandise product delete notification](/static/images/Code%20Refactor/Screenshot%20product%20deletes%20successfully.png)
+
+6. Overall I am happy with how the Merchandise page looks on all screen sizes:
+
+Large screen:
+![Merchandise products listing large start](/static/images/Code%20Refactor/Screenshot%20merchandise%20large%20final%201.png)
+![Merchandise products listing large end](/static/images/Code%20Refactor/Screenshot%20merchandise%20large%20final%202.png)
+
+Medium screen:
+![Merchandise products listing Medium start](/static/images/Code%20Refactor/Screenshot%20merchandise%20medium%20final%201.png)
+![Merchandise products listing Medium end](/static/images/Code%20Refactor/Screenshot%20merchandise%20medium%20final%202.png)
+
+Small screen:
+![Merchandise products listing Small start](/static/images/Code%20Refactor/Screenshot%20merchandise%20small%20final%201.png)
+![Merchandise products listing Small end](/static/images/Code%20Refactor/Screenshot%20merchandise%20small%20final%202.png)
+
+7. I now look at the product_detail pages and I am happy with this overall apart from I have the same problem with the edit buttons here too. I go to my product_detail.html file and replace my superuser button section with the below:
+
+{% if request.user.is_superuser %}
+  <hr>
+
+  <div class="mt-3 d-flex justify-content-start gap-2 flex-wrap">
+
+    <a href="{% url 'merchandise:edit_product' product.id %}"
+       class="btn btn-outline-primary px-4">
+      Edit
+    </a>
+
+    <form action="{% url 'merchandise:delete_product' product.id %}"
+          method="POST"
+          class="d-inline">
+      {% csrf_token %}
+      <button type="submit"
+              class="btn btn-danger px-4"
+              onclick="return confirm('Are you sure you want to delete this product?');">
+        Delete
+      </button>
+    </form>
+
+  </div>
+{% endif %}
+
+- I apply this and then refresh my product_detail page to see how this looks now and this looks good across all screen sizes:
+
+Large screen:
+![Merchandise products detail large](/static/images/Code%20Refactor/Screenshot%20product%20detail%20large%20.png)
+
+Medium screen:
+![Merchandise product details Medium](/static/images/Code%20Refactor/Screenshot%20product%20detail%20medium.png)
+
+Small screen:
+![Merchandise product details Small start](/static/images/Code%20Refactor/Screenshot%20product_detail%20small%201.png)
+![Merchandise product details Small end](/static/images/Code%20Refactor/Screenshot%20product_detail%20small%202.png)
+
+8. I test the functionality of the size selector, quantity buttons and the edit/delete buttons and all are working as they should be.
+
+---
+
+## Code Refactoring - Development Fitness and Nutrition Plans / Profile 
+
+1. Next I check out the page for Fitness and Nutrition Plans, I will concentrate more on the design and layout across screen sizes rather than testing the purchasing as I have already done this on dev. Across all screen sizes, the app looks good:
+
+Large screen:
+![Plans large start](/static/images/Code%20Refactor/Screenshot%20fitness%20plans%20large%201.png)
+![Plans large end](/static/images/Code%20Refactor/Screenshot%20fitness%20plans%20large%202.png)
+
+Medium screen:
+![Plans Medium start](/static/images/Code%20Refactor/Screenshot%20fitness%20plans%20medium%201.png)
+![Plans Medium end](/static/images/Code%20Refactor/Screenshot%20fitness%20plans%20medium%202.png)
+
+Small screen:
+![Plans Small start](/static/images/Code%20Refactor/Screenshot%20fitness%20plans%20small%201.png)
+![Plans Small end](/static/images/Code%20Refactor/Screenshot%20fitness%20plans%20small%202.png)
+
+2. However, there really should be some mechanism that hooks the plan into my profile and has this as it's own content separate from the orders in the profile as well but it currently does not:
+
+![Plans not showing in profile](/static/images/Code%20Refactor/Screenshot%20plans%20not%20showing%20as%20their%20own%20block%20in%20profiles.png)
+
+3. I query ChatGPT for how I would update my current code to accomodate the section for plans in my profile and how to hook this in. The first change it recommends making is to my UserPlan model in plans/models to include a field for purchased_on, as below:
+
+purchased_on = models.DateTimeField(auto_now_add=True)
+
+- As I have made a change to the actual model itself, I then need to run makemigrations and migrate the changes:
+
+python manage.py makemigrations
+
+- However, I receive the following message in the terminal when running this:
+
+(.venv) PS C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym> python manage.py makemigrations
+
+It is impossible to add the field 'purchased_on' with 'auto_now_add=True' to userplan without providing a default. This is because the database needs something to populate existing rows.
+ 1) Provide a one-off default now which will be set on all existing rows
+ 2) Quit and manually define a default value in models.py.
+Select an option: 
+
+- I choose 1 and then type: timezone.now
+
+- Next I run migrate:
+
+python manage.py migrate
+
+- I then update my profiles/views file by importing the model for my UserPlan from the plans app:
+
+from plans.models import UserPlan
+
+- Then in my profile view, just after my orders statement, I add this line for the UserPlan:
+
+  user_plans = UserPlan.objects.filter(
+        user=request.user
+    ).select_related('plan')
+
+- Still in my profile view, I add the below to the context dictionary for the UserPlan:
+
+        'user_plans': user_plans,
+
+- Once my views is updated, I go back into my profile.html template and update this with the below section for Plans, adding above the current section for Order History:
+
+<div class="col-12 col-lg-6">
+
+    <p class="text-muted">My Plans</p>
+
+    {% if user_plans %}
+        <div class="row">
+
+            {% for item in user_plans %}
+            <div class="col-12 mb-3">
+                <div class="card h-100 shadow-sm">
+
+                    {% if item.plan.image %}
+                        <img src="{{ item.plan.image.url }}"
+                             class="card-img-top"
+                             alt="{{ item.plan.title }}">
+                    {% endif %}
+
+                    <div class="card-body">
+
+                        <h5>{{ item.plan.title }}</h5>
+
+                        <p class="small text-muted mb-2">
+                            {{ item.plan.plan_type|title }} Plan
+                        </p>
+
+                        <p class="mb-2">
+                            {{ item.plan.description|truncatewords:18 }}
+                        </p>
+
+                        <p class="mb-0">
+                            <strong>Purchased:</strong>
+                            {{ item.created_on|date:"d M Y" }}
+                        </p>
+
+                    </div>
+
+                </div>
+            </div>
+            {% endfor %}
+
+        </div>
+
+    {% else %}
+        <div class="alert alert-light border">
+            You do not currently own any plans.
+            <br>
+            <a href="{% url 'plans:plans' %}" class="btn btn-sm btn-dark mt-2">
+                Browse Plans
+            </a>
+        </div>
+    {% endif %}
+
+</div>
+
+- Now when I run the dev server, I can see my purchased plans in my profile. This could be better as it looks messy having order history at the bottom:
+
+![Plans now showing in profile](/static/images/Code%20Refactor/Screenshot%20plans%20now%20showing%20in%20profile.png)
+
+- I move the order history section div in profile.html above the section for 'Delivery Details' to see how this looks:
+
+![Plans layout in profile not correct](/static/images/Code%20Refactor/Screenshot%20profile%20fitness%20plans%20large%20bad%20layour.png)
+
+- I update my plans section in my profile.html to the below, with a new for statement and div which will set the plans side by side on desktop and tablet but still keep them stacked on phones:
+
+<div class="col-12">
+
+    <p class="text-muted">My Plans</p>
+
+    {% if user_plans %}
+        <div class="row">
+
+            {% for item in user_plans %}
+            <div class="col-12 col-md-6 mb-3">
+                <div class="card h-100 shadow-sm">
+
+                    {% if item.plan.image %}
+                        <img src="{{ item.plan.image.url }}"
+                             class="card-img-top"
+                             alt="{{ item.plan.title }}">
+                    {% endif %}
+
+                    <div class="card-body">
+
+                        <h5>{{ item.plan.title }}</h5>
+
+                        <p class="small text-muted mb-2">
+                            {{ item.plan.plan_type|title }} Plan
+                        </p>
+
+                        <p class="mb-2">
+                            {{ item.plan.description|truncatewords:18 }}
+                        </p>
+
+                        <p class="mb-0">
+                            <strong>Purchased:</strong>
+                            {{ item.purchased_on|date:"d M Y" }}
+                        </p>
+
+                    </div>
+
+                </div>
+            </div>
+            {% endfor %}
+
+        </div>
+
+    {% else %}
+        <div class="alert alert-light border">
+            You do not currently own any plans.
+        </div>
+    {% endif %}
+
+</div>
+
+4. When I look at the Profile page now, this looks much better:
+
+Large screen:
+![Plans structure correct profile large](/static/images/Code%20Refactor/Screenshot%20plans%20structure%20large%20profile.png)
+
+Medium Screen:
+![Plans structure correct profile medium start](/static/images/Code%20Refactor/Screenshot%20plans%20layout%20medium%201.png)
+![Plans structure correct profile medium end](/static/images/Code%20Refactor/Screenshot%20plans%20layout%20medium%202.png)
+
+Small screen:
+![Plans structure correct profile small start](/static/images/Code%20Refactor/Screenshot%20plans%20layout%20small%201.png)
+![Plans structure correct profile small end](/static/images/Code%20Refactor/Screenshot%20plans%20layout%20small%202.png)
+
+- Actually I have just noticed that the images aren't equally sized in the plans and this could be tweaked to look better across all screens. I create a new class called 'profile-plan-img' and add this to my img src classes for the item.plan.image.url as below:
+
+<img src="{{ item.plan.image.url }}"
+     class="card-img-top profile-plan-img"
+     alt="{{ item.plan.title }}">
+
+- Then in my profiles/css/profile.css, I create a new rule against the new class to fix the height of the image to 260 pixels, fill the card width with the width 100% and object-fit cover so it doesn't stretch the images:
+
+.profile-plan-img {
+    height: 260px;
+    width: 100%;
+    object-fit: cover;
+}
+
+- I hard refresh and empty cache on my dev app and now the plans look much better across all screen sizes:
+
+Large screen:
+![Plans structure image css update large](/static/images/Code%20Refactor/Screenshot%20plans%20large%20image%20css.png)
+
+Medium screen:
+![Plans structure image css update medium](/static/images/Code%20Refactor/Screenshot%20plans%20medium%20image%20css.png)
+
+Small screen:
+![Plans structure image css update small](/static/images/Code%20Refactor/Screenshot%20small%20screen%20image%20css.png)
+
+5. If I change the information in the delivery fields and click 'Update Information' then this updates successfully and gives a toast success notification:
+
+![Profile delivery information update](/static/images/Code%20Refactor/Screenshot%20update%20delivery%20information%20successful.png)
+
+6. This successfully redirects me to the 'Order Confirmation' page as shown below:
+
+![Order Confirmation Successful Page](/static/images/Code%20Refactor/Screenshot%20order%20redirects%20to%20order%20confirmation%20page.png)
+
+- While I am on this page, I will make a quick tweak to the template as I would like the content to be centered. I ask ChatGPT to update my checkout_success.html template to save some time:
+
+<!-- Code Institute Template-->
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'checkout/css/checkout.css' %}" />
+{% endblock %}
+
+{% block page_header %}
+<div class="container header-container">
+  <div class="row">
+    <div class="col"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+
+  <!-- Header -->
+  <div class="row justify-content-center text-center">
+    <div class="col-12 col-lg-8">
+      <hr>
+      <h2 class="logo-font mb-4">Thank You</h2>
+      <hr>
+      <p class="text-black">
+        Your order information is below. A confirmation email will be sent to
+        <strong>{{ order.email }}</strong>.
+      </p>
+    </div>
+  </div>
+
+  <!-- Order Info -->
+  <div class="row justify-content-center">
+    <div class="col-12 col-lg-8">
+      <div class="order-confirmation-wrapper p-3 border text-center">
+
+        <div class="row">
+          <div class="col">
+            <small class="text-muted">Order Info</small>
+          </div>
+        </div>
+
+        <div class="row mb-2">
+          <div class="col-12">
+            <p class="mb-0 text-black font-weight-bold">Order Number</p>
+            <p class="mb-0">{{ order.order_number }}</p>
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <div class="col-12">
+            <p class="mb-0 text-black font-weight-bold">Order Date</p>
+            <p class="mb-0">{{ order.date }}</p>
+          </div>
+        </div>
+
+        <!-- Order Details -->
+        <div class="row">
+          <div class="col">
+            <small class="text-muted">Order Details</small>
+          </div>
+        </div>
+
+        {% for item in order.lineitems.all %}
+        <div class="row mb-2">
+          <div class="col-12">
+            <p class="small mb-0 text-black font-weight-bold">
+              {{ item.product_variant.product.title }}
+              {% if item.product_variant.variant_title %}
+                - {{ item.product_variant.variant_title|upper }}
+              {% endif %}
+            </p>
+            <p class="small mb-0">
+              {{ item.quantity }} × £{{ item.product_variant.price }} = £{{ item.lineitem_total }}
+            </p>
+          </div>
+        </div>
+        {% endfor %}
+
+        <!-- Delivery Address -->
+        <div class="row mt-3">
+          <div class="col">
+            <small class="text-muted">Delivery Address</small>
+          </div>
+        </div>
+
+        <p class="mb-1"><strong>Full Name:</strong> {{ order.full_name }}</p>
+        <p class="mb-1"><strong>Address 1:</strong> {{ order.street_address1 }}</p>
+
+        {% if order.street_address2 %}
+        <p class="mb-1"><strong>Address 2:</strong> {{ order.street_address2 }}</p>
+        {% endif %}
+
+        {% if order.county %}
+        <p class="mb-1"><strong>County:</strong> {{ order.county }}</p>
+        {% endif %}
+
+        <p class="mb-1"><strong>Town / City:</strong> {{ order.town_or_city }}</p>
+
+        {% if order.postcode %}
+        <p class="mb-1"><strong>Postal Code:</strong> {{ order.postcode }}</p>
+        {% endif %}
+
+        <p class="mb-1"><strong>Country:</strong> {{ order.country }}</p>
+        <p class="mb-3"><strong>Phone Number:</strong> {{ order.phone_number }}</p>
+
+        <!-- Billing -->
+        <div class="row">
+          <div class="col">
+            <small class="text-muted">Billing Details</small>
+          </div>
+        </div>
+
+        <p class="mb-1"><strong>Order Total:</strong> £{{ order.order_total }}</p>
+        <p class="mb-1"><strong>Delivery:</strong> £{{ order.delivery_cost }}</p>
+        <p class="mb-3"><strong>Grand Total:</strong> £{{ order.grand_total }}</p>
+
+        <!-- Button -->
+        <div class="text-center mt-4">
+          {% if from_profile %}
+            <a href="{% url 'profile' %}" class="btn btn-black rounded-0 px-4">
+              <i class="fas fa-angle-left mr-2"></i>
+              Back to Profile
+            </a>
+          {% else %}
+            <a href="{% url 'merchandise:products' %}?category=new_arrivals,deals,clearance"
+               class="btn btn-black rounded-0 px-4">
+              <i class="fas fa-gifts mr-2"></i>
+              Now check out the latest deals!
+            </a>
+          {% endif %}
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+- I refresh the page now and the order confirmation looks great across all screen sizes now:
+
+Large screen:
+![Order Confirmation Successful Centered Large](/static/images/Code%20Refactor/Screenshot%20order%20confirmation%20centered%20large.png)
+
+Medium screen:
+![Order Confirmation Successful Centered Medium](/static/images/Code%20Refactor/Screenshot%20order%20confirmation%20centered%20medium.png)
+
+Small screen:
+![Order Confirmation Successful Centered Small](/static/images/Code%20Refactor/Screenshot%20order%20confirmation%20centered%20small.png)
+
+7. Now that the layout looks good, I will test the 'Back to Profile' button which redirects me back to the profile successfully.
+
+8. As I have made a lot of changes, I am going to commit my changes to Git and Heroku now.
+
+---
+
+## 
 
 ---
 
@@ -19333,9 +20247,12 @@ The following parts of my Project were implemented using Bootstrap docs:
 - merchandise/views is_superuser helper
 - merchandise/views add_product size update
 - custom_storages.py updates to remove local setting reliance
-
-
-
+- comment_form.html updates to align template better
+- products.html product management buttons update
+- products.html pagination code update
+- profiles/views UserPlans updates
+- profile.html user plan section
+- checkout_success.html template centered updates
 
 ---
 
