@@ -1,11 +1,11 @@
 # Working Out Gym - Project 4
 
-A Django-powered health and fitness application designed to allow users to make purchases on nutrition and/or fitness plans, business merchandise and products. These plans and other purchases will show up in the user's profile. The app will also promote social interaction amongst it's users on the Discussion Board and encourage feedback through a form on it's About page. 
+A Django-powered health and fitness application designed to allow users to make purchases on nutrition and/or fitness plans, business merchandise and products. These plans and other purchases will show up in the user's profile. The app will also promote social interaction amongst it's users on the Discussion Board and encourage feedback through a form on it's Homepage. 
 
 ## Live Site
 
 - **Live Application:** 
-  
+  https://working-out-gym-aaf119c10db9.herokuapp.com/  
 
 - **GitHub Repository:** 
   https://github.com/LeilsEloise/working_out_gym
@@ -364,7 +364,6 @@ As a **site user** I want **a search facility on products** so that **I can sear
 - PostgreSQL (Code Institute Database)
 - Visual Studio Code
 - SQLite (local database)
-- Cloudinary
 - AWS
 
 ---
@@ -19978,7 +19977,835 @@ Small screen:
 
 ---
 
-## 
+## Code Refactoring - Development Product Management
+
+1. I test my Product Management pages next. I start with my 'add_product' view and I am happy with the layout of this across all screen sizes:
+
+Large screen:
+![Large screen add_product](/static/images/Code%20Refactor/Screenshot%20add%20product%20not%20centered.png)
+
+Medium screen:
+![Medium screen add_product](/static/images/Code%20Refactor/Screenshot%20add%20product%20medium.png)
+
+Small screen:
+![Small screen add_product](/static/images/Code%20Refactor/Screenshot%20add_product%20small.png)
+
+2. As the layout is okay, I will do a quick test of adding a new product, then editing and deleting that product. I populate my add_product form as below:
+
+![Populating add_product](/static/images/Code%20Refactor/Screenshot%20populating%20add%20product%20form.png)
+
+- Once I click 'Add Product' I can then search for the product and see this in my results:
+
+![New product in search results](/static/images/Code%20Refactor/Screenshot%20test%20product%20added.png)
+
+3. If I click the 'Edit' button on the new product, then I am taken to the 'Edit Product' page. This looks good across all screen sizes:
+
+Large screen:
+![Large screen edit_product](/static/images/Code%20Refactor/Screenshot%20edit%20product%20large.png)
+
+Medium screen:
+![Medium screen edit_product](/static/images/Code%20Refactor/Screenshot%20edit%20product%20medium.png)
+
+Small screen:
+![Small screen edit_product](/static/images/Code%20Refactor/Screenshot%20edit%20product%20small%20screen.png)
+
+4. If I make changes to the product form, i.e. the title, category, price then this updates successfully, redirects me to the product_detail view of my new product, reflecting the new changes that I have made:
+
+![edit_product updates successfully](/static/images/Code%20Refactor/Screenshot%20edit%20product%20updated%20successfully.png)
+
+5. If I click 'delete' on my new product then this deletes successfully.
+
+---
+
+## Code Refactoring - Shopping Bag
+
+1. I now want to make sure that my Shopping Bag view is correct and functional. I add some items to my shopping bag from the merchandise pages. Then I navigate there, I am mostly happy with the layout but would like for the header to be centralised and the total section and buttons to be centered:
+
+![shopping bag header and totals not centered](/static/images/Code%20Refactor/Screenshot%20shopping%20bag%20header%20and%20totals%20not%20centered.png)
+
+- To fix this I go to my shoppingbag.html and update this to the below so that my header, totals and buttons are centered and so that the 'Keep Shopping' button has an outline:
+
+<!-- ChatGPT Code -->
+{% extends "base.html" %}
+{% load static %}
+
+{% block page_header %}
+<div class="container header-container">
+  <div class="row">
+    <div class="col"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container mb-2">
+
+  <!-- HEADER -->
+  <div class="row justify-content-center text-center">
+    <div class="col-12 col-lg-8">
+      <hr />
+      <h2 class="logo-font mb-4">Shopping Bag</h2>
+      <hr />
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col">
+
+      {% if bag_items %}
+      <div class="table-responsive rounded">
+        <table class="table table-sm table-borderless">
+
+          <!-- HEADER -->
+          <thead class="text-black">
+            <tr>
+              <th scope="col">Product</th>
+              <th scope="col"></th>
+              <th scope="col">Price</th>
+              <th scope="col">Size</th>
+              <th scope="col">Qty</th>
+              <th scope="col">Subtotal</th>
+            </tr>
+          </thead>
+
+          <!-- ITEMS -->
+          <tbody>
+          {% for item in bag_items %}
+            <tr>
+
+              <!-- Image -->
+              <td class="p-3 w-25">
+                <img 
+                  src="{{ item.product.get_display_image }}" 
+                  class="img-fluid"
+                  alt="{{ item.product.title }}"
+                >
+              </td>
+
+              <!-- Product Info -->
+              <td class="py-3">
+                <p class="my-0"><strong>{{ item.product.title }}</strong></p>
+                <p class="my-0 small text-muted">SKU: {{ item.variant.sku }}</p>
+              </td>
+
+              <!-- Price -->
+              <td class="py-3">
+                <p class="my-0">£{{ item.price|floatformat:2 }}</p>
+              </td>
+
+              <!-- Size -->
+              <td class="py-3">
+                <p class="my-0">{{ item.variant.variant_title|upper }}</p>
+              </td>
+
+              <!-- Quantity -->
+              <td class="py-3">
+                <form
+                  class="form update-form"
+                  method="POST"
+                  action="{% url 'shoppingbag:adjust_bag' item.variant_id %}"
+                >
+                  {% csrf_token %}
+                  <input type="hidden" name="variant_id" value="{{ item.variant_id }}">
+
+                  <div class="input-group input-group-sm" style="width: 120px">
+
+                    <button type="button"
+                      class="decrement-qty btn btn-black rounded-0"
+                      data-item_id="{{ item.variant_id }}"
+                      id="decrement-qty_{{ item.variant_id }}">
+                      <i class="fas fa-minus"></i>
+                    </button>
+
+                    <input
+                      class="form-control text-center qty_input"
+                      type="number"
+                      name="quantity"
+                      value="{{ item.quantity }}"
+                      min="1"
+                      max="99"
+                      data-item_id="{{ item.variant_id }}"
+                      id="id_qty_{{ item.variant_id }}"
+                    />
+
+                    <button type="button"
+                      class="increment-qty btn btn-black rounded-0"
+                      data-item_id="{{ item.variant_id }}"
+                      id="increment-qty_{{ item.variant_id }}">
+                      <i class="fas fa-plus"></i>
+                    </button>
+                  </div>
+
+                  <div class="mt-2">
+                    <a class="update-link text-info"><small>Update</small></a>
+                    <a class="remove-item text-danger" id="remove_{{ item.variant_id }}">
+                      <small>Remove</small>
+                    </a>
+                  </div>
+
+                </form>
+              </td>
+
+              <!-- Subtotal -->
+              <td class="py-3">
+                <p class="my-0">£{{ item.subtotal|floatformat:2 }}</p>
+              </td>
+
+            </tr>
+          {% endfor %}
+          </tbody>
+
+          <!-- TOTALS -->
+          <tr>
+            <td colspan="6" class="pt-5 text-center">
+              <h6><strong>Bag Total: £{{ total|floatformat:2 }}</strong></h6>
+              <h6>Delivery: £{{ delivery|floatformat:2 }}</h6>
+              <h4 class="mt-4">
+                <strong>Grand Total: £{{ grand_total|floatformat:2 }}</strong>
+              </h4>
+
+              {% if free_delivery_delta > 0 %}
+              <p class="mb-1 text-danger">
+                You could get free delivery by spending just
+                <strong>£{{ free_delivery_delta }}</strong> more!
+              </p>
+              {% endif %}
+            </td>
+          </tr>
+
+          <!-- BUTTONS -->
+          <tr>
+            <td colspan="6" class="text-center pt-3">
+              <div class="d-flex justify-content-center gap-2 flex-wrap">
+
+                <a href="{% url 'merchandise:products' %}"
+                   class="btn btn-outline-black rounded-0 btn-lg">
+                  <i class="fas fa-chevron-left"></i>
+                  Keep Shopping
+                </a>
+
+                <a href="{% url 'checkout' %}"
+                   class="btn btn-black rounded-0 btn-lg">
+                  Secure Checkout
+                  <i class="fas fa-lock"></i>
+                </a>
+
+              </div>
+            </td>
+          </tr>
+
+        </table>
+      </div>
+
+      {% else %}
+      <div class="text-center">
+        <p class="lead mb-4">Your bag is empty.</p>
+
+        <a href="{% url 'merchandise:products' %}"
+           class="btn btn-outline-black rounded-0 btn-lg">
+          <i class="fas fa-chevron-left"></i>
+          Keep Shopping
+        </a>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block postloadjs %}
+{{ block.super }}
+
+{% include 'merchandise/includes/quantity_input_script.html' %}
+
+<script>
+  $(".update-link").click(function () {
+    $(this).closest("form").submit();
+  });
+
+  $(".remove-item").click(function () {
+    var csrfToken = "{{ csrf_token }}";
+    var itemId = $(this).attr("id").split("remove_")[1];
+    var url = "{% url 'shoppingbag:remove_from_bag' 0 %}".replace("0", itemId);
+
+    $.post(url, {
+      csrfmiddlewaretoken: csrfToken,
+      variant_id: itemId,
+    }).done(function () {
+      location.reload();
+    });
+  });
+</script>
+
+{% endblock %}
+
+- Now when I refresh this looks good across the large and medium screen sizes but not the small, the totals and content on the page are causing the user to have to scroll sideways:
+
+Large screen:
+![shopping bag large screen](/static/images/Code%20Refactor/Screenshot%20shoppingbag%20large%20updated.png)
+
+Medium screen:
+![shopping bag medium screen](/static/images/Code%20Refactor/Screenshot%20shoppingbag%20medium%20screen.png)
+
+Small screen:
+![shopping bag small screen](/static/images/Code%20Refactor/)
+
+- I query this with ChatGPT as need to finish project now, it recommends updating the bag display section with the following pattern so it keeps the layout on medium and large screens but stacks everything on small:
+
+{% if bag_items %}
+
+<!-- MOBILE BAG CARDS -->
+<div class="d-md-none">
+  {% for item in bag_items %}
+  <div class="card mb-3 shadow-sm">
+    <div class="card-body text-center">
+
+      <img src="{{ item.product.get_display_image }}"
+           class="img-fluid mb-3"
+           style="max-height: 140px;"
+           alt="{{ item.product.title }}">
+
+      <h6 class="font-weight-bold">{{ item.product.title }}</h6>
+      <p class="small text-muted mb-1">SKU: {{ item.variant.sku }}</p>
+      <p class="mb-1"><strong>Price:</strong> £{{ item.price|floatformat:2 }}</p>
+      <p class="mb-1"><strong>Size:</strong> {{ item.variant.variant_title|upper }}</p>
+      <p class="mb-2"><strong>Subtotal:</strong> £{{ item.subtotal|floatformat:2 }}</p>
+
+      <form method="POST"
+            action="{% url 'shoppingbag:adjust_bag' item.variant_id %}">
+        {% csrf_token %}
+
+        <div class="d-flex justify-content-center mb-2">
+          <div class="input-group input-group-sm" style="width: 130px">
+            <button type="button"
+                    class="decrement-qty btn btn-black rounded-0"
+                    data-item_id="{{ item.variant_id }}"
+                    id="decrement-qty_mobile_{{ item.variant_id }}">
+              <i class="fas fa-minus"></i>
+            </button>
+
+            <input class="form-control text-center qty_input"
+                   type="number"
+                   name="quantity"
+                   value="{{ item.quantity }}"
+                   min="1"
+                   max="99"
+                   data-item_id="{{ item.variant_id }}"
+                   id="id_qty_mobile_{{ item.variant_id }}">
+
+            <button type="button"
+                    class="increment-qty btn btn-black rounded-0"
+                    data-item_id="{{ item.variant_id }}"
+                    id="increment-qty_mobile_{{ item.variant_id }}">
+              <i class="fas fa-plus"></i>
+            </button>
+          </div>
+        </div>
+
+        <a class="update-link btn btn-sm btn-outline-primary px-3">
+          Update
+        </a>
+
+        <a class="remove-item btn btn-sm btn-danger px-3"
+           id="remove_{{ item.variant_id }}">
+          Remove
+        </a>
+
+      </form>
+
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+
+<!-- TABLET / DESKTOP TABLE -->
+<!-- TABLET / DESKTOP TABLE -->
+<div class="table-responsive rounded d-none d-md-block">
+  <table class="table table-sm table-borderless">
+    <thead class="text-black">
+      <tr>
+        <th scope="col">Product</th>
+        <th scope="col"></th>
+        <th scope="col">Price</th>
+        <th scope="col">Size</th>
+        <th scope="col">Qty</th>
+        <th scope="col">Subtotal</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for item in bag_items %}
+      <tr>
+        <td class="p-3 w-25">
+          <img src="{{ item.product.get_display_image }}"
+               class="img-fluid"
+               alt="{{ item.product.title }}">
+        </td>
+
+        <td class="py-3">
+          <p class="my-0"><strong>{{ item.product.title }}</strong></p>
+          <p class="my-0 small text-muted">SKU: {{ item.variant.sku }}</p>
+        </td>
+
+        <td class="py-3">
+          <p class="my-0">£{{ item.price|floatformat:2 }}</p>
+        </td>
+
+        <td class="py-3">
+          <p class="my-0">{{ item.variant.variant_title|upper }}</p>
+        </td>
+
+        <td class="py-3">
+          <form class="form update-form"
+                method="POST"
+                action="{% url 'shoppingbag:adjust_bag' item.variant_id %}">
+            {% csrf_token %}
+            <input type="hidden" name="variant_id" value="{{ item.variant_id }}">
+
+            <div class="input-group input-group-sm" style="width: 120px">
+              <button type="button"
+                      class="decrement-qty btn btn-black rounded-0"
+                      data-item_id="{{ item.variant_id }}"
+                      id="decrement-qty_{{ item.variant_id }}">
+                <i class="fas fa-minus"></i>
+              </button>
+
+              <input class="form-control text-center qty_input"
+                     type="number"
+                     name="quantity"
+                     value="{{ item.quantity }}"
+                     min="1"
+                     max="99"
+                     data-item_id="{{ item.variant_id }}"
+                     id="id_qty_{{ item.variant_id }}">
+
+              <button type="button"
+                      class="increment-qty btn btn-black rounded-0"
+                      data-item_id="{{ item.variant_id }}"
+                      id="increment-qty_{{ item.variant_id }}">
+                <i class="fas fa-plus"></i>
+              </button>
+            </div>
+
+            <div class="mt-2">
+              <a class="update-link text-info"><small>Update</small></a>
+              <a class="remove-item text-danger" id="remove_{{ item.variant_id }}">
+                <small>Remove</small>
+              </a>
+            </div>
+          </form>
+        </td>
+
+        <td class="py-3">
+          <p class="my-0">£{{ item.subtotal|floatformat:2 }}</p>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- TOTALS + BUTTONS OUTSIDE BOTH LAYOUTS -->
+<div class="text-center mt-4">
+  <h6><strong>Bag Total: £{{ total|floatformat:2 }}</strong></h6>
+  <h6>Delivery: £{{ delivery|floatformat:2 }}</h6>
+  <h4 class="mt-3">
+    <strong>Grand Total: £{{ grand_total|floatformat:2 }}</strong>
+  </h4>
+
+  {% if free_delivery_delta > 0 %}
+  <p class="mb-3 text-danger">
+    You could get free delivery by spending just
+    <strong>£{{ free_delivery_delta }}</strong> more!
+  </p>
+  {% endif %}
+
+  <div class="d-flex justify-content-center gap-2 flex-wrap mt-3">
+    <a href="{% url 'merchandise:products' %}"
+       class="btn btn-outline-black rounded-0 btn-lg">
+      <i class="fas fa-chevron-left"></i>
+      Keep Shopping
+    </a>
+
+    <a href="{% url 'checkout' %}"
+       class="btn btn-black rounded-0 btn-lg">
+      Secure Checkout
+      <i class="fas fa-lock"></i>
+    </a>
+  </div>
+</div>
+
+{% endif %}
+
+- Now when I refresh the small screen on my dev app it looks much better:
+
+![Shoppingbag small screen start](/static/images/Code%20Refactor/Screenshot%20shoppingbag%20small%20screen%20update%201.png)
+
+![Shoppingbag small screen end](/static/images/Code%20Refactor/Screenshot%20shopping%20bag%20small%20screen%20update%202.png)
+
+- This still looks good on the medium and large screens as well. Now that the layout is resolved, I want to just go through and check all functionality works. I test updating the quantity and this updates successfully, both incrementally and decrementally. I test removing an item from the shopping bag and this removes the item successfully. If I click 'Keep Shopping' then I am redirected to the main Merchandise page. If I click 'Secure Checkout' then this takes me to the checkout.
+
+---
+
+## Code Refactor - Development Checkout
+
+1. I think Checkout looks mostly good but could do with the header being centered, the buttons being centered and 'your card will be charged' statement to be centerd:
+
+![Checkout template not centered](/static/images/Code%20Refactor/Screenshot%20checkout%20template%20needs%20centering.png)
+
+- I ask ChatGPT to update the checkout.html template to resolve this quickly:
+
+<!-- Code Institute Template-->
+{% extends "base.html" %}
+{% load static %}
+{% load bag_tools %}
+
+{% block extra_css %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'checkout/css/checkout.css' %}">
+{% endblock %}
+
+{% block page_header %}
+<div class="container header-container">
+    <div class="row">
+        <div class="col"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+
+    <!-- HEADER -->
+    <div class="row justify-content-center text-center">
+        <div class="col-12 col-lg-8">
+            <hr>
+            <h2 class="logo-font mb-4">Checkout</h2>
+            <hr>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+
+        <!-- LEFT COLUMN -->
+        <div class="col-12 col-lg-6 mb-5">
+            <p class="text-muted text-center">
+                Please fill out the form below to complete your order
+            </p>
+
+            <form action="{% url 'checkout' %}" method="POST" id="payment-form">
+                {% csrf_token %}
+
+                <fieldset class="rounded px-3 mb-5">
+                    <legend class="fieldset-label small text-black px-2 w-auto">Details</legend>
+                    {{ order_form.full_name|as_crispy_field }}
+                    {{ order_form.email|as_crispy_field }}
+                </fieldset>
+
+                <fieldset class="rounded px-3 mb-5">
+                    <legend class="fieldset-label small text-black px-2 w-auto">Delivery</legend>
+
+                    {{ order_form.phone_number|as_crispy_field }}
+                    {{ order_form.street_address1|as_crispy_field }}
+                    {{ order_form.street_address2|as_crispy_field }}
+                    {{ order_form.postcode|as_crispy_field }}
+                    {{ order_form.town_or_city|as_crispy_field }}
+                    {{ order_form.county|as_crispy_field }}
+                    {{ order_form.country|as_crispy_field }}
+
+                    <div class="form-check text-center mt-3">
+                        {% if user.is_authenticated %}
+                        <label class="form-check-label" for="id-save-info">
+                            Save this delivery information to my profile
+                        </label>
+                        <input class="form-check-input ml-2"
+                               type="checkbox"
+                               id="id-save-info"
+                               name="save-info"
+                               checked>
+                        {% else %}
+                        <label class="form-check-label" for="id-save-info">
+                            <a class="text-info" href="{% url 'account_signup' %}">Create an account</a>
+                            or
+                            <a class="text-info" href="{% url 'account_login' %}">login</a>
+                            to save this information
+                        </label>
+                        {% endif %}
+                    </div>
+                </fieldset>
+
+                <fieldset class="px-3">
+                    <legend class="fieldset-label small text-black px-2 w-auto">Payment</legend>
+
+                    <div class="mb-3" id="card-element"></div>
+                    <div class="mb-3 text-danger text-center" id="card-errors" role="alert"></div>
+
+                    <input type="hidden"
+                           value="{{ client_secret }}"
+                           name="client_secret">
+                </fieldset>
+
+                <!-- CHARGE MESSAGE -->
+                <p class="small text-danger text-center mt-4 mb-3">
+                    <span class="icon">
+                        <i class="fas fa-exclamation-circle"></i>
+                    </span>
+
+                    {% if plan %}
+                        Your card will be charged <strong>£{{ plan.price }}</strong>
+                    {% else %}
+                        Your card will be charged <strong>£{{ grand_total|floatformat:2 }}</strong>
+                    {% endif %}
+                </p>
+
+                <!-- BUTTONS -->
+                <div class="submit-button text-center mt-4 mb-2">
+
+                    <a href="{% url 'shoppingbag:view_bag' %}"
+                       class="btn btn-outline-black rounded-0 m-1">
+                        <i class="fas fa-chevron-left"></i>
+                        Adjust Bag
+                    </a>
+
+                    <button id="submit-button"
+                            class="btn btn-black rounded-0 m-1">
+                        Complete Order
+                        <i class="fas fa-lock"></i>
+                    </button>
+
+                </div>
+
+            </form>
+        </div>
+
+        <!-- RIGHT COLUMN -->
+        <div class="col-12 col-lg-6 mb-5">
+
+            <p class="text-muted text-center">
+                Order Summary ({{ product_count }})
+            </p>
+
+            <div class="row">
+                <div class="col-7 offset-2">
+                    <p class="mb-1 mt-0 small text-muted">Item</p>
+                </div>
+                <div class="col-3 text-right">
+                    <p class="mb-1 mt-0 small text-muted">Subtotal</p>
+                </div>
+            </div>
+
+            {% if plan %}
+            <div class="mb-3 p-3 border text-center">
+                <p><strong>{{ plan.title }}</strong></p>
+                <p>£{{ plan.price }}</p>
+            </div>
+            {% endif %}
+
+            {% for item in bag_items %}
+            <div class="row mb-3">
+
+                <div class="col-2">
+                    <a href="{% url 'merchandise:product_detail' item.product.id %}">
+                        <img src="{{ item.product.get_display_image }}"
+                             class="img-fluid"
+                             alt="{{ item.product.title }}">
+                    </a>
+                </div>
+
+                <div class="col-7">
+                    <p class="my-0"><strong>{{ item.product.title }}</strong></p>
+                    <p class="my-0 small">
+                        Size:
+                        {% if item.product.has_sizes %}
+                            {{ item.size|upper }}
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </p>
+                    <p class="my-0 small text-muted">Qty: {{ item.quantity }}</p>
+                </div>
+
+                <div class="col-3 text-right">
+                    <p class="my-0 small text-muted">
+                        £{{ item.product.variants.first.price|calc_subtotal:item.quantity }}
+                    </p>
+                </div>
+
+            </div>
+            {% endfor %}
+
+            <hr>
+
+            <div class="row text-black text-right">
+
+                {% if plan %}
+                <div class="col-7 offset-2">
+                    <p class="my-0">Order Total:</p>
+                    <p class="my-0">Delivery:</p>
+                    <p class="my-0">Grand Total:</p>
+                </div>
+
+                <div class="col-3">
+                    <p class="my-0">£{{ plan.price }}</p>
+                    <p class="my-0">£0.00</p>
+                    <p class="my-0"><strong>£{{ plan.price }}</strong></p>
+                </div>
+
+                {% else %}
+                <div class="col-7 offset-2">
+                    <p class="my-0">Order Total:</p>
+                    <p class="my-0">Delivery:</p>
+                    <p class="my-0">Grand Total:</p>
+                </div>
+
+                <div class="col-3">
+                    <p class="my-0">£{{ total|floatformat:2 }}</p>
+                    <p class="my-0">£{{ delivery|floatformat:2 }}</p>
+                    <p class="my-0"><strong>£{{ grand_total|floatformat:2 }}</strong></p>
+                </div>
+                {% endif %}
+
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block postloadjs %}
+{{ block.super }}
+{{ stripe_public_key|json_script:"id_stripe_public_key" }}
+{{ client_secret|json_script:"id_client_secret" }}
+<script src="{% static 'checkout/js/stripe_elements.js' %}"></script>
+{% endblock %}
+
+- I update the template and refresh and this looks good on all screen sizes:
+
+Large screen:
+![Large screen Checkout](/static/images/Code%20Refactor/Screenshot%20checkout%20large%20screen%20layout%20resolved.png)
+
+Medium Screen:
+![Medium screen Checkout](/static/images/Code%20Refactor/Screenshot%20checkout%20medium%201.png)
+![Medium screen Checkout](/static/images/Code%20Refactor/Screenshot%20checkout%20medium%202.png)
+
+Small Screen:
+![Small screen Checkout](/static/images/Code%20Refactor/Screenshot%20Checkout%20small%201.png)
+![Small screen Checkout](/static/images/Code%20Refactor/Screenshot%20checkout%20small%202.png)
+
+2. I can successfully checkout on my order and this redirects me to the checkout success page. This looks good across all screen sizes:
+
+Large screen:
+![Large screen Checkout Success](/static/images/Code%20Refactor/Screenshot%20checkout%20success%20large.png)
+
+Medium screen:
+![Medium screen Checkout Success](/static/images/Code%20Refactor/Screenshot%20checkout%20success%20medium.png)
+
+Small screen:
+![Small screen Checkout Success](/static/images/Code%20Refactor/Screenshot%20checkout%20success%20small%202.png)
+
+3. If I click the 'Now check out the latest deals' button, it takes me to the Merchandise pages but shows 'No products found'. It should redirect to the main Merchandise product_list view so I will tweak this now. I find the below line of code in my checkout_success.html template and then remove '?category=new_arrivals,deals,clearance':
+
+<a href="{% url 'merchandise:products' %}?category=new_arrivals,deals,clearance"
+
+- Now when I click the 'Check out the latest deals' button I am redirected to the main merchandise page.
+
+---
+
+## Code Refactoring - Development Login and Registration
+
+1. I am already logged in so will test the 'Sign Out' page first. If I click the 'Logout' option from 'My Account' then this correctly recirects me to the 'Sign Out' page shown below. This looks good on all screen sizes:
+
+Large Screen:
+![Sign Out Large](/static/images/Code%20Refactor/Screenshot%20sign%20out%20large%20screen.png)
+
+Medium Screen:
+![Sign Out Medium](/static/images/Code%20Refactor/Screenshot%20sign%20out%20medium.png)
+
+Small Screen:
+![Sign Out Small](/static/images/Code%20Refactor/Screenshot%20signout%20small.png)
+
+- I click 'sign out' and I am signed out successfully:
+
+![Sign Out Successful](/static/images/Code%20Refactor/Screenshot%20signout%20successful.png)
+
+2. If I click the 'Register' link from either the 'My Account' tab or the 'Register' button in the top left, then I am successfully redirected to the registration page. This looks good on all screen sizes and allows me to sign up for an account:
+
+Large Screen:
+![Registration Large](/static/images/Code%20Refactor/Screenshot%20registration%20large.png)
+
+Medium Screen:
+![Registration Medium](/static/images/Code%20Refactor/Screenshot%20registration%20medium.png)
+
+Small Screen:
+![Registration Small](/static/images/Code%20Refactor/Screenshot%20registration%20small%201.png)
+![Registration Small](/static/images/Code%20Refactor/Screenshot%20product_detail%20small%202.png)
+
+3. Upon registering for a new account, I am taken to the 'Verify your e-mail address screen', this doesn't look great and could do with some tweaks:
+
+![Verify email](/static/images/Code%20Refactor/Screenshot%20email%20verification%20needs%20updating.png)
+
+- I update my templates/accounts/verification_sent.html to:
+
+{% extends "base.html" %}
+
+{% load i18n %}
+
+{% block head_title %}{% trans "Verify Your E-mail Address" %}{% endblock %}
+
+{% block content %}
+<section class="container py-5 px-4 px-sm-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-10 col-lg-8 col-xl-7">
+
+            <div class="card shadow-sm border-0 rounded-4 my-5">
+                <div class="card-body p-4 p-md-5 text-center">
+
+                    <h1 class="h2 mb-4">{% trans "Verify Your E-mail Address" %}</h1>
+
+                    <p class="text-muted mb-0 lh-lg">
+                        {% blocktrans %}
+                        We have sent an e-mail to you for verification. Follow the link provided to finalize the signup process. If you do not see the verification e-mail in your main inbox, check your spam folder. Please contact us if you do not receive the verification e-mail within a few minutes.
+                        {% endblocktrans %}
+                    </p>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+- Now when I refresh the e-mail verification page, on all screen sizes, this looks good:
+
+Large Screen:
+![Verification Email Large](/static/images/Code%20Refactor/Screenshot%20verification%20email%20screen%20large.png)
+
+Medium Screen:
+![Verification Email Medium](/static/images/Code%20Refactor/Screenshot%20verification%20email%20medium.png)
+
+Small Screen:
+![Verification Email Small](/static/images/Code%20Refactor/Screenshot%20verification%20email%20small.png)
+
+4. The final screen that I test is my 'Sign In' page. I can access this from either the link in 'My Account' or in the top left of the navbar. The 'Sign In' page looks good across all screen sizes:
+
+Large Screen:
+![Login Large](/static/images/Code%20Refactor/Screenshot%20login%20large.png)
+
+Medium Screen:
+![Login Medium](/static/images/Code%20Refactor/Screenshot%20login%20medium.png)
+
+Small Screen:
+![Login Small](/static/images/Code%20Refactor/Screenshot%20login%20small.png)
+
+5. That's all I will do for the manual testing of the dev app, I will run a collectstatic and then commit my code to Git and Heroku.
+
+---
+
+
+
 
 ---
 
@@ -20253,6 +21080,9 @@ The following parts of my Project were implemented using Bootstrap docs:
 - profiles/views UserPlans updates
 - profile.html user plan section
 - checkout_success.html template centered updates
+- shoppingbag.html layout for small screen updates
+- templates/accounts/email_confirm.html update
+- verification_sent.html update
 
 ---
 
