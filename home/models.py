@@ -1,7 +1,8 @@
 # ChatGPT Code
 
-from django.db import models
 from django.contrib.auth.models import User
+from django.db import models
+
 
 class Feedback(models.Model):
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)

@@ -1,4 +1,5 @@
 from django.contrib import admin
+
 from .models import Category, Product, ProductVariant
 
 
@@ -10,7 +11,8 @@ class CategoryAdmin(admin.ModelAdmin):
     prepopulated_fields = {"slug": ("name",)}
     search_fields = ("name",)
 
-#ChatGPT Code
+
+# ChatGPT Code
 class ProductVariantInline(admin.TabularInline):
     model = ProductVariant
     extra = 0
@@ -30,7 +32,14 @@ class ProductAdmin(admin.ModelAdmin):
 
 @admin.register(ProductVariant)
 class ProductVariantAdmin(admin.ModelAdmin):
-    list_display = ("product", "variant_title", "sku", "price", "inventory_quantity", "is_active")
+    list_display = (
+        "product",
+        "variant_title",
+        "sku",
+        "price",
+        "inventory_quantity",
+        "is_active",
+    )
     list_filter = ("is_active",)
-    search_fields = ['product__name', 'sku']
+    search_fields = ["product__name", "sku"]
     ordering = ("product__title", "variant_title")

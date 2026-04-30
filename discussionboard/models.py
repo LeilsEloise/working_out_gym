@@ -1,12 +1,13 @@
-from django.db import models
 from django.contrib.auth.models import User
+from django.db import models
 from django.utils.text import slugify
+
 
 # Create your models here.
 # Project 3 Article Model Code
 class Post(models.Model):
     title = models.CharField(max_length=200, unique=True)
-    #ChatGPT Code
+    # ChatGPT Code
     slug = models.SlugField(unique=True, blank=True)
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="posts")
     content = models.TextField()
@@ -19,17 +20,16 @@ class Post(models.Model):
 
     def __str__(self):
         return f"{self.title} | written by {self.author}"
-    
-    #ChatGPT Code
+
+    # ChatGPT Code
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.title)
         super().save(*args, **kwargs)
 
+
 class Comment(models.Model):
-    Post = models.ForeignKey(
-        Post, on_delete=models.CASCADE, related_name="comments"
-    )
+    Post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="comments")
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="commenter")
     body = models.TextField()
     approved = models.BooleanField(default=False)

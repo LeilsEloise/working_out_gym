@@ -114,7 +114,29 @@ Site Owner goals are:
 
 ## Project Value & Purpose
 
+This project is designed to provide a centralised fitness and nutrition platform that supports users in both their physical training and lifestyle goals. The primary purpose of the application is to combine e-commerce, personalised fitness and nutrition plans, and community interaction into a single, user-friendly experience.
 
+For users, the platform delivers clear value by:
+
+- Providing structured fitness and nutrition plans that can be easily browsed and purchased and then tracked in their profile
+- Offering a seamless shopping experience for fitness-related products
+- Enabling users to track their activity and engagement through order history and purchased plans
+- Creating a community-driven environment through the discussion board, where users can create a new posts and comment on other user posts 
+- Allowing users to store delivery and profile information, improving usability and making it easier for them to make repeat purchases
+
+For admins and site owners, the system provides:
+
+- A scalable way to manage products, categories, and inventory
+- The ability to sell digital fitness and nutrition plans, creating an additional revenue stream
+- Tools to moderate user-generated content such as posts and comments
+- Access to customer feedback, enabling continuous improvement of the platform
+
+From a UX perspective, the application focuses on:
+
+- Efficiency – reducing the number of steps required to browse, purchase, and interact
+- Clarity – using structured navigation for products, plans, and community content
+- Consistency – maintaining familiar e-commerce and social interaction patterns
+- Engagement – encouraging repeat use through community features and personalised experiences
 
 ---
 
@@ -406,32 +428,124 @@ Below is all ERD tables and diagrams to support this Project.
 
 # 2. Features
 
-## Existing Features
+## Overview
 
-### Model - template to add models into later once created 
+This application is a full-stack fitness and e-commerce platform that combines product purchasing, digital plan sales, and community interaction. It provides functionality for both end users and administrators, delivering a complete and scalable web application.
 
-#### Fields
-- 
-- 
-- 
-- 
+## User Features
 
-#### Admin Enhancements
-- 
-- 
-- 
+### Account Managemement
+- Users can register, log in, and log out
+- Each user has a personal profile with saved delivery details
+- Profiles automatically link to order history and purchased plans
+- Users can update their personal information at any time
+
+### Product Browsing and Search
+- Users can browse all products in the merchandise section
+- Products can be: Filtered by category, Sorted by price or name or Searched using keywords (title, tags, vendor, category)
+- Each product includes: Image, Price, Category and Description
+
+### Product Variants
+- Products support multiple variants(e.g., sizes)
+- Users can select the appropriate variant before adding to bag
+- Inventory and pricing are handled at the variant level
+
+### Shopping Bag
+
+Users can:
+
+- Add products to a session-based shopping bag
+- Adjust quantities
+- Remove items
+
+The bag calculates the following:
+
+- Total cost
+- Delivery Charges
+- Grand total
+
+### Checkouts and Payments
+
+- Secure checkout powered by Stripe integration
+- Users can enter delivery details and then save information to their profile
+
+The system:
+- Creates an Order record
+- Stores line items for each product variant
+- Calculates delivery and totals automatically
+
+### Fitness and Nutrition Plans
+
+Users can browse and purchase:
+
+- Fitness plans
+- Nutrition plans
+
+- Business rule enforced: Users can only own one plan per type
+- Purchased plans are linked to the user account for future access
+
+### Order History
+
+- Users can view: Past orders, Order details and totals
+- Accessible through the user profile page
+
+### Discussion Board (Community Feature)
+Users can:
+- Create posts
+- View posts from others
+- Comment on posts
+- Edit or delete their own content
+
+Posts support:
+- Voting system (upvote/downvote)
+- Encourages community engagement and knowledge sharing
+
+### Feedback System
+
+- Users (or anonymous visitors) can submit feedback via a form
+- Feedback is stored for admin review
+- Helps improve the platform based on user input
+
+### Admin Features
+#### Product Management
+Admins can:
+- Add new products
+- Edit existing products
+- Delete products
+
+- When creating products:
+Variants can be automatically generated (e.g., sizes)
+
+Admins can manage:
+- Categories
+- Pricing
+- Inventory
+
+#### Plan Management
+- Admins can: Create and manage fitness and nutrition plans
+- Plans act as digital products with pricing and descriptions and are then stored in the user's profile
+
+#### Content Moderation
+Admins can:
+- Delete inappropriate posts or comments
+- Monitor user-generated content
+
+#### Order Management
+Admins can access:
+- All order records
+- Customer details
+- Payment information (via Stripe reference)
+
+Supports fulfilment and business tracking
+
+#### Feedback Monitoring
+Admins can:
+- View submitted feedback
+- Mark feedback as handled
+
 
 #### Authentication
 - Django Allauth implemented
-- 
-- 
-- 
-
-#### Styling & Static Files
-
-#### Cloudinary Integration
-
-- 
 
 ---
 
@@ -440,68 +554,1332 @@ Below is all ERD tables and diagrams to support this Project.
 ### Language & Frameworks
 
 - Python 3.12
-- Django 4.2
+- Django 4.2 (Python Web Framework)
 - HTML5
-- CSS
-- Javascript
-- Stripe
+- CSS3
+- JavaScript
+- Bootstrap 5
 
 ### Libraries & Packages
 
-- Django Allauth
+- Django Allauth (authentication)
 - Django Crispy Forms
 - Crispy Bootstrap 5
-- Django Summernote
-- Cloudinary
-- WhiteNoise
-- Gunicorn
-- Pillow
+- Django Summernote (rich text editor)
+- Pillow (image processing)
+- WhiteNoise (static file handling in development)
+- Gunicorn (WSGI HTTP server)
+
+### Databases
+
+- PostgreSQL (Code Institute production database)
+- SQLite (local development database)
  
 ### Tools & Platforms
 
-- Git & Github
-- Heroku
-- PostgreSQL (Code Institute Database)
-- Visual Studio Code
-- SQLite (local database)
-- AWS
+- Git & GitHub (version control)
+- Heroku (deployment platform)
+- Visual Studio Code (IDE)
+
+### APIs & External Services
+
+- Stripe (payment processing API)
+- AWS S3 (static and media file storage)
+
+### Additional Technologies & Concepts
+- Django ORM (database management)
+- Django Templates (dynamic HTML rendering)
+- Session-based storage (shopping bag functionality)
+- Responsive Design (mobile-first approach)
 
 ---
 
 # 4. Testing
 
-- 
-- 
-- 
-- 
+- Manual testing of the local dev app documented in Section 5 - Code Refactoring, all tests passed
+- Manual testing of the live production app is documented in Section 5 - Manual Testing Heroku
 
 ## HTML Validation
 
-- 
+I will run all my .html files through the w3 HTML Validation service at: https://validator.w3.org/
 
-![HTML Validation]()
+### index.html validation
+![HTML Validation - index.html](/static/images/Testing%20Validation/Screenshot%20index%20html%20w3%20validation%20check.png)
+
+---
+
+#### Templates/Account/Logout HTML
+![HTML Validation - logout.html](/static/images/Testing%20Validation/Screenshot%20html%20w3%20validation%20logout.png)
+
+#### Templates/Account/Login HTML
+![HTML Validation - login.html](/static/images/Testing%20Validation/Screenshot%20html%20w3%20validation%20login.png)
+
+#### Templates/Account/verification_sent HTML
+![HTML Validation - verification_sent](/static/images/Testing%20Validation/Screenshot%20html%20w3%20validation%20login.png)
+
+#### Templates/Account/signup HTML
+![HTML Validation - signup](/static/images/Testing%20Validation/Screenshot%20html%20w3%20validation%20check%20signup.png)
+
+---
+
+#### Templates/base HTML
+
+![HTML Validation - base](/static/images/Testing%20Validation/Screenshot%20w3%20html%20validation%20base%20check.png)
+
+---
+
+#### Templates/Includes/main-nav HTML
+
+![HTML Validation - main-nav](/static/images/Testing%20Validation/Screenshot%202main-nav%20html%201.png)
+
+![HTML Validation - main-nav](/static/images/Testing%20Validation/Screenshot%20main-nav%20html%202.png)
+
+![HTML Validation - main-nav](/static/images/Testing%20Validation/Screenshot%20main-nav%20html%203.png)
+
+![HTML Validation - main-nav](/static/images/Testing%20Validation/Screenshot%20main-nav%20html%204.png)
+
+---
+
+#### Templates/Includes/Toasts/toast_success
+
+![HTML Validation - toast success](/static/images/Testing%20Validation/Screenshot%20w3%20html%20toast%20success.png)
+
+
+#### Templates/Includes/Toasts/toast_info
+
+![HTML Validation - toast info](/static/images/Testing%20Validation/Screenshot%20w3%20html%20toast%20info.png)
+
+#### Templates/Includes/Toasts/toast_error
+
+![HTML Validation - toast error](/static/images/Testing%20Validation/Screenshot%202Toast%20errror.png)
+
+#### Templates/Includes/Toasts/toast_warning
+
+![HTML Validation - toast warning](/static/images/Testing%20Validation/Screenshot%202toast%20warning.png)
+
+---
+
+#### Checkout/Templates/Checkout HTML
+
+![HTML Validation - Checkout](/static/images/Testing%20Validation//Screenshot%20checkout%20html.png)
+
+#### Checkout/Templates/Checkout_success HTML
+
+![HTML Validation - Checkout_success](/static/images/Testing%20Validation/Screenshot%20checkout%20success%20html.png)
+
+
+---
+
+#### DiscussionBoard/Templates/comment_confirm_delete HTML
+
+![HTML Validation - comment_confirm_delete](/static/images/Testing%20Validation/Screenshot%20comment%20confirm%20delete.png)
+
+#### DiscussionBoard/Templates/comment_form HTML
+
+![HTML Validation - comment_form](/static/images/Testing%20Validation/Screenshot%20comment_form.png)
+
+#### DiscussionBoard/Templates/post_confirm_delete HTML
+
+![HTML Validation - post_confirm_delete](/static/images/Testing%20Validation/Screenshot%20w3%20html%20toast%20info.png)
+
+#### DiscussionBoard/Templates/post_detail HTML
+
+![HTML Validation - post_detail](/static/images/Testing%20Validation/Screenshot%20post_detail.png)
+
+#### DiscussionBoard/Templates/post_form HTML
+
+![HTML Validation - post_form](/static/images/Testing%20Validation/Screenshot%202post_form.png)
+
+#### DiscussionBoard/Templates/post_list HTML
+
+![HTML Validation - post_list](/static/images/Testing%20Validation/Screenshot%20post%20list%201.png)
+![HTML Validation - post_list](/static/images/Testing%20Validation/Screenshot%20post%20list%202.png)
+
+---
+
+#### Merchandise/Templates/add_product HTML
+
+![HTML Validation - add_product](/static/images/Testing%20Validation/Screenshot%20post%20list%201.png)
+
+#### Merchandise/Templates/all_badges HTML
+
+![HTML Validation - all_badges](/static/images/Testing%20Validation/Screenshot%20all%20badges.png)
+
+#### Merchandise/Templates/badge_detail HTML
+
+![HTML Validation - badge_detail](/static/images/Testing%20Validation/Screenshot%20badge%20detail.png)
+
+#### Merchandise/Templates/edit_product HTML
+
+![HTML Validation - edit product](/static/images/Testing%20Validation/Screenshot%20edit%20product.png)
+
+#### Merchandise/Templates/product_detail HTML
+
+![HTML Validation - product_detail](/static/images/Testing%20Validation/Screenshot%20badge%20detail.png)
+
+![HTML Validation - product_detail](/static/images/Testing%20Validation/Screenshot%20product%20detail%202.png)
+
+#### Merchandise/Templates/products HTML
+
+![HTML Validation - product](/static/images/Testing%20Validation/Screenshot%20products%201.png)
+![HTML Validation - product](/static/images/Testing%20Validation/Screenshot%20products%202%20html.png)
+
+---
+
+#### Plans/Templates/plans HTML
+
+![HTML Validation - plans](/static/images/Testing%20Validation/Screenshot%20plans%201.png)
+
+![HTML Validation - plans](/static/images/Testing%20Validation/Screenshot%20plans%202.png)
+
+---
+
+#### Profile/Templates/profile HTML
+
+![HTML Validation - profile](/static/images/Testing%20Validation/Screenshot%20plans%201.png)
+
+---
+
+#### ShoppingbagTemplates/shoppingbag HTML
+
+![HTML Validation - shoppingbag](/static/images/Testing%20Validation/Screenshot%20plans%201.png)
+
+![HTML Validation - shoppingbag](/static/images/Testing%20Validation/Screenshot%20shopping%20bag%202.png)
 
 ---
 
 ## CSS Validation
 
-- 
+### static/css/style.css 
 
-![CSS Validation]()
+![Static CSS style](/static/images/Testing%20Validation/Screenshot%20style%20css.png)
+
+
+### checkout/static/css/checkout css
+
+![CSS Validation checkout](/static/images/Testing%20Validation/Screenshot%20checkout%20css%20validation.png)
+
+
+### plans/static/plans css
+
+![CSS Validation plans](/static/images/Testing%20Validation/Screenshot%20plans%20css.png)
+
+---
+
+### profiles/static/profiles css
+
+![CSS Validation profiles](/static/images/Testing%20Validation/Screenshot%20profiles%20css.png)
+
 
 ---
 
 ## Javascript Validation
 
-- 
+#### checkout/static/js/stripe_elements
 
-![JS Validation]()
+![JS Validation - stripe_elements](/static/images/JSLint/Screenshot%20JS%20Lint%20Stripe%20Elements.png)
+
+#### profiles/static/js/countryfield
+
+![JS Validation - countryfield](/static/images/JSLint/Screenshot%20JS%20Lint%20country%20field.png)
+
+#### static/js/comments
+
+![JS Lint Comments](/static/images/JSLint/Screenshot%20js%20lint%20comments.png)
+
+#### static/js/script
+
+![JS Lint Script](/static/images/JSLint/Screenshot%20js%20lint%20script.png)
 
 ---
 
 ## Python Validation
 
-- 
+1. I am using Ruff Linter to validate my Python code, so will install into my IDE with:
+
+pip install ruff
+
+2. I verify that it has installed using:
+
+ruff --version
+
+- This returns ruff 0.15.12 in the terminal so I know it has installed.
+
+3. I then add the new install to my requirements.txt file using:
+
+pip3 freeze > requirements.txt
+
+4. I then enable Ruff in VS Code, in order to do this, I add a new file in my project root called ruff.toml with the following code:
+
+line-length = 88
+exclude = [
+    ".venv",
+    "migrations",
+    "env.py",
+    "static",
+    "media",
+    ".env",
+]
+
+[lint]
+select = ["E", "F", "I"]
+fixable = ["ALL"]
+
+5. I then install the ruff extension by clicking the 'Extensions' menu in my VS Code and searching for 'Ruff':
+
+![Ruff Extension Installed](/static/images/py%20lint/Screenshot%20ruff%20vs%20code.png)
+
+6. I then open command pallette in VS Code using ctrl + shift + P, and then search for 'Preferences: Open User Settings(JSON)' in the file that opens, I add the below code in the curly brackets for Ruff:
+
+{
+  "editor.formatOnSave": true,
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff"
+  },
+  "ruff.enable": true,
+  "ruff.lint.enable": true,
+  "ruff.format.enable": true
+}
+
+7. My IDE updates, installs and restarts with the new Ruff configurations applied. While in the root of my project folder, I run the below cmd:
+
+ruff check . --fix
+
+- Which finds no fixes available.
+
+8. I then use Ruff to format Python files using:
+
+ruff format .
+
+- This returns: error: Failed to parse create_fixtures.py:63:1: Unexpected indentation
+61 files reformatted, 8 files left unchanged
+
+9. Then I run:
+
+ruff check .
+
+- It finds 15 errors as shown below:
+
+help: Remove unused import: `django.db.models`
+
+F401 [*] `django.contrib.auth.models.User` imported but unused
+ --> shoppingbag\models.py:2:40
+  |
+1 | from django.db import models
+2 | from django.contrib.auth.models import User
+  |                                        ^^^^
+3 | from merchandise.models import Product, ProductVariant
+  |
+help: Remove unused import: `django.contrib.auth.models.User`
+
+F401 [*] `merchandise.models.Product` imported but unused
+ --> shoppingbag\models.py:3:32
+  |
+1 | from django.db import models
+2 | from django.contrib.auth.models import User
+3 | from merchandise.models import Product, ProductVariant
+  |                                ^^^^^^^
+  |
+help: Remove unused import
+
+F401 [*] `merchandise.models.ProductVariant` imported but unused
+ --> shoppingbag\models.py:3:41
+  |
+1 | from django.db import models
+2 | from django.contrib.auth.models import User
+3 | from merchandise.models import Product, ProductVariant
+  |                                         ^^^^^^^^^^^^^^
+  |
+help: Remove unused import
+
+I001 [*] Import block is un-sorted or un-formatted
+ --> shoppingbag\templatetags\bag_tools.py:2:1
+  |
+1 | # Code Institute
+2 | from django import template
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+help: Organize imports
+
+F401 [*] `django.test.TestCase` imported but unused
+ --> shoppingbag\tests.py:1:25
+  |
+1 | from django.test import TestCase
+  |                         ^^^^^^^^
+2 |
+3 | # Create your tests here.
+  |
+help: Remove unused import: `django.test.TestCase`
+
+I001 [*] Import block is un-sorted or un-formatted
+ --> shoppingbag\urls.py:1:1
+  |
+1 | / from django.urls import path
+2 | | from . import views
+  | |___________________^
+3 |
+4 |   app_name = 'shoppingbag'
+  |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+ --> shoppingbag\views.py:3:1
+  |
+1 |   # ChatGPT Code
+2 |
+3 | / from django.shortcuts import render, redirect, reverse, get_object_or_404
+4 | | from django.contrib import messages
+5 | | from merchandise.models import Product, ProductVariant
+6 | | from .contexts import bag_contents
+7 | | from django.http import HttpResponse
+  | |____________________________________^
+8 |
+9 |   # ChatGPT Code
+  |
+help: Organize imports
+
+F401 [*] `merchandise.models.Product` imported but unused
+ --> shoppingbag\views.py:5:32
+  |
+3 | from django.shortcuts import render, redirect, reverse, get_object_or_404
+4 | from django.contrib import messages
+5 | from merchandise.models import Product, ProductVariant
+  |                                ^^^^^^^
+6 | from .contexts import bag_contents
+7 | from django.http import HttpResponse
+  |
+help: Remove unused import: `merchandise.models.Product`
+
+E501 Line too long (102 > 88)
+  --> shoppingbag\views.py:33:89
+   |
+31 |         messages.success(
+32 |             request,
+33 |             f'Updated {variant.product.title} ({variant.variant_title}) quantity to {bag[variant_id]}'
+   |                                                                                         ^^^^^^^^^^^^^^
+34 |         )
+35 |     else:
+   |
+
+E501 Line too long (96 > 88)
+  --> shoppingbag\views.py:60:89
+   |
+58 |         messages.success(
+59 |             request,
+60 |             f'Updated {variant.product.title} ({variant.variant_title}) quantity to {quantity}',
+   |                                                                                         ^^^^^^^^
+61 |             extra_tags='bag-preview'
+62 |         )
+   |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> working_out_gym\settings.py:12:1
+   |
+10 |   https://docs.djangoproject.com/en/3.2/ref/settings/
+11 |   """
+12 | / import os
+13 | | from pathlib import Path
+14 | | import dj_database_url
+   | |______________________^
+15 |   if os.path.isfile('env.py'):
+16 |       import env
+   |
+help: Organize imports
+
+F401 [*] `env` imported but unused
+  --> working_out_gym\settings.py:16:12
+   |
+14 | import dj_database_url
+15 | if os.path.isfile('env.py'):
+16 |     import env
+   |            ^^^
+17 |
+18 | # Build paths inside the project like this: BASE_DIR / 'subdir'.
+   |
+help: Remove unused import: `env`
+
+E501 Line too long (91 > 88)
+   --> working_out_gym\settings.py:176:89
+    |
+174 | AUTH_PASSWORD_VALIDATORS = [
+175 |     {
+176 |         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    |                                                                                         ^^^
+177 |     },
+178 |     {
+    |
+
+E501 Line too long (93 > 88)
+   --> working_out_gym\settings.py:221:89
+    |
+219 |     AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
+220 |
+221 |     AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com'
+    |                                                                                         ^^^^^
+222 |
+223 |     AWS_DEFAULT_ACL = 'public-read'
+    |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> working_out_gym\urls.py:16:1
+   |
+14 |       2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
+15 |   """
+16 | / from django.contrib import admin
+17 | | from django.urls import path, include
+18 | | from django.conf import settings
+19 | | from django.conf.urls.static import static
+   | |__________________________________________^
+20 |
+21 |   urlpatterns = [
+   |
+help: Organize imports
+
+Found 110 errors.
+[*] 62 fixable with the `--fix` option (1 hidden fix can be enabled with the `--unsafe-fixes` option).
+(.venv) PS C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym> ruff --version
+ruff 0.15.12
+(.venv) PS C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym> ruff check . --fix
+E501 Line too long (104 > 88)
+  --> checkout\admin.py:53:89
+   |
+51 |     )
+52 |     
+53 |     list_display = ('order_number', 'date', 'full_name', 'order_total', 'delivery_cost', 'grand_total',)
+   |                                                                                         ^^^^^^^^^^^^^^^^
+54 |
+55 |     ordering = ('-date',)
+   |
+
+E501 Line too long (122 > 88)
+  --> checkout\models.py:15:89
+   |
+13 | class Order(models.Model):
+14 |     order_number = models.CharField(max_length=32, null=False, editable=False)
+15 |     user_profile = models.ForeignKey(UserProfile, on_delete=models.SET_NULL, null=True, blank=True, related_name='orders')
+   |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+16 |     full_name = models.CharField(max_length=50, null=False, blank=False)
+17 |     email = models.EmailField(max_length=254, null=False, blank=False)
+   |
+
+E501 Line too long (94 > 88)
+  --> checkout\models.py:26:89
+   |
+24 |     county = models.CharField(max_length=80, null=True, blank=True)
+25 |     date = models.DateTimeField(auto_now_add=True)
+26 |     delivery_cost = models.DecimalField(max_digits=6, decimal_places=2, null=False, default=0)
+   |                                                                                         ^^^^^^
+27 |     order_total = models.DecimalField(max_digits=10, decimal_places=2, null=False, default=0)
+28 |     grand_total = models.DecimalField(max_digits=10, decimal_places=2, null=False, default=0)
+   |
+
+E501 Line too long (93 > 88)
+  --> checkout\models.py:27:89
+   |
+25 |     date = models.DateTimeField(auto_now_add=True)
+26 |     delivery_cost = models.DecimalField(max_digits=6, decimal_places=2, null=False, default=0)
+27 |     order_total = models.DecimalField(max_digits=10, decimal_places=2, null=False, default=0)
+   |                                                                                         ^^^^^
+28 |     grand_total = models.DecimalField(max_digits=10, decimal_places=2, null=False, default=0)
+29 |     original_bag = models.TextField(null=False, blank=False, default='')
+   |
+
+E501 Line too long (93 > 88)
+  --> checkout\models.py:28:89
+   |
+26 |     delivery_cost = models.DecimalField(max_digits=6, decimal_places=2, null=False, default=0)
+27 |     order_total = models.DecimalField(max_digits=10, decimal_places=2, null=False, default=0)
+28 |     grand_total = models.DecimalField(max_digits=10, decimal_places=2, null=False, default=0)
+   |                                                                                         ^^^^^
+29 |     original_bag = models.TextField(null=False, blank=False, default='')
+30 |     stripe_pid = models.CharField(max_length=254, null=False, blank=False, default='')
+   |
+
+E501 Line too long (102 > 88)
+  --> checkout\models.py:43:89
+   |
+41 |         accounting for delivery costs.
+42 |         """
+43 |         self.order_total = self.lineitems.aggregate(Sum('lineitem_total'))['lineitem_total__sum'] or 0
+   |                                                                                         ^^^^^^^^^^^^^^
+44 |         if self.order_total < settings.FREE_DELIVERY_THRESHOLD:
+45 |             self.delivery_cost = self.order_total * settings.STANDARD_DELIVERY_PERCENTAGE / 100
+   |
+
+E501 Line too long (95 > 88)
+  --> checkout\models.py:45:89
+   |
+43 |         self.order_total = self.lineitems.aggregate(Sum('lineitem_total'))['lineitem_total__sum'] or 0
+44 |         if self.order_total < settings.FREE_DELIVERY_THRESHOLD:
+45 |             self.delivery_cost = self.order_total * settings.STANDARD_DELIVERY_PERCENTAGE / 100
+   |                                                                                         ^^^^^^^
+46 |         else:
+47 |             self.delivery_cost = 0
+   |
+
+E501 Line too long (113 > 88)
+  --> checkout\models.py:65:89
+   |
+64 | class OrderLineItem(models.Model):
+65 |     order = models.ForeignKey(Order, null=False, blank=False, on_delete=models.CASCADE, related_name='lineitems')
+   |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^
+66 |     product_variant = models.ForeignKey(ProductVariant, null=False, blank=False, on_delete=models.CASCADE)
+67 |     product_size = models.CharField(max_length=2, null=True, blank=True) # XS, S, M, L, XL
+   |
+
+E501 Line too long (106 > 88)
+  --> checkout\models.py:66:89
+   |
+64 | class OrderLineItem(models.Model):
+65 |     order = models.ForeignKey(Order, null=False, blank=False, on_delete=models.CASCADE, related_name='lineitems')
+66 |     product_variant = models.ForeignKey(ProductVariant, null=False, blank=False, on_delete=models.CASCADE)
+   |                                                                                         ^^^^^^^^^^^^^^^^^^
+67 |     product_size = models.CharField(max_length=2, null=True, blank=True) # XS, S, M, L, XL
+68 |     quantity = models.IntegerField(null=False, blank=False, default=0)
+   |
+
+E501 Line too long (90 > 88)
+  --> checkout\models.py:67:89
+   |
+65 |     order = models.ForeignKey(Order, null=False, blank=False, on_delete=models.CASCADE, related_name='lineitems')
+66 |     product_variant = models.ForeignKey(ProductVariant, null=False, blank=False, on_delete=models.CASCADE)
+67 |     product_size = models.CharField(max_length=2, null=True, blank=True) # XS, S, M, L, XL
+   |                                                                                         ^^
+68 |     quantity = models.IntegerField(null=False, blank=False, default=0)
+69 |     lineitem_total = models.DecimalField(max_digits=6, decimal_places=2, null=False, blank=False, editable=False)
+   |
+
+E501 Line too long (113 > 88)
+  --> checkout\models.py:69:89
+   |
+67 |     product_size = models.CharField(max_length=2, null=True, blank=True) # XS, S, M, L, XL
+68 |     quantity = models.IntegerField(null=False, blank=False, default=0)
+69 |     lineitem_total = models.DecimalField(max_digits=6, decimal_places=2, null=False, blank=False, editable=False)
+   |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^
+70 |
+71 |     def save(self, *args, **kwargs):
+   |
+
+E501 Line too long (93 > 88)
+  --> checkout\urls.py:8:89
+   |
+ 6 | urlpatterns = [
+ 7 |     path("", views.checkout, name="checkout"),
+ 8 |     path('checkout_success/<order_number>', views.checkout_success, name='checkout_success'),
+   |                                                                                         ^^^^^
+ 9 |     path('cache_checkout_data/', views.cache_checkout_data, name='cache_checkout_data'),
+10 |     path('wh/', webhook, name='webhook'),
+   |
+
+E501 Line too long (96 > 88)
+  --> checkout\views.py:32:89
+   |
+30 |             'save_info': request.POST.get('save_info'),
+31 |             # ChatGPT Code
+32 |             'username': request.user.username if request.user.is_authenticated else 'Anonymous',
+   |                                                                                         ^^^^^^^^
+33 |         })
+34 |         return HttpResponse(status=200)
+   |
+
+E501 Line too long (111 > 88)
+   --> checkout\views.py:120:89
+    |
+119 |         else:
+120 |             messages.error(request, 'There was an error with your form. Please double check your information.')
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^
+121 |
+122 |     else:
+    |
+
+E501 Line too long (97 > 88)
+   --> checkout\webhook_handler.py:113:89
+    |
+111 |                 self._send_confirmation_email(order)
+112 |                 return HttpResponse(
+113 |                     content=f'Webhook received: {event["type"]} | SUCCESS: Order already exists',
+    |                                                                                         ^^^^^^^^^
+114 |                     status=200
+115 |                 )
+    |
+
+F841 Local variable `wh_secret` is assigned to but never used
+  --> checkout\webhooks.py:16:5
+   |
+14 |     """Listen for webhooks from Stripe"""
+15 |     # Setup
+16 |     wh_secret = settings.STRIPE_WH_SECRET
+   |     ^^^^^^^^^
+17 |     stripe.api_key = settings.STRIPE_SECRET_KEY
+   |
+help: Remove assignment to unused variable `wh_secret`
+
+invalid-syntax: Unexpected indentation
+  --> create_fixtures.py:63:1
+   |
+61 |     product_key = (row.get("handle") or row.get("title") or "").strip().lower()
+62 |
+63 |         if product_key not in product_map:
+   | ^^^^^^^^
+64 |             product_map[product_key] = product_id
+   |
+
+E501 Line too long (109 > 88)
+  --> create_fixtures.py:69:89
+   |
+67 |             category_name = (row.get("product_type") or "").lower()
+68 |
+69 |             clothing_keywords = ["shirt", "top", "tank", "hoodie", "jacket", "shorts", "leggings", "joggers"]
+   |                                                                                         ^^^^^^^^^^^^^^^^^^^^^
+70 |             size_keywords = ["xs", "s", "m", "l", "xl", "xxl"]
+   |
+
+invalid-syntax: Expected a statement
+   --> create_fixtures.py:118:1
+    |
+117 | # --- SAVE FILES ---
+118 | with open("categories.json", "w", encoding="utf-8") as f:
+    | ^
+119 |     json.dump(list(categories.values()), f, indent=2)
+    |
+
+E501 Line too long (91 > 88)
+  --> discussionboard\urls.py:15:89
+   |
+13 |     path("<slug:slug>/edit/", PostUpdate.as_view(), name="post_edit"),
+14 |     path("<slug:slug>/delete/", PostDelete.as_view(), name="post_delete"),
+15 |     path("comment/<int:pk>/delete/", views.CommentDelete.as_view(), name="comment_delete"),
+   |                                                                                         ^^^
+16 |     path("comment/<int:pk>/edit/", views.CommentUpdate.as_view(), name="comment_edit"),
+17 | ]
+   |
+
+E501 Line too long (93 > 88)
+  --> discussionboard\views.py:97:89
+   |
+96 |     def get_success_url(self):
+97 |         return reverse_lazy("discussionboard:post_detail", kwargs={"slug": self.object.slug})
+   |                                                                                         ^^^^^
+98 |
+99 | class PostDelete(LoginRequiredMixin, PostOwnerOrSuperuserMixin, generic.DeleteView):
+   |
+
+E501 Line too long (90 > 88)
+   --> discussionboard\views.py:115:89
+    |
+114 | #ChatGPT Code
+115 | class CommentDelete(LoginRequiredMixin, CommentOwnerOrSuperuserMixin, generic.DeleteView):
+    |                                                                                         ^^
+116 |     model = Comment
+117 |     template_name = "discussionboard/comment_confirm_delete.html"
+    |
+
+E501 Line too long (98 > 88)
+   --> discussionboard\views.py:121:89
+    |
+119 |     def get_success_url(self):
+120 |         # send user back to the post detail page after deleting the comment
+121 |         return reverse_lazy("discussionboard:post_detail", kwargs={"slug": self.object.Post.slug})
+    |                                                                                         ^^^^^^^^^^
+122 |
+123 | #ChatGPT Code
+    |
+
+E501 Line too long (90 > 88)
+   --> discussionboard\views.py:130:89
+    |
+129 | #ChatGPT Code
+130 | class CommentUpdate(LoginRequiredMixin, CommentOwnerOrSuperuserMixin, generic.UpdateView):
+    |                                                                                         ^^
+131 |     model = Comment
+132 |     fields = ["body"]
+    |
+
+E501 Line too long (98 > 88)
+   --> discussionboard\views.py:136:89
+    |
+135 |     def get_success_url(self):
+136 |         return reverse_lazy("discussionboard:post_detail", kwargs={"slug": self.object.Post.slug})
+    |                                                                                         ^^^^^^^^^^
+137 |
+138 | @login_required
+    |
+
+E501 Line too long (91 > 88)
+  --> home\views.py:27:89
+   |
+26 |         else:
+27 |             messages.error(request, "Please correct the errors in the form and try again.")
+   |                                                                                         ^^^
+28 |
+29 |     else:
+   |
+
+E501 Line too long (98 > 88)
+  --> merchandise\admin.py:34:89
+   |
+32 | @admin.register(ProductVariant)
+33 | class ProductVariantAdmin(admin.ModelAdmin):
+34 |     list_display = ("product", "variant_title", "sku", "price", "inventory_quantity", "is_active")
+   |                                                                                         ^^^^^^^^^^
+35 |     list_filter = ("is_active",)
+36 |     search_fields = ['product__name', 'sku']
+   |
+
+E501 Line too long (104 > 88)
+  --> merchandise\management\commands\import_products.py:46:89
+   |
+45 | class Command(BaseCommand):
+46 |     help = "Import Gymshark CSV into Category + Product + ProductVariant (FAST create mode for --clear)"
+   |                                                                                         ^^^^^^^^^^^^^^^^
+47 |
+48 |     def add_arguments(self, parser):
+   |
+
+E501 Line too long (102 > 88)
+  --> merchandise\management\commands\import_products.py:72:89
+   |
+70 |             Product.objects.all().delete()
+71 |             Category.objects.all().delete()
+72 |             self.stdout.write(self.style.WARNING("Cleared existing categories, products & variants."))
+   |                                                                                         ^^^^^^^^^^^^^^
+73 |
+74 |         # Cache products and categories so we only create once per handle / category name
+   |
+
+E501 Line too long (89 > 88)
+  --> merchandise\management\commands\import_products.py:74:89
+   |
+72 |             self.stdout.write(self.style.WARNING("Cleared existing categories, products & variants."))
+73 |
+74 |         # Cache products and categories so we only create once per handle / category name
+   |                                                                                         ^
+75 |         product_cache: dict[str, Product] = {}
+76 |         category_cache: dict[str, Category] = {}
+   |
+
+E501 Line too long (91 > 88)
+  --> merchandise\management\commands\import_products.py:80:89
+   |
+78 |         # Dedupe variants in-memory to avoid IntegrityErrors
+79 |         seen_skus: set[str] = set()
+80 |         seen_variant_keys: set[tuple[str, str]] = set()  # (handle, variant_title) fallback
+   |                                                                                         ^^^
+81 |
+82 |         created_categories = 0
+   |
+
+E501 Line too long (91 > 88)
+  --> merchandise\management\commands\import_products.py:90:89
+   |
+88 |         with csv_path.open(encoding="utf-8-sig", newline="") as f:
+89 |             reader = csv.DictReader(f)
+90 |             self.stdout.write(self.style.WARNING(f"Detected columns: {reader.fieldnames}"))
+   |                                                                                         ^^^
+91 |
+92 |             for row in reader:
+   |
+
+E501 Line too long (94 > 88)
+   --> merchandise\management\commands\import_products.py:112:89
+    |
+110 |                     category = category_cache.get(category_name)
+111 |                     if category is None:
+112 |                         category, created = Category.objects.get_or_create(name=category_name)
+    |                                                                                         ^^^^^^
+113 |                         category_cache[category_name] = category
+114 |                         if created:
+    |
+
+E501 Line too long (119 > 88)
+   --> merchandise\management\commands\import_products.py:160:89
+    |
+158 |                     self.stdout.write(
+159 |                         f"Processed {row_num} rows... "
+160 |                         f"categories: {created_categories}, products: {created_products}, variants: {created_variants}"
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+161 |                     )
+    |
+
+E501 Line too long (117 > 88)
+  --> merchandise\models.py:35:89
+   |
+33 |     slug = models.SlugField(max_length=255, unique=True, blank=True)
+34 |
+35 |     category = models.ForeignKey(Category, null=True, blank=True, on_delete=models.SET_NULL, related_name="products")
+   |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+36 |     vendor = models.CharField(max_length=120, blank=True)
+37 |     has_sizes = models.BooleanField(default=False, null=True, blank=True)
+   |
+
+E501 Line too long (91 > 88)
+  --> merchandise\models.py:83:89
+   |
+81 | # ChatGPT Code
+82 | class ProductVariant(models.Model):
+83 |     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="variants")
+   |                                                                                         ^^^
+84 |
+85 |     variant_title = models.CharField(max_length=255, blank=True)  # e.g. "Small / Black"
+   |
+
+E501 Line too long (112 > 88)
+   --> merchandise\models.py:104:89
+    |
+102 |             models.UniqueConstraint(fields=["sku"], name="uniq_variant_sku"),
+103 |             # fallback uniqueness (when SKU missing)
+104 |             models.UniqueConstraint(fields=["product", "variant_title"], name="uniq_variant_per_product_title"),
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^
+105 |         ]
+    |
+
+E501 Line too long (89 > 88)
+  --> merchandise\views.py:59:89
+   |
+57 |         if "category" in request.GET:
+58 |             current_category = request.GET["category"].strip()
+59 |             category_list = [c.strip() for c in current_category.split(",") if c.strip()]
+   |                                                                                         ^
+60 |             products = products.filter(category__name__in=category_list)
+   |
+
+E501 Line too long (103 > 88)
+   --> merchandise\views.py:104:89
+    |
+102 |         pk=product_id
+103 |     )
+104 |     min_price = product.variants.order_by('price').first().price if product.variants.exists() else None
+    |                                                                                         ^^^^^^^^^^^^^^^
+105 |
+106 |     current_categories = Category.objects.all()
+    |
+
+E501 Line too long (97 > 88)
+   --> merchandise\views.py:192:89
+    |
+190 |             return redirect(reverse('merchandise:product_detail', args=[product.id]))
+191 |         else:
+192 |             messages.error(request, 'Failed to update product. Please ensure the form is valid.')
+    |                                                                                         ^^^^^^^^^
+193 |     else:
+194 |         variant = product.variants.first()
+    |
+
+E501 Line too long (123 > 88)
+  --> plans\models.py:24:89
+   |
+23 | class UserPlan(models.Model):
+24 |     """ ChatGPT - Enforces the rule that users may only have 1 x purchased fitness and/or nutrition plan at any one time"""
+   |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+25 |     user = models.ForeignKey(User, on_delete=models.CASCADE)
+26 |     plan = models.ForeignKey(Plan, on_delete=models.CASCADE)
+   |
+
+E501 Line too long (98 > 88)
+  --> profiles\forms.py:34:89
+   |
+32 |                     placeholder = placeholders[field]
+33 |                 self.fields[field].widget.attrs['placeholder'] = placeholder
+34 |             self.fields[field].widget.attrs['class'] = 'border-black rounded-0 profile-form-input'
+   |                                                                                         ^^^^^^^^^^
+35 |             self.fields[field].label = False
+   |
+
+E501 Line too long (99 > 88)
+  --> profiles\models.py:9:89
+   |
+ 8 | class UserProfile(models.Model):
+ 9 |     """User Profile model to allow users to track orders and plans and maintain delivery details"""
+   |                                                                                         ^^^^^^^^^^^
+10 |     user = models.OneToOneField(User, on_delete=models.CASCADE)
+11 |     default_phone_number = models.CharField(max_length=20, null=True, blank=True)
+   |
+
+E501 Line too long (98 > 88)
+  --> profiles\views.py:23:89
+   |
+21 |             messages.success(request, 'Profile updated successfully')
+22 |         else:
+23 |             messages.error(request, 'Update failed. Please ensure the form is valid.')            
+   |                                                                                         ^^^^^^^^^^
+24 |     else:
+25 |         form = UserProfileForm(instance=profile)
+   |
+
+E501 Line too long (102 > 88)
+  --> shoppingbag\views.py:36:89
+   |
+34 |         messages.success(
+35 |             request,
+36 |             f'Updated {variant.product.title} ({variant.variant_title}) quantity to {bag[variant_id]}'
+   |                                                                                         ^^^^^^^^^^^^^^
+37 |         )
+38 |     else:
+   |
+
+E501 Line too long (96 > 88)
+  --> shoppingbag\views.py:63:89
+   |
+61 |         messages.success(
+62 |             request,
+63 |             f'Updated {variant.product.title} ({variant.variant_title}) quantity to {quantity}',
+   |                                                                                         ^^^^^^^^
+64 |             extra_tags='bag-preview'
+65 |         )
+   |
+
+E501 Line too long (91 > 88)
+   --> working_out_gym\settings.py:178:89
+    |
+176 | AUTH_PASSWORD_VALIDATORS = [
+177 |     {
+178 |         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    |                                                                                         ^^^
+179 |     },
+180 |     {
+    |
+
+E501 Line too long (93 > 88)
+   --> working_out_gym\settings.py:223:89
+    |
+221 |     AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
+222 |
+223 |     AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com'
+    |                                                                                         ^^^^^
+224 |
+225 |     AWS_DEFAULT_ACL = 'public-read'
+    |
+
+Found 109 errors (61 fixed, 48 remaining).
+No fixes available (1 hidden fix can be enabled with the `--unsafe-fixes` option).
+(.venv) PS C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym> ruff format .
+error: Failed to parse create_fixtures.py:63:1: Unexpected indentation
+61 files reformatted, 8 files left unchanged
+(.venv) PS C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym> ruff check .
+E501 Line too long (92 > 88)
+   --> checkout\views.py:119:89
+    |
+117 |                         request,
+118 |                         (
+119 |                             "One of the products in your bag wasn't found in our database. "
+    |                                                                                         ^^^^
+120 |                             "Please call us for assistance!"
+121 |                         ),
+    |
+
+E501 Line too long (91 > 88)
+   --> checkout\views.py:132:89
+    |
+130 |             messages.error(
+131 |                 request,
+132 |                 "There was an error with your form. Please double check your information.",
+    |                                                                                         ^^^
+133 |             )
+    |
+
+E501 Line too long (97 > 88)
+   --> checkout\webhook_handler.py:108:89
+    |
+106 |                 self._send_confirmation_email(order)
+107 |                 return HttpResponse(
+108 |                     content=f"Webhook received: {event['type']} | SUCCESS: Order already exists",
+    |                                                                                         ^^^^^^^^^
+109 |                     status=200,
+110 |                 )
+    |
+
+F841 Local variable `wh_secret` is assigned to but never used
+  --> checkout\webhooks.py:16:5
+   |
+14 |     """Listen for webhooks from Stripe"""
+15 |     # Setup
+16 |     wh_secret = settings.STRIPE_WH_SECRET
+   |     ^^^^^^^^^
+17 |     stripe.api_key = settings.STRIPE_SECRET_KEY
+   |
+help: Remove assignment to unused variable `wh_secret`
+
+invalid-syntax: Unexpected indentation
+  --> create_fixtures.py:63:1
+   |
+61 |     product_key = (row.get("handle") or row.get("title") or "").strip().lower()
+62 |
+63 |         if product_key not in product_map:
+   | ^^^^^^^^
+64 |             product_map[product_key] = product_id
+   |
+
+E501 Line too long (109 > 88)
+  --> create_fixtures.py:69:89
+   |
+67 |             category_name = (row.get("product_type") or "").lower()
+68 |
+69 |             clothing_keywords = ["shirt", "top", "tank", "hoodie", "jacket", "shorts", "leggings", "joggers"]
+   |                                                                                         ^^^^^^^^^^^^^^^^^^^^^
+70 |             size_keywords = ["xs", "s", "m", "l", "xl", "xxl"]
+   |
+
+invalid-syntax: Expected a statement
+   --> create_fixtures.py:118:1
+    |
+117 | # --- SAVE FILES ---
+118 | with open("categories.json", "w", encoding="utf-8") as f:
+    | ^
+119 |     json.dump(list(categories.values()), f, indent=2)
+    |
+
+E501 Line too long (104 > 88)
+  --> merchandise\management\commands\import_products.py:46:89
+   |
+45 | class Command(BaseCommand):
+46 |     help = "Import Gymshark CSV into Category + Product + ProductVariant (FAST create mode for --clear)"
+   |                                                                                         ^^^^^^^^^^^^^^^^
+47 |
+48 |     def add_arguments(self, parser):
+   |
+
+E501 Line too long (89 > 88)
+  --> merchandise\management\commands\import_products.py:76:89
+   |
+74 |             )
+75 |
+76 |         # Cache products and categories so we only create once per handle / category name
+   |                                                                                         ^
+77 |         product_cache: dict[str, Product] = {}
+78 |         category_cache: dict[str, Category] = {}
+   |
+
+E501 Line too long (119 > 88)
+   --> merchandise\management\commands\import_products.py:168:89
+    |
+166 |                     self.stdout.write(
+167 |                         f"Processed {row_num} rows... "
+168 |                         f"categories: {created_categories}, products: {created_products}, variants: {created_variants}"
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+169 |                     )
+    |
+
+E501 Line too long (122 > 88)
+  --> plans\models.py:26:89
+   |
+25 | class UserPlan(models.Model):
+26 |     """ChatGPT - Enforces the rule that users may only have 1 x purchased fitness and/or nutrition plan at any one time"""
+   |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+27 |
+28 |     user = models.ForeignKey(User, on_delete=models.CASCADE)
+   |
+
+E501 Line too long (99 > 88)
+  --> profiles\models.py:9:89
+   |
+ 8 | class UserProfile(models.Model):
+ 9 |     """User Profile model to allow users to track orders and plans and maintain delivery details"""
+   |                                                                                         ^^^^^^^^^^^
+10 |
+11 |     user = models.OneToOneField(User, on_delete=models.CASCADE)
+   |
+
+E501 Line too long (103 > 88)
+  --> shoppingbag\views.py:37:89
+   |
+35 |         messages.success(
+36 |             request,
+37 |             f"Updated {variant.product.title} ({variant.variant_title}) quantity to {bag[variant_id]}",
+   |                                                                                         ^^^^^^^^^^^^^^^
+38 |         )
+39 |     else:
+   |
+
+E501 Line too long (96 > 88)
+  --> shoppingbag\views.py:65:89
+   |
+63 |         messages.success(
+64 |             request,
+65 |             f"Updated {variant.product.title} ({variant.variant_title}) quantity to {quantity}",
+   |                                                                                         ^^^^^^^^
+66 |             extra_tags="bag-preview",
+67 |         )
+   |
+
+E501 Line too long (91 > 88)
+   --> working_out_gym\settings.py:179:89
+    |
+177 | AUTH_PASSWORD_VALIDATORS = [
+178 |     {
+179 |         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+    |                                                                                         ^^^
+180 |     },
+181 |     {
+    |
+
+Found 15 errors.
+No fixes available (1 hidden fix can be enabled with the `--unsafe-fixes` option).
+(.venv) PS C:\Users\leila\OneDrive\Desktop\Documents\vscode-projects\working_out_gym> ruff check .
+E501 Line too long (92 > 88)
+   --> checkout\views.py:119:89
+    |
+117 |                         request,
+118 |                         (
+119 |                             "One of the products in your bag wasn't found in our database. "
+    |                                                                                         ^^^^
+120 |                             "Please call us for assistance!"
+121 |                         ),
+    |
+
+E501 Line too long (91 > 88)
+   --> checkout\views.py:132:89
+    |
+130 |             messages.error(
+131 |                 request,
+132 |                 "There was an error with your form. Please double check your information.",
+    |                                                                                         ^^^
+133 |             )
+    |
+
+E501 Line too long (97 > 88)
+   --> checkout\webhook_handler.py:108:89
+    |
+106 |                 self._send_confirmation_email(order)
+107 |                 return HttpResponse(
+108 |                     content=f"Webhook received: {event['type']} | SUCCESS: Order already exists",
+    |                                                                                         ^^^^^^^^^
+109 |                     status=200,
+110 |                 )
+    |
+
+F841 Local variable `wh_secret` is assigned to but never used
+  --> checkout\webhooks.py:16:5
+   |
+14 |     """Listen for webhooks from Stripe"""
+15 |     # Setup
+16 |     wh_secret = settings.STRIPE_WH_SECRET
+   |     ^^^^^^^^^
+17 |     stripe.api_key = settings.STRIPE_SECRET_KEY
+   |
+help: Remove assignment to unused variable `wh_secret`
+
+invalid-syntax: Unexpected indentation
+  --> create_fixtures.py:63:1
+   |
+61 |     product_key = (row.get("handle") or row.get("title") or "").strip().lower()
+62 |
+63 |         if product_key not in product_map:
+   | ^^^^^^^^
+64 |             product_map[product_key] = product_id
+   |
+
+E501 Line too long (109 > 88)
+  --> create_fixtures.py:69:89
+   |
+67 |             category_name = (row.get("product_type") or "").lower()
+68 |
+69 |             clothing_keywords = ["shirt", "top", "tank", "hoodie", "jacket", "shorts", "leggings", "joggers"]
+   |                                                                                         ^^^^^^^^^^^^^^^^^^^^^
+70 |             size_keywords = ["xs", "s", "m", "l", "xl", "xxl"]
+   |
+
+invalid-syntax: Expected a statement
+   --> create_fixtures.py:118:1
+    |
+117 | # --- SAVE FILES ---
+118 | with open("categories.json", "w", encoding="utf-8") as f:
+    | ^
+119 |     json.dump(list(categories.values()), f, indent=2)
+    |
+
+E501 Line too long (104 > 88)
+  --> merchandise\management\commands\import_products.py:46:89
+   |
+45 | class Command(BaseCommand):
+46 |     help = "Import Gymshark CSV into Category + Product + ProductVariant (FAST create mode for --clear)"
+   |                                                                                         ^^^^^^^^^^^^^^^^
+47 |
+48 |     def add_arguments(self, parser):
+   |
+
+E501 Line too long (89 > 88)
+  --> merchandise\management\commands\import_products.py:76:89
+   |
+74 |             )
+75 |
+76 |         # Cache products and categories so we only create once per handle / category name
+   |                                                                                         ^
+77 |         product_cache: dict[str, Product] = {}
+78 |         category_cache: dict[str, Category] = {}
+   |
+
+E501 Line too long (119 > 88)
+   --> merchandise\management\commands\import_products.py:168:89
+    |
+166 |                     self.stdout.write(
+167 |                         f"Processed {row_num} rows... "
+168 |                         f"categories: {created_categories}, products: {created_products}, variants: {created_variants}"
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+169 |                     )
+    |
+
+E501 Line too long (122 > 88)
+  --> plans\models.py:26:89
+   |
+25 | class UserPlan(models.Model):
+26 |     """ChatGPT - Enforces the rule that users may only have 1 x purchased fitness and/or nutrition plan at any one time"""
+   |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+27 |
+28 |     user = models.ForeignKey(User, on_delete=models.CASCADE)
+   |
+
+E501 Line too long (99 > 88)
+  --> profiles\models.py:9:89
+   |
+ 8 | class UserProfile(models.Model):
+ 9 |     """User Profile model to allow users to track orders and plans and maintain delivery details"""
+   |                                                                                         ^^^^^^^^^^^
+10 |
+11 |     user = models.OneToOneField(User, on_delete=models.CASCADE)
+   |
+
+E501 Line too long (103 > 88)
+  --> shoppingbag\views.py:37:89
+   |
+35 |         messages.success(
+36 |             request,
+37 |             f"Updated {variant.product.title} ({variant.variant_title}) quantity to {bag[variant_id]}",
+   |                                                                                         ^^^^^^^^^^^^^^^
+38 |         )
+39 |     else:
+   |
+
+E501 Line too long (96 > 88)
+  --> shoppingbag\views.py:65:89
+   |
+63 |         messages.success(
+64 |             request,
+65 |             f"Updated {variant.product.title} ({variant.variant_title}) quantity to {quantity}",
+   |                                                                                         ^^^^^^^^
+66 |             extra_tags="bag-preview",
+67 |         )
+   |
+
+E501 Line too long (91 > 88)
+   --> working_out_gym\settings.py:179:89
+    |
+177 | AUTH_PASSWORD_VALIDATORS = [
+178 |     {
+179 |         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+    |                                                                                         ^^^
+180 |     },
+181 |     {
+    |
+
+Found 15 errors.
+No fixes available (1 hidden fix can be enabled with the `--unsafe-fix
+
+- I then run the following cmd as I do not believe this to be much of an issue:
+
+python manage.py check
+
+- And this returns: System check indentfied no issues.
+
 
 --- 
 
@@ -20904,7 +22282,7 @@ Small Screen:
 
 ---
 
-# Manual Testing Heroku - Live Deployed App
+## Manual Testing Heroku - Live Deployed App
 
 Now that I have finished tweaking my code on the development side and making updates where necessary there, I will work through my deployed app and make sure that this all looks good too, as I have been testing the app in Heroku I will not be testing this again here, just checking that the layout looks correct.
 
@@ -21436,6 +22814,131 @@ Small Screen:
 
 ---
 
+# 5. Local Deployment
+
+## Deployment
+
+### Local Deployment
+
+#### Prerequisites
+
+- Python 3.12 installed
+- Git installed
+
+#### Steps:
+
+1. Clone the repository using:
+
+git clone https://github.com/LeilsEloise/working_out_gym.git
+cd working_out_gym
+
+2. Create and activate a virtual environment using:
+
+python -m venv .venv
+
+3. Next, in the terminal run:
+
+- Windows:
+  source .venv/bin/activate
+
+- Mac/Linux:
+  source .venv/bin/activate
+
+4. Then install the dependencies:
+
+pip install -r requirements.txt
+
+5. In the root of your new Project folder, create a new env.py file and populate this as below:
+
+import os
+
+os.environ["SECRET_KEY"] = "your-secret-key"
+os.environ["DATABASE_URL"] = "your-database-url"
+os.environ["STRIPE_PUBLIC_KEY"] = "your-stripe-public-key"
+os.environ["STRIPE_SECRET_KEY"] = "your-stripe-secret-key"
+
+6. Run migrations using:
+
+python manage.py makemigrations
+python manage.py migrate
+
+7. Create a superuser of the app using the below cmd:
+
+python manage.py createsuperuser
+
+8. Run the server on your local dev server using:
+
+python manage.py runserver
+
+9. Click to follow the link in the terminal to see the webpage locally on http://127.0.0.1:8000/
+
+10. Then in the browser, append /admin to the end of the URL and ensure you can login using your new superuser credentials.
+
+---
+
+### Heroku Deployment
+
+#### Prerequisites
+
+- A Heroku Account
+- Your Project pushed to Github
+- Heroku CLI
+
+#### Steps
+
+1. Create a Heroku app, login to your Heroku account and then click on the Dashboard > New > Create New App:
+
+![Create new Heroku App](/static/images/Screenshots/Creating%20and%20deploying%20Heroku%20app/Heroku%20-%20creating%20new%20app.png)
+
+2. Set Config Vars, in the Settings of your new app, set the following:
+
+- SECRET_KEY - the secret key set for the application
+- DATABASE_URL - the database URL for this application
+- CLOUDINARY URL - the Cloudinary URL for this application
+
+3. Prepare the project files and ensure that it includes:
+
+- requirements.txt with all relevant software#
+- Procfile with: web: gunicorn <your_project_name>.wsgi
+- Correct Allowed Hosts and security settings
+
+4. Connect Heroku app to Github and deploy:
+
+- In the Deploy tab of your new Heroku app, look for Github and search for your repository and then click connect:
+
+![Connecting Github Repository](/static/images/Screenshots/Creating%20and%20deploying%20Heroku%20app/Heroku%20deploying%20app%20-%20connecting%20Github%20repository.png)
+
+- Then click Deploy Branch
+
+5. Run the migrations on Heroku using Heroku CLI:
+
+heroku run python manage.py migrate -a good-newspaper
+
+6. Create a superuser on Heroku:
+
+heroku run python manage.py createsuperuser -a good-newspaper
+
+7. Once the app is fully deployed, you can open it from the 'Open App' button on the Heroku site or use the below cmd with Heroku CLI:
+
+heroku open -a good-newspaper
+
+---
+
+## Database Configuration
+
+- PostgreSQL database created via Code Institute
+- `dj-database-url` and `psycopg2` installed
+- Environment variables used for security
+- SQLite disabled in production
+
+---
+
+## Security
+
+- `env.py` added to `.gitignore`
+- Secret key generated securely
+- DEBUG set to `False` in production
+- CSRF trusted origins configured
 
 
 # 6. Credits and Acknowledgements

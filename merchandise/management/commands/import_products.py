@@ -69,7 +69,9 @@ class Command(BaseCommand):
             ProductVariant.objects.all().delete()
             Product.objects.all().delete()
             Category.objects.all().delete()
-            self.stdout.write(self.style.WARNING("Cleared existing categories, products & variants."))
+            self.stdout.write(
+                self.style.WARNING("Cleared existing categories, products & variants.")
+            )
 
         # Cache products and categories so we only create once per handle / category name
         product_cache: dict[str, Product] = {}
@@ -77,7 +79,9 @@ class Command(BaseCommand):
 
         # Dedupe variants in-memory to avoid IntegrityErrors
         seen_skus: set[str] = set()
-        seen_variant_keys: set[tuple[str, str]] = set()  # (handle, variant_title) fallback
+        seen_variant_keys: set[tuple[str, str]] = (
+            set()
+        )  # (handle, variant_title) fallback
 
         created_categories = 0
         created_products = 0
@@ -87,7 +91,9 @@ class Command(BaseCommand):
 
         with csv_path.open(encoding="utf-8-sig", newline="") as f:
             reader = csv.DictReader(f)
-            self.stdout.write(self.style.WARNING(f"Detected columns: {reader.fieldnames}"))
+            self.stdout.write(
+                self.style.WARNING(f"Detected columns: {reader.fieldnames}")
+            )
 
             for row in reader:
                 row_num += 1
@@ -109,7 +115,9 @@ class Command(BaseCommand):
                 if category_name:
                     category = category_cache.get(category_name)
                     if category is None:
-                        category, created = Category.objects.get_or_create(name=category_name)
+                        category, created = Category.objects.get_or_create(
+                            name=category_name
+                        )
                         category_cache[category_name] = category
                         if created:
                             created_categories += 1

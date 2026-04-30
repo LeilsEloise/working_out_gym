@@ -1,9 +1,11 @@
-from django.shortcuts import render, redirect
 from django.contrib import messages
+from django.shortcuts import redirect, render
+
 from .forms import FeedbackForm
 
+
 # Create your views here.
-#ChatGPT Code
+# ChatGPT Code
 def home(request):
 
     if request.method == "POST":
@@ -22,7 +24,9 @@ def home(request):
             return redirect("home")
 
         else:
-            messages.error(request, "Please correct the errors in the form and try again.")
+            messages.error(
+                request, "Please correct the errors in the form and try again."
+            )
 
     else:
         form = FeedbackForm()

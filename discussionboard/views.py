@@ -1,15 +1,16 @@
-#ChatGPT code
+# ChatGPT code
 
-from django.views import generic
-from django.urls import reverse_lazy
-from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.utils.text import slugify
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse_lazy
+from django.utils.text import slugify
+from django.views import generic
 
 from .forms import CommentForm
-from .models import Post, Comment
+from .models import Comment, Post
+
 
 class PostList(generic.ListView):
     model = Post
@@ -29,6 +30,7 @@ class PostList(generic.ListView):
             context["my_posts"] = Post.objects.none()
 
         return context
+
 
 def post_detail(request, slug):
     post = get_object_or_404(Post, slug=slug)
@@ -62,7 +64,7 @@ def post_detail(request, slug):
             "comments": comments,
             "comment_form": comment_form,
         },
-    )    
+    )
 
 
 class PostCreate(LoginRequiredMixin, generic.CreateView):
@@ -78,10 +80,12 @@ class PostCreate(LoginRequiredMixin, generic.CreateView):
             form.instance.slug = slugify(form.instance.title)
         return super().form_valid(form)
 
+
 class PostOwnerOrSuperuserMixin(UserPassesTestMixin):
     def test_func(self):
         post = self.get_object()
         return self.request.user.is_superuser or post.author == self.request.user
+
 
 class PostUpdate(LoginRequiredMixin, PostOwnerOrSuperuserMixin, generic.UpdateView):
     model = Post
@@ -91,9 +95,12 @@ class PostUpdate(LoginRequiredMixin, PostOwnerOrSuperuserMixin, generic.UpdateVi
     def form_valid(self, form):
         messages.success(self.request, "Post updated successfully.")
         return super().form_valid(form)
-    
+
     def get_success_url(self):
-        return reverse_lazy("discussionboard:post_detail", kwargs={"slug": self.object.slug})
+        return reverse_lazy(
+            "discussionboard:post_detail", kwargs={"slug": self.object.slug}
+        )
+
 
 class PostDelete(LoginRequiredMixin, PostOwnerOrSuperuserMixin, generic.DeleteView):
     model = Post
@@ -104,35 +111,48 @@ class PostDelete(LoginRequiredMixin, PostOwnerOrSuperuserMixin, generic.DeleteVi
         messages.success(self.request, "Post deleted.")
         return super().delete(request, *args, **kwargs)
 
-#ChatGPT Code
+
+# ChatGPT Code
 class CommentOwnerOrSuperuserMixin(UserPassesTestMixin):
     def test_func(self):
         comment = self.get_object()
         return self.request.user.is_superuser or comment.author == self.request.user
 
-#ChatGPT Code
-class CommentDelete(LoginRequiredMixin, CommentOwnerOrSuperuserMixin, generic.DeleteView):
+
+# ChatGPT Code
+class CommentDelete(
+    LoginRequiredMixin, CommentOwnerOrSuperuserMixin, generic.DeleteView
+):
     model = Comment
     template_name = "discussionboard/comment_confirm_delete.html"
 
     def get_success_url(self):
         # send user back to the post detail page after deleting the comment
-        return reverse_lazy("discussionboard:post_detail", kwargs={"slug": self.object.Post.slug})
+        return reverse_lazy(
+            "discussionboard:post_detail", kwargs={"slug": self.object.Post.slug}
+        )
 
-#ChatGPT Code
+
+# ChatGPT Code
 class CommentOwnerOrSuperuserMixin(UserPassesTestMixin):
     def test_func(self):
         comment = self.get_object()
         return self.request.user.is_superuser or comment.author == self.request.user
 
-#ChatGPT Code
-class CommentUpdate(LoginRequiredMixin, CommentOwnerOrSuperuserMixin, generic.UpdateView):
+
+# ChatGPT Code
+class CommentUpdate(
+    LoginRequiredMixin, CommentOwnerOrSuperuserMixin, generic.UpdateView
+):
     model = Comment
     fields = ["body"]
     template_name = "discussionboard/comment_form.html"
 
     def get_success_url(self):
-        return reverse_lazy("discussionboard:post_detail", kwargs={"slug": self.object.Post.slug})
+        return reverse_lazy(
+            "discussionboard:post_detail", kwargs={"slug": self.object.Post.slug}
+        )
+
 
 @login_required
 def post_vote(request, slug, value):

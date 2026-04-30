@@ -1,0 +1,14 @@
+line-length = 88
+exclude = [
+    ".venv",
+    "venv",
+    "env",
+    "migrations",
+    "static",
+    "media",
+    ".env",
+]
+
+[lint]
+select = ["E", "F", "I"]
+fixable = ["ALL"]
