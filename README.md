@@ -24,6 +24,7 @@ A Django-powered health and fitness application designed to allow users to make 
 - Project Value & Purpose
 - User Stories
 - Wireframes
+- ERD Tables, Dictionaries and Diagrams
 
 # 2. Features
 
@@ -301,6 +302,105 @@ As a **site user** I want **a search facility on products** so that **I can sear
 ### Merchandise Wireframe
 
 ![Wireframe Merchandise](/static/images/Wireframes/Merchandise%20Wireframe.jpg)
+
+---
+
+## ERD Section
+
+Below is all ERD tables and diagrams to support this Project.
+
+---
+
+### ERD Database Tables
+
+#### ERD - Home Feedback
+
+![ERD Table for Homepage - Feedback](/static/images/erd/Screenshot%20ERD%20Model%20for%20home%20feeedback.png)
+
+#### ERD - Discussion Board Post
+
+![ERD Table for Discussion Board Post](/static/images/erd/Screenshot%20ERD%20Model%20for%20Discussion%20Board%20Post.png)
+
+#### ERD - Discussion Board Comment
+
+![ERD Table for Discussion Board Comment](/static/images/erd/Screenshot%20ERD%20Model%20for%20Comment.png)
+
+#### ERD - auth user
+
+![ERD Table for auth_user](/static/images/erd/Screenshot%20ERD%20Model%20for%20auth_user.png)
+
+
+#### ERD - Merchandise Badge
+
+![ERD Table for Merchandise Badge](/static/images/erd/Screenshot%20ERD%20Model%20for%20Merchandise%20Badge.png)
+
+
+#### ERD - Merchandise Product
+
+![ERD Table for Merchandise Product](/static/images/erd/Screenshot%20ERD%20Model%20for%20Merchandise%20Product.png)
+
+
+#### ERD - Merchandise ProductVariant
+
+![ERD Table for Merchandise ProductVariant](/static/images/erd/Screenshot%20ERD%20Model%20for%20merchandise%20product%20variant.png)
+
+#### ERD - Checkout Order
+
+![ERD Table for Checkout Order](/static/images/erd/Screenshot%20ERD%20Model%20for%20checkout%20order.png)
+
+#### ERD - Checkout OrderLineItem
+
+![ERD Table for Checkout OrderLineItem](/static/images/erd/Screenshot%20ERD%20model%20for%20Checkout%20Orderlineitem.png)
+
+#### ERD - Plans 
+
+![ERD Table for Plans](/static/images/erd/Screenshot%20ERD%20Model%20for%20plans%20plan.png)
+
+#### ERD - UserPlans
+
+![ERD Table for UserPlans](/static/images/erd/Screenshot%20ERD%20Models%20for%20plans%20userplan.png)
+
+#### ERD - User Profiles
+
+![ERD Table for User Profiles](/static/images/erd/Screenshot%20ERD%20Table%20for%20profiles%20userprofiles.png)
+
+---
+
+### ERD Diagrams
+
+#### ERD Diagram - Full crow's foot diagram for app
+
+![ERD Diagram Crow's Foot](/static/images/erd/Screenshot%20full%20crow's%20foot%20ERD%20Model.png)
+
+#### ERD Diagram - Homepage Feedback
+
+![ERD Diagram Homepage Feedback](/static/images/erd/Screenshot%20homepage%20feedback%20erd%20diagram.png)
+
+#### ERD Diagram - Discussion Board
+
+![ERD Diagram - Discussion Board](/static/images/erd/Screenshot%20discussion%20Board%20ERD%20diagram.png)
+
+#### ERD Diagram - Checkout
+
+![ERD Diagram - Checkout](/static/images/erd/Screenshot%20Ecommerce%20checkout%20ERD%20diagraam.png)
+
+#### ERD Diagram - Plans
+
+![ERD Diagram - Plans](/static/images/erd/Screenshot%20plans%20ERD%20Diagram.png)
+
+---
+
+### ERD Database Dictionary and Relationships
+
+
+#### ERD Database Dictionary
+![ERD Database Dictionary](/static/images/erd/Screenshot%20Database%20ERD%20Dictionary.png)
+
+#### ERD Key Relationship Explanations
+![ERD Key Relationship Explanations](/static/images/erd/Screenshot%20ERD%20Key%20Relationship%20Explanations.png)
+
+#### ERD Deletion Behaviours
+![ERD Deletion Behaviours](/static/images/erd/Screenshot%20ERD%20Key%20Relationship%20Explanations.png)
 
 ---
 
@@ -20804,8 +20904,535 @@ Small Screen:
 
 ---
 
+# Manual Testing Heroku - Live Deployed App
+
+Now that I have finished tweaking my code on the development side and making updates where necessary there, I will work through my deployed app and make sure that this all looks good too, as I have been testing the app in Heroku I will not be testing this again here, just checking that the layout looks correct.
+
+---
+
+## Heroku Testing - Homepage
+
+1. I launch the app from the Heroku dashboard, using 'Open app'. I land on the Hompage, which I inspect across all screen sizes and this looks good:
+
+Large Screen:
+![Home Large](/static/images/Testing%20Heroku/Screenshot%20heroku%20home%20large.png)
+
+Medium Screen:
+![Home Medium](/static/images/Testing%20Heroku/Screenshot%20heroku%20home%20medium.png)
+
+Small Screen:
+![Home Small](/static/images/Testing%20Heroku/Screenshot%20heroku%20home%20small.png)
+
+2. If I populate the feedback form with some content and hit send then this produces a toast success notification, however, this is showing the shoppingbag preview which isn't quite right. I test submitting a feedback form on the dev app and the case is not true there:
+
+![Heroku Toast Notification Still Showing ShoppingBag](/static/images/Testing%20Heroku/Screenshot%20toast%20notification%20feedback%20form.png)
+
+- I empty the cache and hard reload the Heroku app's browser and then also restart the Dynos of my Heroku app:
+
+heroku restart -a working-out-gym
+
+- However, the issue is the same. I ask ChatGPT to look at my toast_success.html template and see if there are any issues and it recommends updating from:
+
+{% if grand_total and not on_profile_page %}
+
+To:
+
+{% if grand_total and not on_profile_page and 'bag-preview' in message.tags %}
+
+- Then in my bag views, I update each of my bag adjust views (add, edit, delete) so that the message.success includes the extra_tags='bag_preview':
+
+        messages.success(
+            request,
+            f'Added {variant.product.title} ({variant.variant_title}) to your bag',
+            extra_tags='bag-preview'
+        )
+
+- I commit the code to both Git and Heroku so I can then test the code in play on the live app. This has fixed the issue in Heroku now:
+
+![Heroku Toast Notification Resolved](/static/images/Testing%20Heroku/Screenshot%20heroku%20toast%20success%20notification%20resolved.png)
+
+3. I then login to the admin panel as my superuser and check that the feedback forms has been being sent, which they have, I can amend and delete these accordingly:
+
+![Heroku Admin Panel Main Feedback Form](/static/images/Testing%20Heroku/Screenshot%20feedback%20form%20admin%20panel%20main.png)
+
+![Heroku Admin Feedback Form List](/static/images/Testing%20Heroku/Screenshot%20heroku%20feedback%20form%20list.png)
+
+![Heroku Admin Feedback Delete](/static/images/Testing%20Heroku/Screenshot%20admin%20feedback%20delete.png)
+
+![Heroku Admin Feedback Delete Prompt](/static/images/Testing%20Heroku/Screenshot%20delete%20feedback%20prompt.png)
+
+![Heroku Admin Feedback Deleted](/static/images/Testing%20Heroku/Screenshot%20feedback%20successful%20deletion.png)
+
+---
+
+## Heroku Testing - Discussion Board
+
+1. From the Homepage, I can open the Navbar menu and then open the Discussion Board, as below. This looks good across all screen sizes:
+
+Large Screen:
+![Discussion Board Large](/static/images/Testing%20Heroku/Screenshot%20discussion%20board%20large.png)
+
+Medium Screen:
+![Discussion Board Medium](/static/images/Testing%20Heroku/Screenshot%20discussion%20board%20medium.png)
+
+Small Screen:
+![Discussion Board Small](/static/images/Testing%20Heroku/Screenshot%20discussion%20board%20small%201.png)
+![Discussion Board Small](/static/images/Testing%20Heroku/Screenshot%20discussion%20board%20small%202.png)
+
+2. Whilst logged in as a superuser, I can see all posts on main Discussion Board screen with the options to 'edit' and 'delete' both my own post and the standard users. I can only see my own post in 'Your Posts' section.
+
+3. I log on as a standard user to make sure I don't see the 'edit' and 'delete' buttons there which I don't:
+
+![Discussion Board Standard User](/static/images/Testing%20Heroku/Screenshot%20standard%20user%20discussion%20board.png)
+
+4. I test making a new post as the standard logged in user, which posts successfully:
+
+![Discussion Board Standard User New Post Creation](/static/images/Testing%20Heroku/Screenshot%20new%20post%20std%20user%20details.png)
+
+![Discussion Board New Post Saved](/static/images/Testing%20Heroku/Screenshot%20new%20post%20saved.png)
+
+5. I can click either the 'edit' button under the post itself or from the 'Actions' panel down the right hand side to open up the edit post view on the new post. I have updated the below with more content and then click save:
+
+![Discussion Board Edit New Post](/static/images/Testing%20Heroku/Screenshot%20post%20edit.png)
+
+6. Upon saving, I am redirected to the post detail page for the new post where I am given a toast success notification also:
+
+![Discussion Board Edit Post Post Details](/static/images/Testing%20Heroku/Screenshot%20edit%20post%20saved%20and%20post%20detail%20opened.png)
+
+7. I test leaving a comment while I am on the post and find that I can do this successfully:
+
+![Discussion Board Post Create Comment](/static/images/Testing%20Heroku/Screenshot%20creating%20comment.png)
+
+![Discussion Board Comment Posted](/static/images/Testing%20Heroku/Screenshot%20comment%20saved%20awaiting%20approval.png)
+
+8. I go back to the previous screen and try to delete my post using the delete button beneath the post itself. This successfully brings me to the 'Delete Post' screen and upon clicking 'Yes, delete' the post is removed on the post list:
+
+![Discussion Board Delete Post Prompt](/static/images/Testing%20Heroku/Screenshot%20delete%20post%20prompt.png)
+
+![Discussion Board Post Deleted](/static/images/Testing%20Heroku/Screenshot%20post%20deleted.png)
+
+9. I also test that I can post, edit and delete comments on other user's posts successfully, which I can:
+
+![Discussion Board Post Comment Other User Post](/static/images/Testing%20Heroku/Screenshot%20create%20comment%20other%20user%20post.png)
+
+![Discussion Board Post Comment Saved - Other User Post](/static/images/Testing%20Heroku/Screenshot%20comment%20created%20other%20user%20post.png)
+
+![Discussion Board Post Edit Comment - Other User Post](/static/images/Testing%20Heroku/Screenshot%20edit%20comment%20other%20user%20post.png)
+
+![Discussion Board Post Edit Comment Saved - Other User Post](/static/images/Testing%20Heroku/Screenshot%20edit%20comment%20other%20user%20post%20saved.png)
+
+![Discussion Board Post Delete Comment - Other User Post](/static/images/Testing%20Heroku/Screenshot%20delete%20comment%20other%20user%20post.png)
+
+![Discussion Board Post Deleted Comment - Other User Post](/static/images/Testing%20Heroku/Screenshot%20comment%20deleted%20other%20user%20post.png)
+
+- I am happy with how the page functions and displays across all screen sizes on the Heroku version so move on to testing the next page, the Merchandise page, next.
+
+---
+
+## Heroku Testing - Merchandise App
+
+1. Opening the main Merchandise page, this looks good on all the screen sizes. I do not see the product management buttons when logged in as the standard user, the pages redirect user to the next set of items:
+
+![Merchandise Start](/static/images/Testing%20Heroku/Screenshot%20merchandise%20start.png)
+
+![Merchandise End - Page Numbers Update and Redirect](/static/images/Testing%20Heroku/Screenshot%20merchandise%20end%20page%20numbers.png)
+
+2. If I test the sorting through the 'Sort' selector and set them to each of my different sorting options then this is updated correctly:
+
+![Merchandise Sorting Price Low to High](/static/images/Testing%20Heroku/Screenshot%20merchandise%20low%20to%20high%20sort.png)
+
+![Merchandise Sorting Price High to Low](/static/images/Testing%20Heroku/Screenshot%20merchandise%20high%20to%20low%20sort.png)
+
+![Merchandise Sorting Name A-Z](/static/images/Testing%20Heroku/Screenshot%20merchandise%20name%20ascending.png)
+
+![Merchandise Sorting Name Z-A](/static/images/Testing%20Heroku/Screenshot%20merchandise%20name%20descending.png)
+
+3. Similarly, if I open the two options for sorting by price and category from the Merchandise Navbar menu, then these both open successfully:
+
+![Merchandise Sorting Navbar Menu Price](/static/images/Testing%20Heroku/Screenshot%20merchandise%20navbar%20sort%20price.png)
+
+![Merchandise Sorting Navbar Menu Category](/static/images/Testing%20Heroku/Screenshot%20merchandise%20navbar%20sort%20category.png)
+
+4. If I click into any of my category badges on the Merchandise page then these redirect to the correct pages:
+
+![Merchandise Badge Categories Loading](/static/images/Testing%20Heroku/Screenshot%20merchandise%20badge%20categories%20loading.png)
+
+5. If I open the category sorting option from the Navbar Merchandise menu, i.e. womens tops then this loads okay too:
+
+![Merchandise Navbar Merchandise Category Items Opening](/static/images/Testing%20Heroku/Screenshot%20merchandise%20navbar%20category.png)
+
+6. If I click onto the products then these open successfully. When I am on the product, I can choose from the different sizes and increase or decrease the quantity and add to my bag:
+
+![Merchandise Product Details Add to Bag](/static/images/Testing%20Heroku/Screenshot%20product%20detail%20.png)
+
+7. I then want to make sure that when logged in as a superuser on Heroku that I see all the options that I should in Merchandise app. I login as my superuser and navigate to the Merchandise page:
+
+![Merchandise SuperUser logged in](/static/images/Testing%20Heroku/Screenshot%20merchandise%20super%20user%20page.png)
+
+8. If I click one of the products, then I see the product management buttons there too:
+
+![Merchandise SuperUser product detail](/static/images/Testing%20Heroku/Screenshot%20merchandise%20super%20user%20product%20detail.png)
+
+9. If I click the edit button then this takes me to the correct page for editing the product and if I update the price and title then I see this reflected on the product:
+
+![Merchandise edit product](/static/images/Testing%20Heroku/Screenshot%20edit%20product%20title%20price.png)
+
+![Merchandise edit product updated product detail](/static/images/Testing%20Heroku/Screenshot%20edit%20product%20updated%20successfully.png)
+
+10. Instead of deleting any actual products, I will now test adding a product through Product Management. I open the 'Product Management' option from 'My Account' menu options:
+
+![Product Management My Account](/static/images/Testing%20Heroku/Screenshot%20product%20management%20account%20tab.png)
+
+11. In the new view, I create a new product successfully:
+
+![Product Management Added Product](/static/images/Testing%20Heroku/Screenshot%20add%20product.png)
+
+12. I search for my newly added product in the search bar and it appears:
+
+![Product Management New Product Search Results](/static/images/Testing%20Heroku/Screenshot%20merchandise%20new%20product%20created.png)
+
+13. I can click the newly created product and it opens successfully:
+
+![New Product Detail](/static/images/Testing%20Heroku/Screenshot%20new%20product%20detail%20item.png)
+
+14. If I click 'edit' on my new product then I can edit this successfully and I am notified that I am editing the product:
+
+![Editing new product](/static/images/Testing%20Heroku/Screenshot%20edit%20product%20new%20product.png)
+
+![Editing new product saved](/static/images/Testing%20Heroku/Screenshot%20edit%20product%20new%20product%20saved.png)
+
+15. Now that I have confirmed that adding and editing is okay in Heroku, I will now delete the test product I have created:
+
+![Deleting Product](/static/images/Testing%20Heroku/Screenshot%20delete%20product%20prompt.png)
+
+![Product Deleted Successfully](/static/images/Testing%20Heroku/Screenshot%20product%20deleted%20successfully.png)
+
+---
+
+## Heroku Testing - Shopping Bag
+
+1. I am happy with everything in the Merchandise app so I want to next test my shopping bag and checkout as a standard user, so I login as the standard user again and add some items to my shopping bag. These add successfully so I then click my Shopping Bag icon in my navbar to be taken to the below view:
+
+![Shopping Bag View Large](/static/images/Testing%20Heroku/Screenshot%20shoppingbag%20view.png)
+
+![Shopping Bag View Medium](/static/images/Testing%20Heroku/Screenshot%20shoppingbag%20medium%20view.png)
+
+![Shopping Bag View Small](/static/images/Testing%20Heroku/Screenshot%20shoppingbag%20small%20view.png)
+
+2. If I increase or decrease the quantity of the item then this works:
+
+![Shopping Bag Quantity Increase](/static/images/Testing%20Heroku/Screenshot%20shoppingbag%20quantity%20increase.png)
+
+![Shopping Bag Quantity Decrease](/static/images/Testing%20Heroku/Screenshot%20shoppingbag%20quantity%20decrease.png)
+
+3. If I clickn 'remove' on the item then it removes it completely:
+
+![Shopping Bag Item Removal](/static/images/Testing%20Heroku/Screenshot%20shopping%20bag%20remove.png)
+
+4. I am happy with how the shoppingbag appears on all screens and it is functional so I add some products back into the bag and then return to the shoppingbag and click 'Secure Checkout' so I can test checkout next.
+
+---
+
+## Heroku Testing - Checkout
+
+1. Upon clicking 'Secure Checkout' I am successfully redirected to the checkout page with the items I added to my bag. The view is good across all screen sizes:
+
+Large Screen:
+![Checkout Large Screen](/static/images/Testing%20Heroku/Screenshot%20checkout%20large#.png)
+
+Medium Screen:
+![Checkout Medium Start](/static/images/Testing%20Heroku/Screenshot%20checkout%20medium%201.png)
+![Checkout Medium Start](/static/images/Testing%20Heroku/Screenshot%20checkout%20medium%202.png)
+
+Small Screen:
+![Checkout Small Start](/static/images/Testing%20Heroku/Screenshot%20checkout%20small%201.png)
+![Checkout Small End](/static/images/Testing%20Heroku/Screenshot%20checkout%20small%202.png)
+
+2. I can click 'Adjust Bag' and it redirects me to my shoppinbag:
+
+![Checkout Adjust Bag Redirect](/static/images/Testing%20Heroku/Screenshot%20checkout%20adjust%20bag%20.png)
+
+3. I can populate my details, checking the box to save the delivery information to my profile, (which I will check soon) and then complete the order which successfully completes my order and redirects me to the checkout success page. This looks good across all screen sizes:
 
 
+Large Screen:
+![Checkout Large Screen](/static/images/Testing%20Heroku/Screenshot%20checkout%20success%20page.png)
+
+Medium Screen:
+![Checkout Medium Start](/static/images/Testing%20Heroku/Screenshot%20checkout%20success%20medium.png)
+
+Small Screen:
+![Checkout Small Start](/static/images/Testing%20Heroku/Screenshot%20checkout%20success%20small.png)
+
+4. If I click the 'Now check out the latest deals' button then I am correctly redirected to the main Merchandise page:
+
+![Checkout Latest Deals Button Redirects](/static/images/Testing%20Heroku/Screenshot%20check%20out%20latest%20deals.png)
+
+5. I am happy with the way everything looks in Heroku on the checkout app so I move on to the Fitness and Nutrition Plans app next. 
+
+---
+
+## Heroku Testing - Plans
+
+1. I can open the Fitness and Nutrition Plans page from the Navbar without any issues, this displays well on all screen sizes and is giving me the option to buy the plans as a user who has never purchased these before:
+
+Large Screen:
+![Plans Large Screen](/static/images/Testing%20Heroku/Screenshot%20plans%20large.png)
+
+Medium Screen:
+![Plans Medium Screen Start](/static/images/Testing%20Heroku/Screenshot%20plans%20medium%201.png)
+![Plans Medium Screen End](/static/images/Testing%20Heroku/Screenshot%20plans%20medium%202.png)
+
+Small Screen:
+![Plans Small Screen Start](/static/images/Testing%20Heroku/Screenshot%20plans%20small%201.png)
+![Plans Small Screen continued](/static/images/Testing%20Heroku/Screenshot%20plans%20small%202.png)
+![Plans Small Screen end](/static/images/Testing%20Heroku/Screenshot%20plans%20small%203.png)
+
+2. I can click to 'Buy Plan' on any of the fitness plans and this redirects me to checkout for the plan, this clearly shows which plan is being purchased and this looks good on all screen sizes:
+
+
+Large Screen:
+![Plans Checkout Large Screen](/static/images/Testing%20Heroku/Screenshot%20checkout%20plans%20large.png)
+
+Medium Screen:
+![Plans Checkout Medium Screen Start](/static/images/Testing%20Heroku/Screenshot%20plans%20checkout%20medium%201.png)
+![Plans Checkout Medium Screen End](/static/images/Testing%20Heroku/Screenshot%20plans%20checkout%20medium%202.png)
+
+Small Screen:
+![Plans Checkout Small Screen Start](/static/images/Testing%20Heroku/Screenshot%20plans%20checkout%20small%201.png)
+![Plans Checkout Small Screen End](/static/images/Testing%20Heroku/Screenshot%20plans%20checkout%20small%202.png)
+
+3. If I use the successful Stripe card number then I can purchase the plan successfully:
+
+![Plans Purchased Successfully](/static/images/Testing%20Heroku/Screenshot%20plan%20purchase%20successful.png)
+
+4. Now if I go back to my Fitness and Nutrition Page, the user is blocked from purchasing any more fitness plans as per the rules I implemented:
+
+![Owned Fitness Plan](/static/images/Testing%20Heroku/Screenshot%20owned%20fitness%20plan.png)
+
+5. If I scroll down to the Nutrition Plans then I can click 'Buy Plan' on these and it will redirect me to the checkout for plans:
+
+![Checkout Nutrition Plan](/static/images/Testing%20Heroku/Screenshot%20plans%20checkout%20nutrition.png)
+
+6. Then upon completing my order, I am redirected to the checkout success page with an order confirmation:
+
+![Checkout Nutrition Plan Order Confirmation](/static/images/Testing%20Heroku/Screenshot%20nutrition%20plan%20purchased.png)
+
+7. Now when I navigate back to the Fitness and Nutritions Plans page through the navbar I can see I can no longer purchase nutrition plans either:
+
+![Owned Nutrition Plan](/static/images/Testing%20Heroku/Screenshot%20owned%20nutrition%20plan.png)
+
+8. Now if I go to my Profile from the 'My Account' menu, I can see my 2 x new plans that I have purchased:
+
+![Plans Reflected in Profile](/static/images/Testing%20Heroku/Screenshot%20plans%20reflected%20in%20profile.png)
+
+---
+
+## Heroku Testing - Profiles
+
+1. I now want to make sure that everything looks and works right on my profile page on my deployed app. I can see this looks good acrosss all screen sizes:
+
+Large Screen:
+![Profile Large Screen](/static/images/Testing%20Heroku/Screenshot%20profiles%20large%20screen.png)
+
+Medium Screen:
+![Profiles Medium Start](/static/images/Testing%20Heroku/Screenshot%20profile%20medium%201.png)
+![Profiles Medium Screen End](/static/images/Testing%20Heroku/Screenshot%20profile%20medium%202.png)
+
+Small Screen:
+![Profile Small Screen Start](/static/images/Testing%20Heroku/Screenshot%20profile%201.png)
+![Plans Checkout Small Cont](/static/images/Testing%20Heroku/Screenshot%20profile%202.png)
+![Plans Checkout Small End](/static/images/Testing%20Heroku/Screenshot%20profile%20small%203.png)
+
+2. As the layout is correct, I now want to make sure that I can click into my previous orders and open them which I can:
+
+![Order Confirmation Page](/static/images/Testing%20Heroku/Screenshot%20order%20confirmation%20page%20plans.png)
+
+3. If I click the 'Back to Profile' button it correctly redirects me to my profile:
+
+![Profile redirect](/static/images/Testing%20Heroku/Screenshot%20profile%20redirect.png)
+
+4. I can update my details in my profile and click 'Update Information' and the details are saved:
+
+![Profile Update Details](/static/images/Testing%20Heroku/Screenshot%20profile%20update%20details%20successfully.png)
+
+5. The profile looks good so I will check that the registration and login process looks and works good too.
+
+---
+
+## Heroku Testing - Registration and Login
+
+1. To make sure that all the registration and account login and logouts work okay on my Productiom app, I start by first logging out of the standard account I am logged into. Clicking either of the logout options highlighted below, successfully redirects me to the sign out page which looks good across the board:
+
+![Sign Out Screen](/static/images/Testing%20Heroku/Screenshot%20logout.png)
+
+- If I click okay to sign out then I am redirected to the Homepage with a toast success notification:
+
+![Sign Out Homepage Toast Success](/static/images/Testing%20Heroku/Screenshot%20logout%20toast%20success.png)
+
+2. I then want to test that account registration looks and works okay on Heroku, it displays correctly across all the screen sizes:
+
+Large Screen:
+![Registration Large](/static/images/Code%20Refactor/Screenshot%20registration%20large.png)
+
+Medium Screen:
+![Registration Medium](/static/images/Code%20Refactor/Screenshot%20registration%20medium.png)
+
+Small Screen:
+![Registration Small](/static/images/Code%20Refactor/Screenshot%20registration%20small%201.png)
+![Registration Small](/static/images/Code%20Refactor/Screenshot%20registration%20small%202.png)
+
+3. If I register for an account then I am redirected to the page asking me to verify my e-mail address first, this looks good on all screen sizes:
+
+Large Screen:
+![Registration Verify Email Large](/static/images/Testing%20Heroku/Screenshot%20register%20verify%20email%20large.png)
+
+Medium Screen:
+![Registration Verify Email Medium](/static/images/Testing%20Heroku/Screenshot%20register%20verify%20email%20medium.png)
+
+Small Screen:
+![Registration Verify Email Small](/static/images/Testing%20Heroku/Screenshot%20register%20verify%20email%20small.png)
+
+4. The account I have used was already set up with the app so hasn't sent a verification e-mail but I can confirm that e-mails are being sent by the app through the order confirmation e-mails I have received. I verify the account manually and then checkout login next which also looks good across the board:
+
+Large Screen:
+![Login Large](/static/images/Testing%20Heroku/Screenshot%20login%20large.png
+
+Medium Screen:
+![Login Medium](/static/images/Testing%20Heroku/Screenshot%20login%20medium.png)
+
+Small Screen:
+![Login Small](/static/images/Testing%20Heroku/Screenshot%20login%20small.png)
+
+---
+
+## Heroku Testing - Admin Panel
+
+1. As I have made sure that the frontend is all presented well and works okay, now I want to make sure that I can use everything in the admin panel as intended. To start with, I can go into 'Accounts' > 'E-mail Addresses' and see all the accounts and their e-mail addresses listed:
+
+![E-mail addresses Admin Panel](/static/images/Testing%20Heroku%20Admin/email%20addresses%20admin%20panel.png)
+
+- If I click on an account, then I can verify their email addresses and set it as their primary address on this screen:
+
+![E-mail addresses Admin Panel Change](/static/images/Testing%20Heroku%20Admin/Screenshot%20email%20address%20detail%20change.png)
+
+- I am redirected back to the list of accounts and their e-mail addresses as below, with a notification advising it has updated successfully:
+
+![E-mail addresses Admin Panel Successful Update](/static/images/Testing%20Heroku%20Admin/Screenshot%20email%20updated%20successfully.png)
+
+2. I am happy with this section of Admin, so I look at my Authentication and Authorisation section next. The groups section is empty as to be expected but the users is populated as shown below:
+
+![E-mail addresses Admin Auth User List](/static/images/Testing%20Heroku%20Admin/Screenshot%20admin%20auth%20user%20list.png)
+
+- If I click an account of one of the standard users then I am presented with the screen below which allows me to amend the user's permissions, set their names and email address and option to select if they are staff. I can unverify and verify an e-mail address, however, the e-mail system is in place so will send the users a verification email when they sign up. I can als delete users from this view:
+
+![User Change Screen](/static/images/Testing%20Heroku%20Admin/Screenshot%20admin%20users%20change%20user.png)
+
+![User Change Screen 2](/static/images/Testing%20Heroku%20Admin/Screenshot%20admin%20change%20user%202.png)
+
+- If I choose to delete a selected user in this menu either on the account itself or from the list then this works which it does, and it shows me everything user was connected to on our app:
+
+![Select user to delete](/static/images/Testing%20Heroku%20Admin/Screenshot%20admin%20panel%20delete%20user.png)
+
+![User delete prompt](/static/images/Testing%20Heroku%20Admin/Screenshot%20admin%20panel%20delete%20user%20prompt.png)
+
+- After clicking 'yes' to delete, the list is refreshed with the deleted account removed:
+
+![User deleted](/static/images/Testing%20Heroku%20Admin/Screenshot%20account%20deleted%20successfully.png)
+
+3. I am now going to check out the 'Checkout' > 'Orders' section of my admin panel and make sure that I can see all the orders that have been made in there, which I can. It shows me the name, date, order total, delivery cost and grand total:
+
+![Order List Admin Panel](/static/images/Testing%20Heroku%20Admin//Screenshot%20checkout%20orders%20list%20admin.png)
+
+- If I click into one of the orders for delivery, I can see all the information on the order and can make changes were necessary if a user asked to update there order. I can also delete:
+
+![Order Details Admin Panel](/static/images/Testing%20Heroku%20Admin/Screenshot%20order%20details%20admin%20view.png)
+
+4. I am happy with the Orders, so move on to looking at the next section which is for the Discussion Board app. From the admin panel, I have options for 'Comments' and 'Posts':
+
+![Order Details Admin Panel](/static/images/Testing%20Heroku%20Admin/Screenshot%20order%20details%20admin%20view.png)
+
+- If I click 'Change' on comments, then I can see all the comments that are currently on the DiscussionBoard...I have checked and the fact that it is empty currently is correct as there are no comments on any of the posts on the Discussion Board:
+
+![Discussion Board Comments](/static/images/Testing%20Heroku%20Admin/Screenshot%20admin%20discsussion%20board%20comments%20empty.png)
+
+- If I add a comment on one of the existing posts, then this is reflected in the admin panel:
+
+![Discussion Board Comments - new comment](/static/images/Testing%20Heroku%20Admin/Screenshot%20admin%20discusssion%20board%20comment%20added.png)
+
+- If I click the comment itself then I am able to moderate accordingly:
+
+![Discussion Board Comments - commment edit](/static/images/Testing%20Heroku%20Admin/Screenshot%20edit%20comment%20discsussion%20board.png)
+
+- I go back to the DiscussionBoard adn click change on 'Posts' to see that I can see all posts on the Discussion Board which I can:
+
+![Discussion Board Posts](/static/images/Testing%20Heroku%20Admin/Screenshot%20discussion%20board%20posts.png)
+
+- If I click on one of the posts then I can see all the content and have the options to edit:
+
+![Discussion Board Post Details](/static/images/Testing%20Heroku%20Admin/Screenshot%20discussion%20board%20post%20details.png)
+
+5. I am happy with the Discussion Board so will checkout the Home > Feedback section next. Upon clicking the option for Feedbacks, I can see all the forms that have been previously submitted:
+
+![Homepage Feedback Forms List](/static/images/Testing%20Heroku%20Admin/Screenshot%20home%20feedback%20list.png)
+
+- If I click one of the feedback forms then I can see all the details and have options to amend:
+
+![Homepage Feedback Form Details](/static/images/Testing%20Heroku%20Admin/Screenshot%20home%20feedback%20form%20details.png)
+
+6. I am happy with the last section so now I move onto Merchandise Administration, when I click this option from the admin panel, then I am presented with the below:
+
+![Merchandise Admin Menu](/static/images/Testing%20Heroku%20Admin/Screenshot%20merchandise%20admin.png)
+
+- I start with Categories and can see I am able to add new categories or change the current categories as per the screenshots below:
+
+![Merchandise Categories Add](/static/images/Testing%20Heroku%20Admin/Screenshot%20merchandise%20add%20category.png)
+
+![Merchandise Categories Change](/static/images/Testing%20Heroku%20Admin/Screenshot%20change%20category.png)
+
+![Merchandise Categories Change Details](/static/images/Testing%20Heroku%20Admin/Screenshot%20change%20category%20details.png)
+
+- I then look at ProductVariants which I can also add and edit:
+
+![Merchandise ProductVariant Add](/static/images/Testing%20Heroku%20Admin/Screenshot%20productvariant%20add.png)
+
+![Merchandise ProductVariant Change](/static/images/Testing%20Heroku%20Admin/Screenshot%20productvariant%20change.png)
+
+![Merchandise ProductVariant Change Details](/static/images/Testing%20Heroku%20Admin/Screenshot%20productvariant%20change%20details.png)
+
+- Finally on the Merchandise Admin, I check out Products. This gives me the option to add a new product, edit existing ones and see all product listings:
+
+![Merchandise Product Add](/static/images/Testing%20Heroku%20Admin/Screenshot%20product%20add.png)
+
+![Merchandise Product Change](/static/images/Testing%20Heroku%20Admin/Screenshot%20product%20details%20change.png)
+
+![Merchandise Product Change Details](/static/images/Testing%20Heroku%20Admin/Screenshot%20product%20list%20change.png)
+
+7. For the last thing I will check on my Django app, is the Plans section. I have options for 'Plans' and 'User Plans':
+
+![Plans Admin Menu](/static/images/Testing%20Heroku%20Admin/Screenshot%20plans%20main%20menu.png)
+
+- I start with the Plans themselves and check that 'Add' and 'Change' work accordingly, which they do:
+
+![Plans Add](/static/images/Testing%20Heroku%20Admin/Screenshot%20add%20plan.png)
+
+![Plans Change List](/static/images/Testing%20Heroku%20Admin/Screenshot%20%20plans%20change%20list.png)
+
+![Plans Change Details](/static/images/Testing%20Heroku%20Admin/Screenshot%20plans%20details%20edit.png)
+
+- I then look at my userplans, if i click the menu option for this then I can see all the currently owned plans:
+
+![UserPlans List](/static/images/Testing%20Heroku%20Admin/Screenshot%20userplans%20list.png)
+
+- If I click into one of the plans then I can see all the details for that users plan and make tweaks if I needed to:
+
+![UserPlans Details](/static/images/Testing%20Heroku%20Admin/Screenshot%20userplans%20details.png)
+
+- I can also add a plan for a user if I would like to from selecting 'Add':
+
+![UserPlans Add](/static/images/Testing%20Heroku%20Admin/Screenshot%20add%20new%20plan.png)
+
+- I am happy with all my testing of the Django production app now.
 
 ---
 
@@ -20828,6 +21455,7 @@ The following parts of my Project were implemented using Bootstrap docs:
 - Used Bootstrap documentation for Products cards
 - Used Bootstrap Toasts method to provide users with informative messages throughout their interactions with the site.
 - Bootstrap Toasts html code for toast templates
+
 
 #### Favicon
 
@@ -21083,6 +21711,8 @@ The following parts of my Project were implemented using Bootstrap docs:
 - shoppingbag.html layout for small screen updates
 - templates/accounts/email_confirm.html update
 - verification_sent.html update
+- messages.success bag preview tag updates on shoppingbag/views
+- ERD Diagrams and Database Dictionaries and Key relationships
 
 ---
 
